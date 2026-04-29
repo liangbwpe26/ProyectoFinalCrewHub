@@ -1,0 +1,139 @@
+/* src/components/pages/Register.css */
+
+/* Contenedor principal: Fondo negro absoluto */
+.register-page {
+    background-color: #000000;
+    min-height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Distribución en dos columnas */
+.register-split {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 150px;
+    max-width: 1200px;
+    width: 100%;
+    padding: 20px;
+}
+
+/* --- LADO IZQUIERDO: LOGO --- */
+.register-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.register-brand-text {
+    color: #ffffff;
+    font-size: 4.8rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.register-brand-logo {
+    width: 400px;
+    height: auto;
+    border-radius: 50%;
+}
+
+/* --- LADO DERECHO: FORMULARIO --- */
+.register-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+/* Tarjeta oscura del formulario */
+.register-card {
+    background-color: #262626; /* Gris oscuro del diseño */
+    border: 1px solid #363636;
+    border-radius: 12px;
+    width: 400px;
+    padding: 40px 30px; /* Ajustado para que crezca con el contenido */
+    display: flex;
+    flex-direction: column;
+}
+
+.register-form-title {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* Inputs blancos */
+.register-input {
+    width: 100%;
+    background-color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 15px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    color: #262626;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.register-input:focus {
+    box-shadow: 0 0 0 2px #92bcf7; /* Un borde brillante sutil al enfocar */
+}
+
+/* Botón estilo píldora */
+.register-btn {
+    width: 100%;
+    background-color: #92bcf7; 
+    color: #ffffff;
+    border: none;
+    border-radius: 20px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.register-btn:hover {
+    background-color: #7aaef5;
+}
+
+/* Enlace a iniciar sesión */
+.register-login-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #a8a8a8;
+}
+
+.register-login-link {
+    color: #0095f6;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.register-login-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsividad básica */
+@media (max-width: 800px) {
+    .register-split {
+        flex-direction: column;
+        gap: 50px;
+    }
+}

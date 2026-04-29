@@ -1,0 +1,151 @@
+/* Contenedor principal: Fondo negro absoluto, ocupa toda la pantalla */
+.login-page {
+    background-color: #000000;
+    min-height: 100vh;
+    
+    /* ESTAS 4 LÍNEAS SON LA MAGIA NUEVA */
+    width: 100vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Distribución en dos columnas */
+.login-split {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 150px; /* <-- AUMENTADO: Separación entre el logo y el formulario (antes 80px) */
+    max-width: 1200px; /* <-- AUMENTADO: Más espacio para que todo respire (antes 1000px) */
+    width: 100%;
+    padding: 20px;
+}
+
+/* --- LADO IZQUIERDO: LOGO --- */
+.login-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.brand-text {
+    color: #ffffff;
+    font-size: 4.8rem; /* <-- AUMENTADO: Texto mucho más grande (antes 3.5rem) */
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 25px; /* Un poco más de espacio entre el título y la imagen */
+    text-align: center;
+}
+
+.brand-logo {
+    width: 400px; /* <-- AUMENTADO: Logo más grande (antes 300px) */
+    height: auto;
+    border-radius: 50%; 
+}
+
+/* --- LADO DERECHO: FORMULARIO --- */
+.login-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+/* El rectángulo oscuro de fondo */
+.login-card {
+    background-color: #262626; /* Gris oscuro del diseño */
+    border: 1px solid #363636;
+    border-radius: 12px;
+    width: 400px;
+    padding: 40px 30px; /* Ajustado para que crezca con el contenido */
+    display: flex;
+    flex-direction: column;
+}
+
+/* La franja blanca central */
+.login-white-band {
+    width: 100%;
+    padding: 30px 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-title {
+    font-size: 25px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 20px;
+}
+
+/* Inputs calcados al diseño de la imagen */
+.login-input {
+    width: 100%;
+    background-color: #fafafa;
+    border: 1px solid #dbdbdb;
+    border-radius: 6px;
+    padding: 12px 10px;
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: #262626;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.login-input:focus {
+    border-color: #a8a8a8;
+}
+
+.login-input::placeholder {
+    color: #8e8e8e;
+}
+
+/* Botón estilo píldora azul claro */
+.login-btn {
+    width: 100%;
+    background-color: #92bcf7; /* Azul pálido del diseño */
+    color: #ffffff;
+    border: none;
+    border-radius: 20px; /* Píldora */
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #7aaef5; /* Un poco más oscuro al pasar el ratón */
+}
+
+/* Enlace a registro */
+.login-register-text {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #8e8e8e;
+}
+
+.login-register-link {
+    color: #0095f6; /* Azul Instagram */
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.login-register-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsividad básica para pantallas pequeñas */
+@media (max-width: 800px) {
+    .login-split {
+        flex-direction: column;
+        gap: 40px;
+    }
+}
