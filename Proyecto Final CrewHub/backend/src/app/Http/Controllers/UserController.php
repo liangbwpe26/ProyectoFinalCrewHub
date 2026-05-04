@@ -17,21 +17,24 @@ class UserController extends Controller
             return response()->json(['success' => true, 'users' => []]);
         }
 
-        // 1. Buscamos usuarios que coincidan con el texto (y excluimos al usuario actual)
         $users = User::where('_id', '!=', $me->_id)
-            ->where(function($query) use ($searchTerm) {
-                $query->where('username', 'like', "%{$searchTerm}%")
-                      ->orWhere('email', 'like', "%{$searchTerm}%");
-            })
-            ->take(20) // Limitamos a 20 resultados por rendimiento
-            ->get(['_id', 'username', 'email']);
+            ->where('username', 'like', "%{$searchTerm}%")
+            ->take(20)
+            ->get(['_id', 'username', 'email', 'profile_picture', 'display_name']);
 
-        // 2. Obtenemos la lista de los IDs de las personas a las que YO sigo
-        $myFollowingIds = Follow::where('follower_id', $me->_id)->pluck('followed_id')->toArray();
+        // Traemos todos mis seguimientos hacia estos usuarios
+        $myFollows = \App\Models\Follow::where('follower_id', $me->_id)
+            ->whereIn('followed_id', $users->pluck('_id'))
+            ->get()->keyBy('followed_id');
 
-        // 3. Le añadimos una bandera 'is_followed' a cada resultado para que React sepa qué botón dibujar
-        $users->transform(function($user) use ($myFollowingIds) {
-            $user->is_followed = in_array($user->_id, $myFollowingIds);
+        // Le añadimos el estado exacto a cada usuario
+        $users->transform(function($user) use ($myFollows) {
+            $followRecord = $myFollows->get($user->_id);
+            if ($followRecord) {
+                $user->follow_status = $followRecord->status ?? 'accepted'; // Si es viejo, lo damos por aceptado
+            } else {
+                $user->follow_status = 'none'; // No lo seguimos
+            }
             return $user;
         });
 

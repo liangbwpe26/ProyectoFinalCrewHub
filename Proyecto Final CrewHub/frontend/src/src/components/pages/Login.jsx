@@ -68,7 +68,7 @@ const Login = () => {
                                         ref={loginRef}
                                         name="login"
                                         type="text"
-                                        placeholder="Username or email address"
+                                        placeholder="Usuario o correo electrónico"
                                         onChange={updateData}
                                         required
                                     />
@@ -78,13 +78,13 @@ const Login = () => {
                                         ref={passwordRef}
                                         name="password"
                                         type="password"
-                                        placeholder="Password"
+                                        placeholder="Contraseña"
                                         onChange={updateData}
                                         required
                                     />
                                     
                                     <button type="submit" className="login-btn">
-                                        Log in
+                                        Inicia Sesión
                                     </button>
                                 </form>
 

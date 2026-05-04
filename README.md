@@ -116,7 +116,3 @@ docker logs social_backend
 ```
 
 ---
-
-## Licencia
-
-Este proyecto es de uso educativo y puede adaptarse según tus necesidades.

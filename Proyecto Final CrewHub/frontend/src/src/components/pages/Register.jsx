@@ -39,18 +39,52 @@ const Register = () => {
 
     const handleRegister = (e) => {
         e.preventDefault();
+        
+        // Ejecutamos tu validador de frontend personalizado
+        const usernameError = validateUsername(userData.username);
+        if (usernameError) {
+            setErrors([usernameError]);
+            return;
+        }
+
         if (validateForm()) {
             registerAPI(userData)
-                .then(() => navigate("/"))
+                .then(() => navigate("/setup-profile")) // <--- ¡AQUÍ ESTÁ EL CAMBIO!
                 .catch((error) => setErrors([error.message]));
         }
+    };
+
+    // Lista de palabras que NUNCA pueden ser un nombre de usuario
+    const FORBIDDEN_USERNAMES = ['login', 'register', 'chat', 'home', 'api', 'admin', 'perfil', 'config', 'index'];
+
+    // Función de sanitización y validación
+    const validateUsername = (username) => {
+        const cleanUsername = username.trim().toLowerCase();
+        
+        // 1. Validar longitud
+        if (cleanUsername.length < 3 || cleanUsername.length > 20) {
+            return "El usuario debe tener entre 3 y 20 caracteres.";
+        }
+
+        // 2. Validar caracteres (solo letras, números y guiones bajos)
+        const regex = /^[a-z0-9_]+$/;
+        if (!regex.test(cleanUsername)) {
+            return "Solo se permiten minúsculas, números y guiones bajos (_).";
+        }
+
+        // 3. Validar palabras reservadas (rutas de nuestra app)
+        if (FORBIDDEN_USERNAMES.includes(cleanUsername)) {
+            return "Este nombre de usuario no está disponible por políticas de la plataforma.";
+        }
+
+        return null; // Nulo significa que todo está perfecto
     };
 
     return (
         <Fragment>
             <div className="register-page">
                 <div className="register-split">
-                    
+
                     {/* COLUMNA IZQUIERDA: Logo y Título */}
                     <div className="register-left">
                         <div className="register-brand-text">CREW HUB</div>
@@ -61,7 +95,7 @@ const Register = () => {
                     <div className="register-right">
                         <div className="register-card">
                             <div className="register-form-title">Regístrate en CrewHub</div>
-                            
+
                             <form onSubmit={handleRegister}>
                                 {/* Campo Usuario */}
                                 <input
@@ -73,7 +107,7 @@ const Register = () => {
                                     onChange={updateData}
                                     required
                                 />
-                                
+
                                 {/* Campo Correo */}
                                 <input
                                     className="register-input"
@@ -84,7 +118,7 @@ const Register = () => {
                                     onChange={updateData}
                                     required
                                 />
-                                
+
                                 {/* Campo Contraseña */}
                                 <input
                                     className="register-input"
@@ -95,7 +129,7 @@ const Register = () => {
                                     onChange={updateData}
                                     required
                                 />
-                                
+
                                 <button type="submit" className="register-btn">
                                     Registrarse
                                 </button>

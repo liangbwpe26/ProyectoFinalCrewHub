@@ -16,9 +16,23 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            // 1. Validación de datos (Saneamiento automático de Laravel)
+            // SANEAMIENTO PREVIO: Convertimos el username a minúsculas antes de validar.
+            // Así evitamos que alguien se registre como "Login" o "CHAT" y rompa las rutas.
+            if ($request->has('username')) {
+                $request->merge(['username' => strtolower($request->username)]);
+            }
+
+            // 1. Validación de datos (El Muro de Seguridad)
             $validatedData = $request->validate([
-                'username' => 'required|string|max:50|unique:users,username',
+                'username' => [
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:20',
+                    'unique:users,username',
+                    'regex:/^[a-z0-9_]+$/', // Solo letras minúsculas, números y guiones bajos permitidos
+                    'not_in:login,register,chat,home,api,admin,perfil,config,index' // Palabras reservadas (Rutas de React)
+                ],
                 'email' => 'required|string|email|max:100|unique:users,email',
                 'password' => 'required|string|min:8',
             ]);
@@ -67,11 +81,17 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // 2. ¿Es un correo o un usuario? PHP lo detecta automáticamente
-        $loginType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        // Saneamiento en el login: si intentan entrar con username, lo pasamos a minúsculas
+        $loginInput = $request->login;
+        if (!filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            $loginInput = strtolower($loginInput);
+        }
 
-        // 3. Buscamos al usuario en MongoDB usando el campo detectado
-        $user = User::where($loginType, $request->login)->first();
+        // 2. ¿Es un correo o un usuario? PHP lo detecta automáticamente
+        $loginType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        // 3. Buscamos al usuario en MongoDB usando el campo detectado y saneado
+        $user = User::where($loginType, $loginInput)->first();
 
         // 4. Verificamos que exista y la contraseña sea correcta
         if (!$user || !Hash::check($request->password, $user->password_hash)) {
@@ -82,9 +102,6 @@ class AuthController extends Controller
         }
 
         // 5. CREACIÓN DEL TOKEN REFINADO
-        // Parámetro 1: Nombre del token
-        // Parámetro 2: Habilidades o permisos (['*'] significa todos los permisos, pero puedes limitarlo)
-        // Parámetro 3: Fecha de expiración (ej. 7 días)
         $token = $user->createToken(
             'auth_token',
             ['*'],

@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    // 3. Aquí es donde PHP fallaba al no encontrar HasApiTokens
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $connection = 'mongodb';
@@ -21,8 +20,10 @@ class User extends Authenticatable
     protected $fillable = [
         'username',
         'email',
-        'password_hash',
-        'fecha_registro',
+        'password',
+        'display_name', 
+        'profile_picture',
+        'date_of_birth',   
     ];
 
     protected $hidden = [
@@ -30,7 +31,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    // Le indicamos a Laravel cómo se llama tu campo de contraseña
     public function getAuthPassword()
     {
         return $this->password_hash;
@@ -40,6 +40,7 @@ class User extends Authenticatable
     {
         return [
             'fecha_registro' => 'datetime',
+            'date_of_birth' => 'date',
         ];
     }
 }

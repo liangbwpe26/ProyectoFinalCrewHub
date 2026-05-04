@@ -2,13 +2,11 @@ import React, { Fragment } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AuthProvider from "./contexts/AuthContext.jsx";
 import RoutesApp from "./components/structure/Routes.jsx";
-import ReactDOM from 'react-dom/client'
-import './index.css'
+import ReactDOM from 'react-dom/client';
+import './index.css';
 
-// 1. IMPORTAR BOOTSTRAP AQUÍ (¡Súper importante el orden!)
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-// ... resto del archivo ...
 
 const App = () => {
     return (
