@@ -43,7 +43,7 @@ class PostInteractionController extends Controller
     public function getComments(Request $request, $postId)
     {
         $me = $request->user();
-        
+
         // Obtenemos desde dónde empezar (0 por defecto) y el límite (5)
         $offset = (int) $request->query('offset', 0);
         $limit = 5;
@@ -82,10 +82,10 @@ class PostInteractionController extends Controller
         });
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'comments' => $comments,
             // Enviamos un booleano al frontend para saber si aún quedan más por cargar
-            'hasMore' => ($offset + $limit) < $totalCount 
+            'hasMore' => ($offset + $limit) < $totalCount
         ]);
     }
 
@@ -202,16 +202,17 @@ class PostInteractionController extends Controller
 
         // Solo notificamos si el comentario existe y NO es de nosotros mismos
         if ($comment && $comment->user_id !== $me->_id) {
-            Notification::create([
+            $notif = Notification::create([
                 'recipient_id' => $comment->user_id,
                 'sender_id' => $me->_id,
-                'type' => 'comment_reaction', // Nuevo tipo de notificación
+                'type' => 'comment_reaction',
                 'post_id' => $comment->post_id,
                 'comment_id' => $comment->_id,
                 'is_read' => false
             ]);
 
-            
+            $notif->load(['sender', 'post']);
+            broadcast(new NotificationSent($notif));
         }
 
         return response()->json(['success' => true, 'reacted' => true]);

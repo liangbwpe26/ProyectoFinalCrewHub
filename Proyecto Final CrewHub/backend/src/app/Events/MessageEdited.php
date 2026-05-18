@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 
-class MessageSent implements ShouldBroadcastNow
+class MessageEdited implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets;
 
@@ -22,13 +22,13 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // Emitimos al canal de la sala de chat Y al canal personal del remitente
+        // Avisamos a la sala de chat Y a la bandeja del que editó
         $channels = [
             new PrivateChannel('chat.' . $this->message['conversation_id']),
             new PrivateChannel('App.Models.User.' . $this->message['sender_id'])
         ];
 
-        // Si tenemos el destinatario, le disparamos también a su canal personal
+        // Si tenemos la ID de la otra persona, le avisamos a su bandeja
         if ($this->receiverId) {
             $channels[] = new PrivateChannel('App.Models.User.' . $this->receiverId);
         }
@@ -38,6 +38,6 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastAs()
     {
-        return 'MessageSent';
+        return 'MessageEdited';
     }
 }

@@ -1,21 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchAPI } from '../services/api';
+import { useToast } from '../contexts/ToastContext.jsx';
+import { ERRORS } from '../utils/errorMessages.js';
 
 export const usePostInteractions = (post, token, targetCommentId = null) => {
     const postId = post._id || post.id;
+    const { showToast } = useToast();
 
-    // Estados del Post
+    // Estados
     const [hasReacted, setHasReacted] = useState(post.has_reacted || false);
     const [reactionsCount, setReactionsCount] = useState(post.reactions_count || 0);
     const [showComments, setShowComments] = useState(!!targetCommentId);
     const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
 
-    // Estados de Comentarios
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [loadingComments, setLoadingComments] = useState(false);
 
-    // Estados de Menciones y Respuestas
     const [mentionResults, setMentionResults] = useState([]);
     const [showMentions, setShowMentions] = useState(false);
     const [isSearchingMentions, setIsSearchingMentions] = useState(false);
@@ -25,7 +26,6 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    // 1. REACCIONAR AL POST
     const handlePostReact = async () => {
         const wasReacted = hasReacted;
         setHasReacted(!wasReacted);
@@ -36,41 +36,39 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             if (!data.success) {
                 setHasReacted(wasReacted);
                 setReactionsCount(prev => wasReacted ? prev + 1 : prev - 1);
+                showToast(data.message || "No se pudo procesar tu reacción.", 'error');
             }
         } catch (error) {
             setHasReacted(wasReacted);
             setReactionsCount(prev => wasReacted ? prev + 1 : prev - 1);
+            showToast("Problema de conexión al reaccionar.", 'error');
         }
     };
 
-    // 2. CARGAR COMENTARIOS
     const fetchComments = useCallback(async (currentOffset = 0) => {
         if (currentOffset === 0) setLoadingComments(true);
         else setLoadingMore(true);
 
         try {
-            const postId = post._id || post.id; 
             const data = await fetchAPI(`/posts/${postId}/comments?offset=${currentOffset}`, {}, token);
             
             if (data.success) {
-                if (currentOffset === 0) {
-                    setComments(data.comments);
-                } else {
-                    setComments(prev => [...prev, ...data.comments]);
-                }
+                if (currentOffset === 0) setComments(data.comments);
+                else setComments(prev => [...prev, ...data.comments]);
+                
                 setHasMore(data.hasMore);
                 setOffset(currentOffset);
+            } else {
+                showToast(data.message || "Error al cargar comentarios.", 'error');
             }
         } catch (error) {
-            console.error("Error cargando comentarios:", error);
+            showToast(ERRORS.SERVER_500, 'error');
         } finally {
             setLoadingComments(false);
             setLoadingMore(false);
         }
-    // 👉 ESTO ES VITAL: Las dependencias del useCallback
-    }, [post._id, post.id, token]); 
+    }, [postId, token]); 
 
-    // Efecto que reacciona a la notificación
     useEffect(() => {
         if (targetCommentId) {
             setShowComments(true);
@@ -78,6 +76,28 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
         }
     }, [targetCommentId, fetchComments]);
     
+    // NUEVA MAGIA: EL SCROLL Y RESALTADO AUTOMÁTICO
+    useEffect(() => {
+        if (targetCommentId && comments.length > 0) {
+            // Le damos 100ms a React para que termine de pintar el HTML de los comentarios
+            setTimeout(() => {
+                const commentElement = document.getElementById(`comment-${targetCommentId}`);
+                if (commentElement) {
+                    // 1. Bajamos la pantalla hasta el comentario (centrado)
+                    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // 2. Destello visual azul para que el usuario sepa cuál es
+                    commentElement.style.transition = 'background-color 0.5s ease';
+                    commentElement.style.backgroundColor = 'rgba(0, 149, 246, 0.3)'; // Azul suave
+                    
+                    setTimeout(() => {
+                        commentElement.style.backgroundColor = 'transparent';
+                    }, 2000); // El destello dura 2 segundos
+                }
+            }, 100);
+        }
+    }, [targetCommentId, comments]);
+
     const toggleComments = () => {
         const willShow = !showComments;
         setShowComments(willShow);
@@ -93,13 +113,17 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
                     return c;
                 }));
             }
-        } catch (error) { console.error("Error al cargar respuestas", error); }
+        } catch (error) { 
+            showToast("Error al cargar respuestas.", 'error'); 
+        }
     };
 
-    // 3. ENVIAR COMENTARIO
     const submitComment = async (e, onSuccess) => {
         e.preventDefault();
-        if (!newComment.trim()) return;
+        if (!newComment.trim()) {
+            showToast(ERRORS.EMPTY_MESSAGE, 'error');
+            return;
+        }
 
         try {
             const body = { content: newComment };
@@ -108,23 +132,22 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             const data = await fetchAPI(`/posts/${postId}/comments`, { method: 'POST', body }, token);
 
             if (data.success) {
-                if (replyingTo) {
-                    fetchComments();
-                } else {
-                    setComments(prev => [data.comment, ...prev]);
-                }
+                if (replyingTo) fetchComments();
+                else setComments(prev => [data.comment, ...prev]);
+                
                 setNewComment("");
                 setReplyingTo(null);
-
-                // NUEVO: Sumar 1 al contador visual
                 setCommentsCount(prev => prev + 1);
-
+                
                 if (onSuccess) onSuccess();
+            } else {
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            showToast(ERRORS.SERVER_500, 'error'); 
+        }
     };
 
-    // 4. MENCIONES
     const handleInputChange = async (e) => {
         const value = e.target.value;
         setNewComment(value);
@@ -140,8 +163,9 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             try {
                 const data = await fetchAPI(`/mentions/search?q=${query}`, {}, token);
                 if (data.success) setMentionResults(data.users);
-            } catch (err) { console.error(err); }
-            finally { setIsSearchingMentions(false); }
+            } catch (err) { 
+                // Evitamos el toast aquí para que no sea molesto mientras se escribe rápido
+            } finally { setIsSearchingMentions(false); }
         } else {
             setShowMentions(false);
         }
@@ -155,7 +179,6 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
         if (inputRef && inputRef.current) inputRef.current.focus();
     };
 
-    // 5. REACCIONAR A COMENTARIOS
     const handleCommentReact = async (commentId) => {
         try {
             const data = await fetchAPI(`/comments/${commentId}/react`, { method: 'POST' }, token);
@@ -176,20 +199,18 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
                     return c;
                 }));
             }
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            showToast("Problema de conexión al reaccionar al comentario.", 'error'); 
+        }
     };
 
-    
-
-    // Retornamos todo lo que la vista va a necesitar
     return {
         hasReacted, reactionsCount, handlePostReact,
         showComments, toggleComments, comments, loadingComments, loadAllReplies,
         newComment, setNewComment, submitComment,
         replyingTo, setReplyingTo,
         mentionResults, showMentions, isSearchingMentions, handleInputChange, selectMention,
-        handleCommentReact, hasMore,
-        loadingMore,
+        handleCommentReact, hasMore, loadingMore,
         loadMoreComments: () => fetchComments(offset + 5)
     };
 };

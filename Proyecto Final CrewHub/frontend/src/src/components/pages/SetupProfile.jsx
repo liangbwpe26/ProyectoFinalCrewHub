@@ -1,7 +1,6 @@
 import React, { Fragment, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
-import ShowErrors from "../ShowErrors.jsx";
 import { useProfileForm } from "../../hooks/useProfileForm.js";
 import "./Register.css"; 
 import logoImg from "../../assets/logo.png";
@@ -10,15 +9,13 @@ const SetupProfile = () => {
     const { token, activeUser, setActiveUser } = useContext(AuthContext); 
     const navigate = useNavigate();
 
-    // Invocamos nuestro Hook pasándole el activeUser
     const { 
         displayName, setDisplayName, dateOfBirth, setDateOfBirth, 
-        previewUrl, handleImageChange, errors, loading, submitProfile 
+        previewUrl, handleImageChange, loading, submitProfile 
     } = useProfileForm(token, activeUser || {});
 
     const handleSetup = (e) => {
         e.preventDefault();
-        // Llamamos a la función del hook y le decimos qué hacer si tiene éxito
         submitProfile((updatedUser) => {
             if (setActiveUser) setActiveUser(updatedUser);
             navigate("/");
@@ -59,8 +56,6 @@ const SetupProfile = () => {
                             <div className="register-login-text" style={{ marginTop: "15px" }}>
                                 <span className="register-login-link" onClick={() => navigate("/")} style={{ color: "gray" }}>Omitir este paso por ahora</span>
                             </div>
-
-                            {errors.length > 0 && <div style={{ marginTop: "15px" }}><ShowErrors errors={errors} /></div>}
                         </div>
                     </div>
                 </div>

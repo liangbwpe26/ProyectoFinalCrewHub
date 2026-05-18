@@ -9,6 +9,7 @@ RUN npm install
 RUN npm install react-router-dom
 RUN npm install bootstrap
 RUN npm install laravel-echo pusher-js
+RUN npm install react-easy-crop
 
 # Copiamos el resto del código
 COPY src/ ./

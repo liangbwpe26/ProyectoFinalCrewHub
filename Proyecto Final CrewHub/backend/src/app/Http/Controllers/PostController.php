@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\Follow;
+use App\Models\Reaction;
+use App\Models\Comment;
 
 class PostController extends Controller
 {
@@ -69,11 +71,11 @@ class PostController extends Controller
 
         // NUEVO: Añadimos las estadísticas de reacciones a cada post
         $posts->transform(function($post) use ($me) {
-            $post->reactions_count = \App\Models\Reaction::where('post_id', $post->_id)->count();
-            $post->comments_count = \App\Models\Comment::where('post_id', $post->_id)->count();
-            $post->has_reacted = \App\Models\Reaction::where('post_id', $post->_id)
-                                                     ->where('user_id', $me->_id)
-                                                     ->exists();
+            $post->reactions_count = Reaction::where('post_id', $post->_id)->count();
+            $post->comments_count = Comment::where('post_id', $post->_id)->count();
+            $post->has_reacted = Reaction::where('post_id', $post->_id)
+                                         ->where('user_id', $me->_id)
+                                         ->exists();
             return $post;
         });
 
@@ -87,18 +89,47 @@ class PostController extends Controller
     public function show(Request $request, $id)
     {
         $me = $request->user();
-        $post = \App\Models\Post::with('user')->find($id);
+        $post = Post::with('user')->find($id);
 
         if (!$post) {
             return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
         }
 
-        $post->reactions_count = \App\Models\Reaction::where('post_id', $post->_id)->count();
-        $post->has_reacted = $me ? \App\Models\Reaction::where('post_id', $post->_id)->where('user_id', $me->_id)->exists() : false;
+        $post->reactions_count = Reaction::where('post_id', $post->_id)->count();
+        $post->has_reacted = $me ? Reaction::where('post_id', $post->_id)->where('user_id', $me->_id)->exists() : false;
         
         // NUEVO: Contamos TODOS los comentarios (padres e hijos) de este post
-        $post->comments_count = \App\Models\Comment::where('post_id', $post->_id)->count();
+        $post->comments_count = Comment::where('post_id', $post->_id)->count();
 
         return response()->json(['success' => true, 'post' => $post]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $post = Post::find($id);
+        if (!$post) return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
+        
+        if ((string)$post->user_id !== (string) $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $request->validate(['description' => 'nullable|string|max:1000']);
+        $post->description = $request->input('description');
+        $post->save();
+
+        return response()->json(['success' => true, 'post' => $post]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $post = Post::find($id);
+        if (!$post) return response()->json(['success' => false], 404);
+
+        if ((string)$post->user_id !== (string) $request->user()->id) {
+            return response()->json(['success' => false], 403);
+        }
+
+        $post->delete();
+        return response()->json(['success' => true]);
     }
 }

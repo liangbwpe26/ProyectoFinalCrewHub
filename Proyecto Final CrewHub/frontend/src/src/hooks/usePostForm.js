@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { fetchAPI } from '../services/api.js';
+import { useToast } from '../contexts/ToastContext.jsx';
+import { ERRORS } from '../utils/errorMessages.js';
 
 export const usePostForm = (token, onSuccessCallback) => {
     const [description, setDescription] = useState("");
     const [imageFile, setImageFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    
+    const { showToast } = useToast();
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            setError("Solo se permiten imágenes (JPG, PNG, GIF).");
+            showToast("Solo se permiten imágenes (JPG, PNG, GIF).", "error");
             return;
         }
 
-        setError(null);
         setImageFile(file);
         setPreviewUrl(URL.createObjectURL(file));
     };
@@ -25,36 +27,29 @@ export const usePostForm = (token, onSuccessCallback) => {
     const submitPost = async (e) => {
         e.preventDefault();
         if (!imageFile) {
-            setError("Debes seleccionar una imagen para publicar.");
+            showToast("Debes seleccionar una imagen para publicar.", "error");
             return;
         }
 
         setLoading(true);
-        setError(null);
-
         const formData = new FormData();
         formData.append('image', imageFile);
         if (description) formData.append('description', description);
 
         try {
-            const data = await fetchAPI('/posts', {
-                method: 'POST',
-                body: formData
-            }, token);
+            const data = await fetchAPI('/posts', { method: 'POST', body: formData }, token);
 
             if (data.success) {
-                // Limpiamos el formulario
                 setDescription("");
                 setImageFile(null);
                 setPreviewUrl(null);
-                
-                // Si el componente nos pasó una función para actualizar la UI, la llamamos
+                showToast("¡Publicación subida con éxito!", "success");
                 if (onSuccessCallback) onSuccessCallback(data.post);
             } else {
-                setError(data.message || 'Error al crear la publicación.');
+                showToast(data.message || ERRORS.DEFAULT, "error");
             }
         } catch (err) {
-            setError('Error de conexión con el servidor.');
+            showToast(ERRORS.SERVER_500, "error");
         } finally {
             setLoading(false);
         }
@@ -64,13 +59,11 @@ export const usePostForm = (token, onSuccessCallback) => {
         setDescription("");
         setImageFile(null);
         setPreviewUrl(null);
-        setError(null);
     };
 
     return { 
         description, setDescription, 
         previewUrl, handleImageChange, 
-        error, loading, 
-        submitPost, cancelPost 
+        loading, submitPost, cancelPost 
     };
 };

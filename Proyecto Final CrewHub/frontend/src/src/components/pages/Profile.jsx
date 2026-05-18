@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { useProfileLogic } from "../../hooks/useProfileLogic.js";
 import CreatePost from "../CreatePost.jsx";
-import PostActions from '../PostActions';
+import PostCard from "../PostCard.jsx"; 
 import NotificationBell from "../NotificationBell.jsx";
 
 const Profile = () => {
@@ -29,6 +29,13 @@ const Profile = () => {
         ? (profile.profile_picture.startsWith('http') ? profile.profile_picture : `http://127.0.0.1:8000${profile.profile_picture}`)
         : `https://ui-avatars.com/api/?name=${profile.username}&background=262626&color=fff&bold=true&size=150`;
 
+    const getAvatar = (user) => {
+        if (user && user.profile_picture) {
+            return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+        }
+        return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
+    };
+
     const getPostImage = (path) => {
         if (!path) return '';
         return path.startsWith('http') ? path : `http://127.0.0.1:8000${path}`;
@@ -45,9 +52,8 @@ const Profile = () => {
                     <NotificationBell />
                 </div>
 
-                {/* CABECERA DEL PERFIL */}
                 <div style={{ width: "100%", maxWidth: "800px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", borderBottom: "1px solid #262626", paddingBottom: "30px" }}>
-                    <img src={profileImageUrl} alt={`Perfil`} style={{ width: "130px", height: "130px", borderRadius: "50%", objectFit: "cover", border: "3px solid #262626" }} />
+                    <img src={profileImageUrl} alt="Perfil" style={{ width: "130px", height: "130px", borderRadius: "50%", objectFit: "cover", border: "3px solid #262626" }} />
 
                     <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
                         {isMyProfile ? (
@@ -75,10 +81,9 @@ const Profile = () => {
                     <div style={{ textAlign: "center", marginTop: "10px" }}>
                         <h2 style={{ margin: "0", fontSize: "1.6rem" }}>{profile.display_name || profile.username}</h2>
                         <span style={{ color: "gray", fontSize: "1.1rem" }}>@{profile.username}</span>
-                        {profile.is_private && <div style={{ fontSize: "0.85rem", color: "gray", marginTop: "5px" }}>🔒 Cuenta Privada</div>}
+                        {profile.is_private && <div style={{ fontSize: "0.85rem", color: "gray", marginTop: "5px" }}> Cuenta Privada</div>}
                     </div>
 
-                    {/* ESTADÍSTICAS PERFECTAMENTE SIMÉTRICAS */}
                     <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <span style={{ fontWeight: "bold", fontSize: "1.3rem", margin: 0 }}>{posts.length}</span>
@@ -97,7 +102,6 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* GALERÍA DE PUBLICACIONES */}
                 <div style={{ width: "100%", maxWidth: "800px", marginTop: "30px" }}>
                     {isLocked ? (
                         <div style={{ textAlign: "center", padding: "50px 20px", border: "1px solid #262626", borderRadius: "12px", backgroundColor: "#121212" }}>
@@ -132,7 +136,6 @@ const Profile = () => {
                 </div>
             </div>
 
-            {/* MODAL 1: CREAR POST */}
             {isModalOpen && (
                 <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
                     <div style={{ width: "100%", maxWidth: "600px", position: "relative" }}>
@@ -141,7 +144,6 @@ const Profile = () => {
                 </div>
             )}
 
-            {/* MODAL 2: VER PUBLICACIÓN EN GRANDE CON COMENTARIOS */}
             {selectedPost && (
                 <div
                     style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}
@@ -151,37 +153,16 @@ const Profile = () => {
                         onClick={(e) => e.stopPropagation()}
                         style={{ width: "100%", maxWidth: "600px", backgroundColor: "#121212", borderRadius: "12px", border: "1px solid #262626", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}
                     >
-                        <div style={{ padding: "15px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #262626", flexShrink: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <img src={profileImageUrl} alt="avatar" style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }} />
-                                <strong style={{ color: "#fff" }}>{profile.username}</strong>
-                            </div>
-                            <button onClick={() => setSelectedPost(null)} style={{ background: "transparent", color: "gray", border: "none", fontSize: "1.2rem", cursor: "pointer", fontWeight: "bold" }}>✕</button>
-                        </div>
-                        <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column" }}>
-                            <div style={{ backgroundColor: "#000", display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
-                                <img
-                                    src={getPostImage(selectedPost.image_path)}
-                                    alt="Publicación"
-                                    style={{ width: "100%", maxHeight: "60vh", objectFit: "contain", display: "block" }}
-                                />
-                            </div>
-                            <div style={{ padding: "20px 20px 0 20px" }}>
-                                <p style={{ margin: 0, fontSize: "1rem", lineHeight: "1.5" }}>
-                                    <strong style={{ color: "#fff", marginRight: "8px" }}>@{profile.username}</strong>
-                                    <span style={{ color: "#e0e0e0" }}>{selectedPost.description}</span>
-                                </p>
-                                <span style={{ display: "block", marginTop: "10px", fontSize: "0.8rem", color: "gray", textTransform: "uppercase", marginBottom: "15px" }}>
-                                    {new Date(selectedPost.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                </span>
-                            </div>
-                            <PostActions post={selectedPost} />
-                        </div>
+                        <PostCard 
+                            initialPost={{ ...selectedPost, user: selectedPost.user || profile }} 
+                            getAvatar={getAvatar} 
+                            isModal={true} 
+                            onCloseModal={() => setSelectedPost(null)} 
+                        />
                     </div>
                 </div>
             )}
 
-            {/* MODAL 3: SEGUIDORES / SEGUIDOS */}
             {isFollowModalOpen && (
                 <div
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
@@ -195,7 +176,7 @@ const Profile = () => {
                             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>
                                 {followModalType === 'followers' ? 'Seguidores' : 'Seguidos'}
                             </h3>
-                            <button onClick={closeFollowModal} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                            <button onClick={closeFollowModal} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 'bold' }}>X</button>
                         </div>
                         <div
                             onScroll={handleFollowModalScroll}
@@ -208,7 +189,6 @@ const Profile = () => {
                                 return (
                                     <div key={user._id || user.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between' }}>
 
-                                        {/* Foto y Nombre (Clickeables) */}
                                         <Link to={`/${user.username}`} onClick={closeFollowModal} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                                             <img
                                                 src={user.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user.username}&background=262626&color=fff&bold=true`}
@@ -221,11 +201,10 @@ const Profile = () => {
                                             </div>
                                         </Link>
 
-                                        {/* 👉 BOTÓN DE SEGUIMIENTO A LA DERECHA */}
                                         {!isSelf && (
                                             <button
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Evita que se dispare el Link al perfil accidentalmente
+                                                    e.stopPropagation(); 
                                                     toggleModalUserFollow(user._id || user.id, status);
                                                 }}
                                                 style={{
@@ -238,7 +217,7 @@ const Profile = () => {
                                                     border: status === 'none' ? 'none' : '1px solid #363636',
                                                     backgroundColor: status === 'none' ? '#0095f6' : '#262626',
                                                     color: 'white',
-                                                    flexShrink: 0 // Evita que el botón se aplaste si el nombre es muy largo
+                                                    flexShrink: 0 
                                                 }}
                                             >
                                                 {status === 'pending' ? 'Pendiente' : (status === 'accepted' ? 'Siguiendo' : 'Seguir')}
@@ -246,7 +225,7 @@ const Profile = () => {
                                         )}
                                     </div>
                                 );
-                            })};
+                            })}
 
                             {isFollowLoading && <p style={{ textAlign: 'center', color: 'gray', fontSize: '0.85rem' }}>Cargando...</p>}
                             {!isFollowLoading && !followHasMore && followUsers.length > 0 && (
@@ -256,11 +235,11 @@ const Profile = () => {
                                 <p style={{ textAlign: 'center', color: 'gray', fontSize: '0.9rem', marginTop: '20px' }}>
                                     {followModalType === 'followers' ? 'Aún no tiene seguidores.' : 'Aún no sigue a nadie.'}
                                 </p>
-                            )};
+                            )}
                         </div>
                     </div>
                 </div>
-            )};
+            )}
         </Fragment>
     );
 };

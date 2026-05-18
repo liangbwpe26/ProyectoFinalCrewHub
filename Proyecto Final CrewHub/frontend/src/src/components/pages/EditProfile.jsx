@@ -7,10 +7,10 @@ const EditProfile = () => {
     const { activeUser, token, setActiveUser } = useContext(AuthContext); 
     const navigate = useNavigate();
 
-    // Reutilizamos el mismo Hook mágico
+    // 👇 Eliminados "errors" y "successMsg" de aquí[cite: 22]
     const { 
         displayName, setDisplayName, dateOfBirth, setDateOfBirth,
-        isPrivate, setIsPrivate, previewUrl, handleImageChange, errors, successMsg, loading, submitProfile 
+        isPrivate, setIsPrivate, previewUrl, handleImageChange, loading, submitProfile 
     } = useProfileForm(token, activeUser || {});
 
     const handleSubmit = (e) => {
@@ -36,8 +36,7 @@ const EditProfile = () => {
 
                 <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "500px", padding: "20px", backgroundColor: "#121212", borderRadius: "10px", border: "1px solid #262626", display: "flex", flexDirection: "column", gap: "20px" }}>
                     
-                    {errors.length > 0 && <div style={{ color: "#ff4d4d", backgroundColor: "rgba(255, 77, 77, 0.1)", padding: "10px", borderRadius: "5px", textAlign: "center" }}>{errors[0]}</div>}
-                    {successMsg && <div style={{ color: "#4CAF50", backgroundColor: "rgba(76, 175, 80, 0.1)", padding: "10px", borderRadius: "5px", textAlign: "center" }}>{successMsg}</div>}
+                    {/* 👇 Eliminamos los divs de alerta rojos y verdes que estaban aquí[cite: 22] */}
 
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                         <img src={previewUrl} alt="Previsualización" style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", border: "2px solid #363636" }} />
@@ -70,15 +69,8 @@ const EditProfile = () => {
                                 onChange={(e) => setIsPrivate(e.target.checked)} 
                                 style={{ opacity: 0, width: 0, height: 0 }} 
                             />
-                            {/* Un diseño de "Toggle Switch" estilo iOS/Android */}
-                            <span style={{
-                                position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: isPrivate ? "#0095f6" : "#363636", borderRadius: "24px", transition: "0.3s"
-                            }}>
-                                <span style={{
-                                    position: "absolute", height: "18px", width: "18px", left: isPrivate ? "22px" : "3px", bottom: "3px",
-                                    backgroundColor: "white", borderRadius: "50%", transition: "0.3s"
-                                }}></span>
+                            <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: isPrivate ? "#0095f6" : "#363636", borderRadius: "24px", transition: "0.3s" }}>
+                                <span style={{ position: "absolute", height: "18px", width: "18px", left: isPrivate ? "22px" : "3px", bottom: "3px", backgroundColor: "white", borderRadius: "50%", transition: "0.3s" }}></span>
                             </span>
                         </label>
                     </div>

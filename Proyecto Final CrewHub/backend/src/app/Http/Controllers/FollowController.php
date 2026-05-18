@@ -7,6 +7,7 @@ use App\Models\Follow;
 use App\Models\User;
 use App\Models\Notification;
 use MongoDB\BSON\ObjectId;
+use App\Events\NotificationSent;
 
 class FollowController extends Controller
 {
@@ -40,12 +41,17 @@ class FollowController extends Controller
 
         // SI ES PRIVADA, CREAMOS LA NOTIFICACIÓN GLOBAL
         if ($isPrivate) {
-            Notification::create([
+            $notification = Notification::create([
                 'recipient_id' => $id,
                 'sender_id' => $me->_id,
                 'type' => 'follow_request',
                 'is_read' => false
             ]);
+
+            // ANTES de enviarlo al WebSocket
+            $notification->load('sender');
+
+            event(new NotificationSent($notification));
         }
 
         return response()->json([

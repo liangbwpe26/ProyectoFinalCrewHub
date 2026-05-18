@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchAPI } from '../services/api.js';
+import { useToast } from '../contexts/ToastContext.jsx';
+import { ERRORS } from '../utils/errorMessages.js';
 
 export const useProfileLogic = (username, token) => {
     const [profile, setProfile] = useState(null);
@@ -8,8 +10,6 @@ export const useProfileLogic = (username, token) => {
     const [error, setError] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    // NUEVO: Estado para el modal de Ver Publicación
     const [selectedPost, setSelectedPost] = useState(null);
 
     const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
@@ -18,6 +18,8 @@ export const useProfileLogic = (username, token) => {
     const [followOffset, setFollowOffset] = useState(0);
     const [followHasMore, setFollowHasMore] = useState(true);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+    const { showToast } = useToast();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -32,20 +34,19 @@ export const useProfileLogic = (username, token) => {
                     setPosts(profileData.posts || []);
                 } else {
                     setError("Usuario no encontrado.");
+                    showToast(ERRORS.USER_NOT_FOUND, 'error');
                 }
             } catch (err) {
                 setError("Error de conexión con el servidor.");
+                showToast(ERRORS.SERVER_500, 'error');
             } finally {
                 setLoading(false);
             }
         };
 
-        if (token && username) {
-            fetchProfile();
-        }
+        if (token && username) fetchProfile();
     }, [username, token]);
 
-    // NUEVA FUNCIÓN: Para seguir/dejar de seguir desde el perfil
     const toggleFollow = async () => {
         if (!profile) return;
         const currentStatus = profile.follow_status;
@@ -58,19 +59,19 @@ export const useProfileLogic = (username, token) => {
             if (data.success) {
                 const newStatus = (currentStatus === 'none') ? (data.status || 'accepted') : 'none';
                 setProfile(prev => ({ ...prev, follow_status: newStatus }));
+            } else {
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
-            console.error("Error al actualizar seguimiento:", error);
+            showToast("Error al actualizar seguimiento.", 'error');
         }
     };
 
-    // NUEVO: Función para inyectar la nueva foto en la cuadrícula al instante
     const addNewPostToProfile = (newPost) => {
         setPosts(prev => [newPost, ...prev]);
         setIsModalOpen(false);
     };
 
-    // FUNCIÓN PARA CARGAR LOS DATOS (De 10 en 10)
     const loadFollowData = async (currentOffset = 0, type = followModalType) => {
         if (!profile) return;
         setIsFollowLoading(true);
@@ -82,22 +83,21 @@ export const useProfileLogic = (username, token) => {
             const data = await fetchAPI(endpoint, {}, token);
 
             if (data.success) {
-                if (currentOffset === 0) {
-                    setFollowUsers(data.users);
-                } else {
-                    setFollowUsers(prev => [...prev, ...data.users]);
-                }
+                if (currentOffset === 0) setFollowUsers(data.users);
+                else setFollowUsers(prev => [...prev, ...data.users]);
+                
                 setFollowHasMore(data.hasMore);
                 setFollowOffset(currentOffset);
+            } else {
+                showToast(data.message || "Error al cargar la lista de usuarios.", 'error');
             }
         } catch (error) {
-            console.error("Error cargando lista de usuarios", error);
+            showToast(ERRORS.SERVER_500, 'error');
         } finally {
             setIsFollowLoading(false);
         }
     };
 
-    // ABRIR Y CERRAR EL MODAL
     const openFollowModal = (type) => {
         setFollowModalType(type);
         setFollowUsers([]);
@@ -109,12 +109,9 @@ export const useProfileLogic = (username, token) => {
 
     const closeFollowModal = () => setIsFollowModalOpen(false);
 
-    // EL SENSOR DE SCROLL INFINITO
     const handleFollowModalScroll = (e) => {
         const { scrollTop, clientHeight, scrollHeight } = e.target;
-        // Si estamos a 50px de llegar al fondo, y hay más por cargar...
         if (scrollHeight - scrollTop <= clientHeight + 50 && !isFollowLoading && followHasMore) {
-            // OJO: Le pasamos el type para que sepa exactamente qué está cargando
             loadFollowData(followOffset + 10, followModalType);
         }
     };
@@ -123,14 +120,11 @@ export const useProfileLogic = (username, token) => {
         try {
             const isUnfollowing = currentStatus === 'accepted' || currentStatus === 'pending';
             const endpoint = isUnfollowing ? `/unfollow/${targetUserId}` : `/follow/${targetUserId}`;
-            
-            // 👉 EL CAMBIO CLAVE: Elegimos el método correcto según la acción
             const httpMethod = isUnfollowing ? 'DELETE' : 'POST';
             
             const data = await fetchAPI(endpoint, { method: httpMethod }, token);
 
             if (data.success) {
-                // Actualizamos el estado de la lista al instante
                 setFollowUsers(prev => prev.map(user => {
                     const id = user._id || user.id;
                     if (id === targetUserId) {
@@ -138,23 +132,19 @@ export const useProfileLogic = (username, token) => {
                     }
                     return user;
                 }));
+            } else {
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
-            console.error("Error al cambiar estado de seguimiento en modal", error);
+            showToast("Error al cambiar estado de seguimiento.", 'error');
         }
     };
 
     return {
         profile, loading, error, toggleFollow,
         posts, isModalOpen, setIsModalOpen, addNewPostToProfile,
-        selectedPost, setSelectedPost, isFollowModalOpen,
-        followModalType,
-        followUsers,
-        isFollowLoading,
-        followHasMore,
-        openFollowModal,
-        closeFollowModal,
-        handleFollowModalScroll,
-        toggleModalUserFollow,
+        selectedPost, setSelectedPost, isFollowModalOpen, followModalType,
+        followUsers, isFollowLoading, followHasMore,
+        openFollowModal, closeFollowModal, handleFollowModalScroll, toggleModalUserFollow,
     };
 };

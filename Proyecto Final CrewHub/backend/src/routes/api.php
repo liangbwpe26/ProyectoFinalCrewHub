@@ -8,6 +8,10 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostInteractionController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\StoryController;
 
 // Rutas Públicas
 Route::post('/login', [AuthController::class, 'login']);
@@ -40,29 +44,51 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/requests/reject/{followerId}', [FollowController::class, 'rejectRequest']);
 
     // Rutas para Publicaciones (Posts)
-    Route::post('/posts', [App\Http\Controllers\PostController::class, 'store']);
-    Route::get('/posts/feed', [App\Http\Controllers\PostController::class, 'index']);
+    Route::post('/posts', [PostController::class, 'store']);
+    Route::get('/posts/feed', [PostController::class, 'index']);
 
     // Reacciones y Comentarios en Posts
-    Route::post('/posts/{postId}/react', [App\Http\Controllers\PostInteractionController::class, 'toggleReaction']);
-    Route::post('/posts/{postId}/comments', [App\Http\Controllers\PostInteractionController::class, 'addComment']);
-    Route::get('/posts/{postId}/comments', [App\Http\Controllers\PostInteractionController::class, 'getComments']);
+    Route::post('/posts/{postId}/react', [PostInteractionController::class, 'toggleReaction']);
+    Route::post('/posts/{postId}/comments', [PostInteractionController::class, 'addComment']);
+    Route::get('/posts/{postId}/comments', [PostInteractionController::class, 'getComments']);
 
     // Rutas para Menciones, Respuestas y Notificaciones
-    Route::get('/mentions/search', [App\Http\Controllers\PostInteractionController::class, 'searchMentions']);
-    Route::post('/comments/{commentId}/react', [App\Http\Controllers\PostInteractionController::class, 'toggleCommentReaction']);
+    Route::get('/mentions/search', [PostInteractionController::class, 'searchMentions']);
+    Route::post('/comments/{commentId}/react', [PostInteractionController::class, 'toggleCommentReaction']);
 
     // Centro de Notificaciones Global
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index']);
-    Route::put('/notifications/read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/read', [NotificationController::class, 'markAsRead']);
 
     // Obtener todas las respuestas de un comentario
-    Route::get('/comments/{commentId}/replies', [App\Http\Controllers\PostInteractionController::class, 'getReplies']);
+    Route::get('/comments/{commentId}/replies', [PostInteractionController::class, 'getReplies']);
 
     // Vista individual de una publicación
-    Route::get('/posts/{id}', [App\Http\Controllers\PostController::class, 'show']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
 
     // Rutas para ver las listas de seguidores/seguidos
     Route::get('/users/{username}/followers', [FollowController::class, 'getFollowers']);
     Route::get('/users/{username}/following', [FollowController::class, 'getFollowing']);
+
+    // Rutas de la Bandeja de Entrada y Chats
+    Route::get('/conversations', [ChatController::class, 'getConversations']); // Lista lateral de chats
+    Route::get('/messages/{username}', [ChatController::class, 'getMessages']); // Cargar un chat específico
+    Route::post('/messages/{username}', [ChatController::class, 'sendMessage']); // Enviar mensaje
+
+    // Rutas para Editar y Eliminar mensajes
+    Route::put('/messages/{messageId}', [ChatController::class, 'editMessage']); // Editar mensaje (usa PUT)
+    Route::delete('/messages/{messageId}', [ChatController::class, 'deleteMessage']); // Eliminar mensaje
+
+    Route::get('/chats-unread', [ChatController::class, 'getUnreadCount']);
+    Route::post('/chats/{username}/read', [ChatController::class, 'markChatAsRead']);
+
+    // Rutas para editar y eliminar publicaciones
+    Route::put('/posts/{id}', [PostController::class, 'update']);
+    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+
+    // Rutas para Historias (Stories)
+    Route::post('/stories', [StoryController::class, 'store']);
+    Route::get('/stories', [StoryController::class, 'getFeedStories']);
+    Route::post('/stories/{id}/view', [StoryController::class, 'markAsViewed']);
+    Route::delete('/stories/{id}', [StoryController::class, 'destroy']);
 });

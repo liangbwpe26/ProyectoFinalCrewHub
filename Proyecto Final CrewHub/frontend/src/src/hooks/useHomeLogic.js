@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAPI } from '../services/api.js';
+import { useToast } from '../contexts/ToastContext.jsx';
+import { ERRORS } from '../utils/errorMessages.js';
 
 export const useHomeLogic = (token) => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     
     // Estados del Buscador y Contactos
     const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +27,7 @@ export const useHomeLogic = (token) => {
                 setMutuals(data.mutuals);
             }
         } catch (error) {
-            console.error("Error obteniendo mutuals:", error);
+            showToast("Error al cargar tus contactos.", 'error');
         }
     }, [token]);
 
@@ -38,19 +41,17 @@ export const useHomeLogic = (token) => {
                 setFeed(data.posts);
             }
         } catch (error) {
-            console.error("Error obteniendo el muro:", error);
+            showToast("No pudimos cargar tu feed. Intenta recargar la página.", 'error');
         } finally {
             setLoadingFeed(false);
         }
     }, [token]);
 
-    // Ejecutar al cargar el componente
     useEffect(() => {
         fetchMutuals();
         fetchFeed();
     }, [fetchMutuals, fetchFeed]);
 
-    // 3. Función para añadir un post recién creado sin recargar
     const addNewPostToFeed = (newPost) => {
         setFeed(prevFeed => [newPost, ...prevFeed]);
     };
@@ -74,7 +75,7 @@ export const useHomeLogic = (token) => {
                 setSearchResults([]);
             }
         } catch (error) {
-            console.error("Error buscando usuarios:", error);
+            showToast("Error al buscar usuarios.", 'error');
             setSearchResults([]);
         } finally {
             setIsSearching(false);
@@ -100,39 +101,17 @@ export const useHomeLogic = (token) => {
                     }
                     return user;
                 }));
-                // Actualizamos los mutuals por si dejamos de seguir a un amigo
                 fetchMutuals();
-            }
-        } catch (error) {
-            console.error("Error al actualizar seguimiento:", error);
-        }
-    };
-
-    // 6. Iniciar Chat
-    const startChat = async (friendId) => {
-        try {
-            const data = await fetchAPI(`/chat/start/${friendId}`, { method: 'POST' }, token);
-            if (data.success) {
-                const chatId = data.conversation.id || data.conversation._id;
-                navigate(`/chat/${chatId}`);
             } else {
-                alert(data.message);
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
-            console.error("Error al iniciar el chat:", error);
+            showToast("Error al actualizar estado de seguimiento.", 'error');
         }
     };
 
     return {
-        searchQuery,
-        searchResults,
-        isSearching,
-        mutuals,
-        feed,
-        loadingFeed,
-        addNewPostToFeed,
-        handleSearch,
-        toggleFollow,
-        startChat
+        searchQuery, searchResults, isSearching, mutuals, feed, loadingFeed,
+        addNewPostToFeed, handleSearch, toggleFollow,
     };
 };

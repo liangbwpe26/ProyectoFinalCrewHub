@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchAPI } from '../services/api.js';
 import echo from '../services/echo.js';
+import { useToast } from '../contexts/ToastContext.jsx';
+import { ERRORS } from '../utils/errorMessages.js';
 
-// 👉 LA LLAVE MAESTRA: Extrae el ID real ya sea un string o un objeto $oid de MongoDB
 export const getSafeId = (idField) => {
     if (!idField) return null;
     if (typeof idField === 'object' && idField.$oid) return idField.$oid;
@@ -16,7 +17,8 @@ const useNotifications = (token, userId) => {
     const [selectedPostModal, setSelectedPostModal] = useState(null);
     const [isLoadingPost, setIsLoadingPost] = useState(false);
     const [targetCommentId, setTargetCommentId] = useState(null);
-
+    
+    const { showToast } = useToast();
     const processedIds = useRef(new Set());
 
     const fetchAll = useCallback(async () => {
@@ -29,7 +31,7 @@ const useNotifications = (token, userId) => {
                 setUnreadCount(data.unread_count);
             }
         } catch (error) {
-            console.error("Error cargando notificaciones", error);
+            showToast("Error al cargar notificaciones.", 'error');
         }
     }, [token]);
 
@@ -39,16 +41,15 @@ const useNotifications = (token, userId) => {
             await fetchAPI('/notifications/read', { method: 'PUT' }, token);
             setUnreadCount(0);
         } catch (error) {
-            console.error("Error al marcar como leído", error);
+            showToast("No pudimos marcar las notificaciones como leídas.", 'error');
         }
     };
 
     const handleAccept = async (notification) => {
-        // Usamos la llave maestra para sacar el ID puro
         const followerId = getSafeId(notification.sender_id) || getSafeId(notification.sender?._id);
 
         if (!followerId) {
-            console.error("❌ Error: ID no encontrado", notification);
+            showToast(ERRORS.DEFAULT, 'error');
             return;
         }
 
@@ -57,9 +58,12 @@ const useNotifications = (token, userId) => {
             if (data.success) {
                 const notifId = getSafeId(notification._id) || getSafeId(notification.id);
                 setFollowRequests(prev => prev.filter(n => (getSafeId(n._id) || getSafeId(n.id)) !== notifId));
+                showToast("Solicitud aceptada.", 'success');
+            } else {
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
-            console.error("Error al aceptar solicitud:", error);
+            showToast(ERRORS.SERVER_500, 'error');
         }
     };
 
@@ -72,16 +76,17 @@ const useNotifications = (token, userId) => {
             if (data.success) {
                 const notifId = getSafeId(notification._id) || getSafeId(notification.id);
                 setFollowRequests(prev => prev.filter(n => (getSafeId(n._id) || getSafeId(n.id)) !== notifId));
+            } else {
+                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
-            console.error("Error al rechazar solicitud:", error);
+            showToast(ERRORS.SERVER_500, 'error');
         }
     };
 
     const openNotificationPost = async (postId, commentId, closeDropdown) => {
         if (closeDropdown) closeDropdown();
         
-        // Aseguramos que el ID del post sea un string válido para la URL
         const safePostId = getSafeId(postId);
         if (!safePostId) return;
 
@@ -90,10 +95,12 @@ const useNotifications = (token, userId) => {
             const data = await fetchAPI(`/posts/${safePostId}`, {}, token);
             if (data.success) {
                 setSelectedPostModal(data.post);
-                setTargetCommentId(getSafeId(commentId)); // También limpiamos el ID del comentario
+                setTargetCommentId(getSafeId(commentId)); 
+            } else {
+                showToast(data.message || "No se pudo cargar la publicación.", 'error');
             }
         } catch (error) {
-            console.error("Error abriendo post", error);
+            showToast(ERRORS.SERVER_500, 'error');
         } finally {
             setIsLoadingPost(false);
         }
@@ -120,7 +127,6 @@ const useNotifications = (token, userId) => {
                 setUnreadCount(data.unread_count);
             }
 
-            // Usamos la llave maestra aquí también
             const newId = getSafeId(newNotif._id) || getSafeId(newNotif.id);
 
             if (newId && processedIds.current.has(newId)) return;
@@ -146,17 +152,8 @@ const useNotifications = (token, userId) => {
     }, [token, userId]);
 
     return {
-        mainNotifications,
-        followRequests,
-        unreadCount,
-        handleAccept,
-        handleReject,
-        markAllAsRead,
-        selectedPostModal,
-        setSelectedPostModal,
-        isLoadingPost,
-        openNotificationPost,
-        targetCommentId,
+        mainNotifications, followRequests, unreadCount, handleAccept, handleReject, markAllAsRead,
+        selectedPostModal, setSelectedPostModal, isLoadingPost, openNotificationPost, targetCommentId,
     };
 };
 

@@ -1,34 +1,35 @@
 import React, { createContext, useState, useEffect } from "react";
-import { fetchAPI } from "../services/api"; // Importamos nuestro servicio maestro
+import { fetchAPI } from "../services/api";
+import { useToast } from "./ToastContext.jsx";
+import { ERRORS } from "../utils/errorMessages.js";
 
 export const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
-    // 1. Estados iniciales limpios
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [activeUser, setActiveUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Para evitar "parpadeos" al recargar
+    const [loading, setLoading] = useState(true);
+    
+    // Inyectamos nuestro Toast
+    const { showToast } = useToast();
 
-    // 2. Efecto para validar la sesión al cargar la app
     useEffect(() => {
         const verifySession = async () => {
             if (token) {
                 try {
-                    // Le pedimos al backend los datos del usuario usando el token
                     const userData = await fetchAPI('/user', {}, token);
                     setActiveUser(userData);
                 } catch (error) {
-                    console.error("Token inválido o expirado:", error);
-                    logout(); // Si el token no sirve, limpiamos la sesión
+                    showToast("Tu sesión ha expirado.", "error");
+                    logout(); 
                 }
             }
-            setLoading(false); // Ya terminamos de verificar
+            setLoading(false); 
         };
 
         verifySession();
     }, [token]);
 
-    // 3. Funciones de Autenticación (Ahora usando fetchAPI)
     const loginAPI = async (credentials) => {
         try {
             const data = await fetchAPI('/login', {
@@ -40,12 +41,14 @@ const AuthProvider = ({ children }) => {
                 localStorage.setItem('token', data.token);
                 setToken(data.token);
                 setActiveUser(data.user);
-                return data; // Devolvemos data para manejar el éxito en Login.jsx
+                showToast("¡Bienvenido de vuelta!", "success");
+                return data; 
             } else {
                 throw new Error(data.message || "Error al iniciar sesión");
             }
         } catch (error) {
-            throw error; // Lanzamos el error para que Login.jsx lo atrape y muestre
+            showToast(error.message || ERRORS.DEFAULT, "error");
+            throw error; 
         }
     };
 
@@ -60,11 +63,13 @@ const AuthProvider = ({ children }) => {
                 localStorage.setItem('token', data.token);
                 setToken(data.token);
                 setActiveUser(data.user);
+                showToast("Cuenta creada exitosamente.", "success");
                 return data; 
             } else {
                 throw new Error(data.message || "Error al registrarse");
             }
         } catch (error) {
+            showToast(error.message || ERRORS.DEFAULT, "error");
             throw error; 
         }
     };
@@ -75,20 +80,10 @@ const AuthProvider = ({ children }) => {
         setActiveUser(null);
     };
 
-    // 4. Qué exporta el contexto
-    const contextValue = {
-        token,
-        activeUser,
-        setActiveUser, // Necesario para SetupProfile y EditProfile
-        loginAPI,
-        registerAPI,
-        logout,
-        loading
-    };
+    const contextValue = { token, activeUser, setActiveUser, loginAPI, registerAPI, logout, loading };
 
     return (
         <AuthContext.Provider value={contextValue}>
-            {/* Si está validando la sesión al recargar, no renderiza los hijos aún */}
             {!loading && children} 
         </AuthContext.Provider>
     );

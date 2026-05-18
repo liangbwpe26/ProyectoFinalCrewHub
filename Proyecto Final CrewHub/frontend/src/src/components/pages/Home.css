@@ -1,0 +1,31 @@
+/* Resetea los márgenes que el navegador pone por defecto a todo */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Pintamos el fondo base de la página de negro absoluto */
+body {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  /* Puedes dejar la fuente que ya tenías o usar esta por defecto */
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: hidden; /* Evita que haya scroll horizontal accidental */
+}
+
+/* Opcional: Para que la barra de scroll se vea oscura y combine con el diseño */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

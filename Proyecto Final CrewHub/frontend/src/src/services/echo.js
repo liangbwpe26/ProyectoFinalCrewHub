@@ -13,7 +13,6 @@ const echo = new Echo({
     authEndpoint: 'http://127.0.0.1:8000/api/broadcasting/auth', 
     auth: {
         headers: {
-            // Importante: Evaluamos el token en cada petición
             Authorization: `Bearer ${localStorage.getItem('token')}`,
             Accept: 'application/json',
         },

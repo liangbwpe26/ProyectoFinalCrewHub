@@ -4,19 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Conversation;
-use App\Models\Follow;
+use App\Models\User;
 use App\Models\Message;
 use App\Events\MessageSent;
+use App\Events\MessageEdited;
+use App\Events\MessageDeleted;
 
 class ChatController extends Controller
 {
-    public function startConversation(Request $request, $friendId)
+    private function getOrCreateConversation($myId, $theirId) 
     {
-        $me = $request->user();
-        $myId = (string) $me->_id;
-        $theirId = (string) $friendId;
-
-        $ids = [$myId, $theirId];
+        $ids = [(string)$myId, (string)$theirId];
         sort($ids); 
         $roomHash = implode('-', $ids);
 
@@ -27,55 +25,285 @@ class ChatController extends Controller
         if (!$conversation) {
             $conversation = Conversation::create([
                 'is_group' => false,
-                'participant_ids' => [$myId, $theirId],
+                'participant_ids' => $ids,
                 'room_hash' => $roomHash,
                 'last_message_at' => now(),
             ]);
         }
-
-        return response()->json(['success' => true, 'conversation' => $conversation]);
+        return $conversation;
     }
 
-    public function getMessages(Request $request, $conversationId)
+    private function prepareMessageForBroadcast($msg)
+    {
+        $data = $msg->toArray();
+        $data['_id'] = (string) $msg->id;
+        $data['id'] = (string) $msg->id; 
+        $data['sender_id'] = (string) $msg->sender_id;
+        $data['conversation_id'] = (string) $msg->conversation_id;
+        return $data;
+    }
+
+    private function getReceiverId($conversation, $myIdStr) {
+        if (!$conversation) return null;
+        foreach ($conversation->participant_ids as $id) {
+            if ((string)$id !== $myIdStr) return (string)$id;
+        }
+        return null;
+    }
+
+    // ==========================================
+    // NUEVO: CONTAR PERSONAS NO LEÍDAS (EL BADGE)
+    // ==========================================
+    public function getUnreadCount(Request $request)
     {
         $me = $request->user();
-        $myId = (string) $me->_id;
+        $myIdStr = (string) $me->id;
 
-        $conversation = Conversation::find($conversationId);
-        if (!$conversation || !collect($conversation->participant_ids ?? [])->contains($myId)) {
-            return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403);
+        $conversations = Conversation::where('room_hash', 'like', "%{$myIdStr}%")->get();
+        $unreadCount = 0;
+
+        foreach ($conversations as $conv) {
+            $recentMessages = Message::where('conversation_id', (string) $conv->id)
+                ->orderBy('created_at', 'desc')
+                ->take(30)
+                ->get();
+
+            $validLastMessage = null;
+            foreach ($recentMessages as $msg) {
+                $deletedBy = $msg->deleted_by ?? [];
+                if (is_object($deletedBy)) $deletedBy = (array)$deletedBy;
+                if (!in_array($myIdStr, $deletedBy)) {
+                    $validLastMessage = $msg;
+                    break; 
+                }
+            }
+
+            if ($validLastMessage && $validLastMessage->sender_id !== $myIdStr) {
+                $readBy = $validLastMessage->read_by ?? [];
+                if (is_object($readBy)) $readBy = (array)$readBy;
+
+                if (!in_array($myIdStr, $readBy)) {
+                    $unreadCount++; // Cuenta como +1 persona no leída
+                }
+            }
         }
 
-        $messages = Message::where('conversation_id', $conversationId)
+        return response()->json(['success' => true, 'unread_count' => $unreadCount]);
+    }
+
+    // ==========================================
+    // NUEVO: MARCAR CHAT COMO LEÍDO AL ABRIRLO
+    // ==========================================
+    public function markChatAsRead(Request $request, $username)
+    {
+        $me = $request->user();
+        $targetUser = User::where('username', $username)->first();
+        if (!$targetUser) return response()->json(['success' => false]);
+
+        $conversation = $this->getOrCreateConversation($me->id, $targetUser->id);
+
+        $unreadMessages = Message::where('conversation_id', (string) $conversation->id)
+            ->where('sender_id', '!=', (string)$me->id)
+            ->get();
+
+        foreach ($unreadMessages as $msg) {
+            $readBy = $msg->read_by ?? [];
+            if (is_object($readBy)) $readBy = (array)$readBy;
+            if (!in_array((string)$me->id, $readBy)) {
+                $readBy[] = (string)$me->id;
+                $msg->forceFill(['read_by' => array_values($readBy)])->save();
+            }
+        }
+        return response()->json(['success' => true]);
+    }
+
+    public function getMessages(Request $request, $username)
+    {
+        $me = $request->user();
+        $myIdStr = (string) $me->id;
+        
+        $targetUser = User::where('username', $username)->first();
+        if (!$targetUser) return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
+
+        $conversation = $this->getOrCreateConversation($me->id, $targetUser->id);
+
+        $messages = Message::where('conversation_id', (string) $conversation->id)
             ->orderBy('created_at', 'asc')
             ->get();
 
-        return response()->json(['success' => true, 'messages' => $messages]);
-    }
-
-    public function sendMessage(Request $request, $conversationId)
-    {
-        $request->validate(['content' => 'required|string|max:1000']);
-
-        $me = $request->user();
-        $myId = (string) $me->_id;
-
-        $conversation = Conversation::find($conversationId);
-        if (!$conversation || !collect($conversation->participant_ids ?? [])->contains($myId)) {
-            return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403);
+        $validMessages = [];
+        foreach ($messages as $msg) {
+            $deletedBy = $msg->deleted_by ?? [];
+            if (is_object($deletedBy)) $deletedBy = (array)$deletedBy;
+            
+            $isDeletedForMe = false;
+            foreach ($deletedBy as $dId) {
+                if ((string)$dId === $myIdStr) {
+                    $isDeletedForMe = true;
+                    break;
+                }
+            }
+            if (!$isDeletedForMe) $validMessages[] = $msg;
         }
 
-        $message = Message::create([
-            'conversation_id' => $conversationId,
-            'sender_id' => $myId,
-            'content' => $request->input('content'),
-            'read_by' => [$myId], 
+        return response()->json([
+            'success' => true, 
+            'conversation_id' => (string) $conversation->id,
+            'messages' => $validMessages
         ]);
+    }
 
-        $conversation->update(['last_message_at' => now()]);
+    public function sendMessage(Request $request, $username)
+    {
+        try {
+            $request->validate(['content' => 'required|string|max:1000']);
+            $me = $request->user();
+            
+            $targetUser = User::where('username', $username)->first();
+            if (!$targetUser) return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
 
-        event(new MessageSent($message));
+            $conversation = $this->getOrCreateConversation($me->id, $targetUser->id);
 
-        return response()->json(['success' => true, 'message' => $message]);
+            $message = Message::create([
+                'conversation_id' => (string) $conversation->id,
+                'sender_id' => (string) $me->id,
+                'content' => $request->input('content'),
+                'read_by' => [(string) $me->id], // Yo ya lo leí porque lo envié
+            ]);
+
+            $conversation->update(['last_message_at' => now()]);
+
+            $cleanMessage = $message->fresh();
+            $cleanArray = $this->prepareMessageForBroadcast($cleanMessage);
+
+            event(new MessageSent($cleanArray, (string)$targetUser->id));
+
+            return response()->json(['success' => true, 'message' => $cleanMessage]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error_detail' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getConversations(Request $request)
+    {
+        $me = $request->user();
+        $myIdStr = (string) $me->id;
+
+        $conversations = Conversation::where('room_hash', 'like', "%{$myIdStr}%")->get();
+        $chatList = [];
+
+        foreach ($conversations as $conv) {
+            $otherUserId = $this->getReceiverId($conv, $myIdStr);
+
+            if (!$otherUserId) continue;
+
+            $otherUser = User::find($otherUserId);
+            if (!$otherUser) continue;
+
+            $recentMessages = Message::where('conversation_id', (string) $conv->id)
+                ->orderBy('created_at', 'desc')
+                ->take(30)
+                ->get();
+
+            $validLastMessage = null;
+            foreach ($recentMessages as $msg) {
+                $deletedBy = $msg->deleted_by ?? [];
+                if (is_object($deletedBy)) $deletedBy = (array)$deletedBy;
+                
+                $isDeletedForMe = false;
+                foreach ($deletedBy as $dId) {
+                    if ((string)$dId === $myIdStr) {
+                        $isDeletedForMe = true;
+                        break;
+                    }
+                }
+
+                if (!$isDeletedForMe) {
+                    $validLastMessage = $msg;
+                    break; 
+                }
+            }
+
+            // 🔥 COMPROBAMOS SI ESTÁ LEÍDO PARA LA BANDEJA
+            $unread = false;
+            if ($validLastMessage && $validLastMessage->sender_id !== $myIdStr) {
+                $readBy = $validLastMessage->read_by ?? [];
+                if (is_object($readBy)) $readBy = (array)$readBy;
+                if (!in_array($myIdStr, $readBy)) {
+                    $unread = true;
+                }
+            }
+
+            $chatList[] = [
+                'conversation_id' => (string) $conv->id,
+                'user' => $otherUser,
+                'last_message' => $validLastMessage,
+                'unread' => $unread, // ¡El backend nos da la respuesta!
+            ];
+        }
+
+        usort($chatList, function($a, $b) {
+            $timeA = $a['last_message'] ? \Carbon\Carbon::parse($a['last_message']->created_at)->timestamp : 0;
+            $timeB = $b['last_message'] ? \Carbon\Carbon::parse($b['last_message']->created_at)->timestamp : 0;
+            return $timeB <=> $timeA;
+        });
+
+        return response()->json(['success' => true, 'conversations' => $chatList]);
+    }
+
+    public function editMessage(Request $request, $messageId)
+    {
+        $me = $request->user();
+        $msg = Message::find($messageId);
+
+        if (!$msg || $msg->sender_id !== (string)$me->id) return response()->json(['success' => false], 403);
+        if ($msg->created_at->diffInSeconds(now()) > 180) return response()->json(['success' => false], 400);
+
+        $msg->forceFill([
+            'content' => $request->input('content'),
+            'is_edited' => true
+        ])->save();
+
+        $cleanMsg = $msg->fresh();
+        $cleanArray = $this->prepareMessageForBroadcast($cleanMsg);
+        
+        $conversation = Conversation::find($msg->conversation_id);
+        $receiverId = $this->getReceiverId($conversation, (string)$me->id);
+
+        event(new MessageEdited($cleanArray, $receiverId));
+        return response()->json(['success' => true, 'message' => $cleanMsg]);
+    }
+
+    public function deleteMessage(Request $request, $messageId)
+    {
+        $me = $request->user();
+        $msg = Message::find($messageId);
+        $type = $request->query('type') ?? $request->input('type') ?? $request->type; 
+
+        if (!$msg) return response()->json(['success' => false], 404);
+
+        $conversationId = (string) $msg->conversation_id;
+        $conversation = Conversation::find($conversationId);
+        $receiverId = $this->getReceiverId($conversation, (string)$me->id);
+
+        if ($type === 'everyone') {
+            if ($msg->sender_id !== (string)$me->id) return response()->json(['success' => false], 403);
+            $msg->delete(); 
+            event(new MessageDeleted((string)$messageId, $conversationId, (string)$me->id, $receiverId));
+        } else {
+            $deletedBy = $msg->deleted_by ?? [];
+            if (is_object($deletedBy)) $deletedBy = (array)$deletedBy;
+            elseif (!is_array($deletedBy)) $deletedBy = [];
+
+            if (!in_array((string)$me->id, $deletedBy)) {
+                $deletedBy[] = (string)$me->id;
+                $msg->forceFill(['deleted_by' => array_values($deletedBy)])->save();
+                Message::where('_id', $messageId)->orWhere('id', $messageId)->update([
+                    'deleted_by' => array_values($deletedBy)
+                ]);
+            }
+        }
+        return response()->json(['success' => true]);
     }
 }
