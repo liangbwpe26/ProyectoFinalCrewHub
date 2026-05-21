@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext.jsx';
+import { fetchAPI } from '../services/api.js';
 
 export const useForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -14,14 +15,12 @@ export const useForgotPassword = () => {
 
         setLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/forgot-password', {
+            const data = await fetchAPI('/forgot-password', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ email })
+                body: { email }
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 showToast("Si el correo existe, hemos enviado un código.", 'success');
                 navigate('/reset-password', { state: { email } });
             } else {

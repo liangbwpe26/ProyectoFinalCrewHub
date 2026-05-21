@@ -2,6 +2,7 @@ import React, { useState, useRef, useContext, Fragment } from 'react';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
 import ImageCropperModal from './ImageCropperModal.jsx';
+import { fetchAPI } from '../services/api.js';
 
 const CreatePost = ({ onPostCreated, onCancel }) => {
     const { token } = useContext(AuthContext);
@@ -45,12 +46,11 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
         formData.append('description', description);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/posts', {
+            // CORRECCIÓN: Usamos fetchAPI. Se encarga automáticamente de VITE_BACKEND_URL, del Token y del FormData
+            const data = await fetchAPI('/posts', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
-            });
-            const data = await response.json();
+            }, token);
             
             if (data.success) {
                 showToast('Publicación creada con éxito', 'success');

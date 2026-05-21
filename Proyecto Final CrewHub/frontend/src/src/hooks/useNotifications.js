@@ -113,8 +113,10 @@ const useNotifications = (token, userId) => {
     useEffect(() => {
         if (!token || !userId) return;
 
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
         if (echo.connector && echo.connector.pusher) {
-            echo.connector.pusher.config.authEndpoint = 'http://127.0.0.1:8000/api/broadcasting/auth';
+            echo.connector.pusher.config.authEndpoint = `${BACKEND_URL}/api/broadcasting/auth`;
             echo.connector.pusher.config.auth = {
                 headers: {
                     Authorization: `Bearer ${token}`,

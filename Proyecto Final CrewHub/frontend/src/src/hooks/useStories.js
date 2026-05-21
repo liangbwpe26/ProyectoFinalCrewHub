@@ -24,12 +24,11 @@ export const useStories = (token) => {
         formData.append('media', file);
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/stories', {
+            const data = await fetchAPI('/stories', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
-            });
-            const data = await res.json();
+            }, token);
+            
             if (data.success) loadStories();
             return data;
         } catch (error) {
@@ -61,7 +60,7 @@ export const useStories = (token) => {
         }));
 
         try {
-            const res = await fetchAPI(`/stories/${storyId}/like`, { method: 'POST' }, token);
+            await fetchAPI(`/stories/${storyId}/like`, { method: 'POST' }, token);
         } catch (error) {
             console.error("Error al dar like a la historia", error);
         }
@@ -101,5 +100,4 @@ export const useStories = (token) => {
     };
 
     return { storiesFeed, loadingStories, loadStories, uploadStory, markStoryAsViewed, deleteStory, toggleStoryLike, getStoryStats, replyToStory };
-
 };

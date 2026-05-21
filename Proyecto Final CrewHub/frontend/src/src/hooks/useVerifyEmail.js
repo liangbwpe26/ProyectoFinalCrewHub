@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
+import { fetchAPI } from '../services/api.js';
 
 export const useVerifyEmail = (initialEmail) => {
     const navigate = useNavigate();
@@ -19,14 +20,12 @@ export const useVerifyEmail = (initialEmail) => {
 
         setLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/verify-email', {
+            const data = await fetchAPI('/verify-email', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ email, code })
+                body: { email, code }
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 showToast(data.message, 'success');
                 login(data.user, data.token);
                 navigate('/');
@@ -40,20 +39,17 @@ export const useVerifyEmail = (initialEmail) => {
         }
     };
 
-    // Nueva función para solicitar otro código
     const handleResendCode = async () => {
         if (!email || resendLoading) return;
         
         setResendLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/resend-verification', {
+            const data = await fetchAPI('/resend-verification', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ email })
+                body: { email }
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 showToast(data.message, 'success');
             } else {
                 showToast(data.message || 'Error al reenviar el código.', 'error');
@@ -73,6 +69,6 @@ export const useVerifyEmail = (initialEmail) => {
         email, setEmail,
         code, handleCodeChange,
         loading, handleVerify,
-        resendLoading, handleResendCode // Exportamos la nueva función
+        resendLoading, handleResendCode
     };
 };

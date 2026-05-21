@@ -14,7 +14,6 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
     const { token, activeUser } = useContext(AuthContext);
     const { showToast } = useToast();
 
-    // Verificamos si el usuario actual es el dueño del post para mostrar los 3 puntos
     const isMyPost = activeUser && (activeUser.id === postData.user_id || activeUser.username === postData.user?.username);
 
     const toggleMenu = () => setShowMenu(!showMenu);
@@ -51,7 +50,7 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
                     ...prev,
                     ...(res.post || {}),
                     description: editDescription,
-                    user: prev.user // Protegemos el objeto usuario de ser sobreescrito
+                    user: prev.user 
                 }));
                 setIsEditing(false);
                 setShowMenu(false);
@@ -64,19 +63,13 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
         }
     };
 
-    const getPostImage = (path) => path?.startsWith("http") ? path : `http://127.0.0.1:8000${path}`;
+    // CORRECCIÓN AQUÍ: Usar la variable de entorno para las rutas de imágenes
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    const getPostImage = (path) => path?.startsWith("http") ? path : `${BACKEND_URL}${path}`;
 
     return {
-        postData,
-        isDeleted,
-        isEditing, setIsEditing,
-        editDescription, setEditDescription,
-        showMenu, setShowMenu,
-        isDeleteModalOpen, setIsDeleteModalOpen,
-        isMyPost,
-        toggleMenu,
-        confirmDelete,
-        handleSaveEdit,
-        getPostImage
+        postData, isDeleted, isEditing, setIsEditing, editDescription, setEditDescription,
+        showMenu, setShowMenu, isDeleteModalOpen, setIsDeleteModalOpen, isMyPost,
+        toggleMenu, confirmDelete, handleSaveEdit, getPostImage
     };
 };

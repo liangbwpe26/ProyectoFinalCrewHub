@@ -8,11 +8,14 @@ import { ERRORS } from '../utils/errorMessages.js';
 window.Pusher = Pusher;
 
 export const useChatRoomLogic = (targetUsername, token) => {
+    // ... estados mantenidos ...
     const [messages, setMessages] = useState([]);
     const [conversationId, setConversationId] = useState(null);
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef(null);
     const { showToast } = useToast();
+
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,7 +37,7 @@ export const useChatRoomLogic = (targetUsername, token) => {
                     setMessages(data.messages);
                     setConversationId(data.conversation_id);
                     setTimeout(scrollToBottom, 100);
-                    markAsReadBackend(); // Lo marcamos como leído al abrir
+                    markAsReadBackend(); 
                 } else {
                     showToast(data.message || ERRORS.DEFAULT, "error");
                 }
@@ -56,7 +59,8 @@ export const useChatRoomLogic = (targetUsername, token) => {
             wssPort: import.meta.env.VITE_REVERB_PORT,
             forceTLS: false,
             enabledTransports: ['ws', 'wss'],
-            authEndpoint: 'http://127.0.0.1:8000/api/broadcasting/auth',
+            // CORRECCIÓN: Autenticación dinámica para Reverb
+            authEndpoint: `${BACKEND_URL}/api/broadcasting/auth`,
             auth: { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }
         });
 
@@ -69,7 +73,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
                 setTimeout(scrollToBottom, 50);
                 return [...prev, e.message];
             });
-            // Si llega algo mientras tengo el chat abierto, lo asumo leído
             markAsReadBackend();
         });
 
@@ -91,6 +94,7 @@ export const useChatRoomLogic = (targetUsername, token) => {
         };
     }, [conversationId, token]);
 
+    // CORRECCIÓN: Usando fetchAPI para enviar FormData en lugar de fetch nativo
     const handleSendMessage = async (e, imageFile = null) => {
         if (e) e.preventDefault();
         if (!newMessage.trim() && !imageFile) return;
@@ -103,18 +107,12 @@ export const useChatRoomLogic = (targetUsername, token) => {
         if (imageFile) formData.append('image', imageFile);
 
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/messages/${targetUsername}`, {
+            const data = await fetchAPI(`/messages/${targetUsername}`, {
                 method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json' 
-                },
                 body: formData
-            });
-            
-            const data = await response.json();
+            }, token);
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setMessages(prev => {
                     const incomingId = data.message._id || data.message.id;
                     if (prev.some(m => (m._id || m.id) === incomingId)) return prev;
@@ -122,21 +120,18 @@ export const useChatRoomLogic = (targetUsername, token) => {
                 });
                 setTimeout(scrollToBottom, 50);
             } else {
-                console.error("Detalle del error del servidor:", data);
                 setNewMessage(contentToSend);
                 showToast(data.message || data.error_detail || "Error al enviar el mensaje", "error");
             }
         } catch (error) {
-            console.error("Error de conexión:", error);
             setNewMessage(contentToSend);
             showToast("Error interno del servidor", "error");
         }
     };
 
     const handleEditMessage = async (messageId, newContent) => {
-        setMessages(prev => prev.map(msg =>
-            (msg._id || msg.id) === messageId ? { ...msg, content: newContent, is_edited: true } : msg
-        ));
+        // ... (Tu lógica original usando fetchAPI está perfecta aquí) ...
+        setMessages(prev => prev.map(msg => (msg._id || msg.id) === messageId ? { ...msg, content: newContent, is_edited: true } : msg));
         try {
             await fetchAPI(`/messages/${messageId}`, { method: 'PUT', body: { content: newContent } }, token);
             setTimeout(() => window.dispatchEvent(new Event('forceChatReload')), 300);
@@ -144,6 +139,7 @@ export const useChatRoomLogic = (targetUsername, token) => {
     };
 
     const handleDeleteMessage = async (messageId, type) => {
+        // ... (Tu lógica original usando fetchAPI está perfecta aquí) ...
         setMessages(prev => prev.filter(msg => (msg._id || msg.id) !== messageId));
         try {
             await fetchAPI(`/messages/${messageId}?type=${type}`, { method: 'DELETE' }, token);

@@ -34,7 +34,6 @@ export const useChatsLogic = (token, activeUsernameTarget = null) => {
                     unread: false 
                 }));
 
-            // 🔥 AHORA LOS "NO LEÍDOS" VIENEN DIRECTO DEL BACKEND
             const formattedActive = activeConversations.map(c => ({
                 ...c, 
                 unread: c.unread 
@@ -84,9 +83,12 @@ export const useChatsLogic = (token, activeUsernameTarget = null) => {
         ));
     };
 
+    // CORRECCIÓN AQUÍ: Evitamos hardcodear el 127.0.0.1
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    
     const getAvatar = (user) => {
         if (!user) return '';
-        if (user.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+        if (user.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         return `https://ui-avatars.com/api/?name=${user.username}&background=262626&color=fff`;
     };
 

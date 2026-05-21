@@ -9,8 +9,10 @@ export const useProfileForm = (token, initialData = {}) => {
     const [imageFile, setImageFile] = useState(null);
     const [isPrivate, setIsPrivate] = useState(initialData.is_private || false);
     
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    
     const defaultAvatar = initialData.profile_picture 
-        ? (initialData.profile_picture.startsWith('http') ? initialData.profile_picture : `http://127.0.0.1:8000${initialData.profile_picture}`)
+        ? (initialData.profile_picture.startsWith('http') ? initialData.profile_picture : `${BACKEND_URL}${initialData.profile_picture}`)
         : `https://ui-avatars.com/api/?name=${initialData.username || 'U'}&background=262626&color=fff&bold=true&size=150`;
 
     const [previewUrl, setPreviewUrl] = useState(defaultAvatar);

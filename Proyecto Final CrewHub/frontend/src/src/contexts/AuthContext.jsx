@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import { fetchAPI } from "../services/api";
+import { fetchAPI } from "../services/api"; 
 import { useToast } from "./ToastContext.jsx";
 import { ERRORS } from "../utils/errorMessages.js";
 
@@ -29,7 +29,6 @@ const AuthProvider = ({ children }) => {
         verifySession();
     }, [token]);
 
-    // Función auxiliar pública para inyectar la sesión desde VerifyEmail
     const login = (userData, authToken) => {
         localStorage.setItem('token', authToken);
         setToken(authToken);
@@ -38,19 +37,16 @@ const AuthProvider = ({ children }) => {
 
     const loginAPI = async (credentials) => {
         try {
-            // Usamos fetch directamente para poder leer el status 403
-            const response = await fetch('http://127.0.0.1:8000/api/login', {
+            const data = await fetchAPI('/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify(credentials)
+                body: credentials
             });
-            const data = await response.json();
 
-            if (response.ok && data.token) {
+            if (data.token) {
                 login(data.user, data.token);
                 showToast("¡Bienvenido de vuelta!", "success");
                 return { success: true, data };
-            } else if (response.status === 403 && data.needs_verification) {
+            } else if (data.needs_verification) {
                 showToast(data.message, "error");
                 return { success: false, needs_verification: true, email: data.email };
             } else {
@@ -64,14 +60,12 @@ const AuthProvider = ({ children }) => {
 
     const registerAPI = async (userData) => {
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/register', {
+            const data = await fetchAPI('/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify(userData)
+                body: userData
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 showToast(data.message, "success");
                 return { success: true, email: data.email }; 
             } else {
