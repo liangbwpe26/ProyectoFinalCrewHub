@@ -1,132 +1,39 @@
-import React, { Fragment, useContext, useRef, useState } from "react";
-import { AuthContext } from "../../contexts/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "../../contexts/ToastContext.jsx";
-import "./Register.css";
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useRegisterLogic } from "../../hooks/useRegisterLogic.js";
 import logoImg from "../../assets/logo.png";
 
-const initialUserData = {
-    username: "",
-    email: "",
-    password: ""
-};
-
 const Register = () => {
-    const { registerAPI } = useContext(AuthContext);
-    const [userData, setUserData] = useState(initialUserData);
     const navigate = useNavigate();
-    const { showToast } = useToast();
-
-    const usernameRef = useRef(null);
-    const emailRef = useRef(null);
-    const passwordRef = useRef(null);
-
-    const updateData = (event) => {
-        let { name, value } = event.target;
-        setUserData({ ...userData, [name]: value });
-    };
-
-    const validateForm = () => {
-        if (!usernameRef.current.value || !emailRef.current.value || !passwordRef.current.value) {
-            showToast("Todos los campos son obligatorios.", "error");
-            return false;
-        }
-        return true;
-    };
-
-    const FORBIDDEN_USERNAMES = ['login', 'register', 'chat', 'home', 'api', 'admin', 'perfil', 'config', 'index'];
-
-    const validateUsername = (username) => {
-        const cleanUsername = username.trim().toLowerCase();
-        
-        if (cleanUsername.length < 3 || cleanUsername.length > 20) {
-            return "El usuario debe tener entre 3 y 20 caracteres.";
-        }
-        const regex = /^[a-z0-9_]+$/;
-        if (!regex.test(cleanUsername)) {
-            return "Solo se permiten minúsculas, números y guiones bajos (_).";
-        }
-        if (FORBIDDEN_USERNAMES.includes(cleanUsername)) {
-            return "Este nombre de usuario no está disponible.";
-        }
-        return null;
-    };
-
-    const handleRegister = (e) => {
-        e.preventDefault();
-        
-        const usernameError = validateUsername(userData.username);
-        if (usernameError) {
-            showToast(usernameError, "error");
-            return;
-        }
-
-        if (validateForm()) {
-            registerAPI(userData)
-                .then(() => navigate("/setup-profile"))
-                .catch((error) => {
-                    // El error ya es manejado por el AuthContext
-                });
-        }
-    };
+    const { userData, updateData, handleRegister, loading } = useRegisterLogic();
 
     return (
-        <Fragment>
-            <div className="register-page">
-                <div className="register-split">
-                    <div className="register-left">
-                        <div className="register-brand-text">CREW HUB</div>
-                        <img src={logoImg} alt="Crew Hub Logo" className="register-brand-logo" />
-                    </div>
+        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+            <div className="flex flex-col md:flex-row items-center gap-20 max-w-5xl w-full">
+                <div className="flex flex-col items-center flex-1">
+                    <div className="text-white text-7xl font-extrabold tracking-widest mb-6 text-center">CREW HUB</div>
+                    <img src={logoImg} alt="Crew Hub Logo" className="w-[350px] h-[350px] rounded-full object-cover shadow-2xl" />
+                </div>
 
-                    <div className="register-right">
-                        <div className="register-card">
-                            <div className="register-form-title">Regístrate en CrewHub</div>
+                <div className="w-full max-w-[400px] bg-[#121212] border border-[#262626] rounded-2xl p-10 shadow-2xl">
+                    <h2 className="text-white text-xl font-bold mb-6 text-center">Regístrate</h2>
 
-                            <form onSubmit={handleRegister}>
-                                <input
-                                    className="register-input"
-                                    ref={usernameRef}
-                                    name="username"
-                                    type="text"
-                                    placeholder="Nombre de usuario"
-                                    onChange={updateData}
-                                    required
-                                />
+                    <form onSubmit={handleRegister} className="flex flex-col gap-4">
+                        <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="username" type="text" placeholder="Nombre de usuario" value={userData.username} onChange={updateData} required />
+                        <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="email" type="email" placeholder="Correo electrónico" value={userData.email} onChange={updateData} required />
+                        <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="password" type="password" placeholder="Contraseña" value={userData.password} onChange={updateData} required />
 
-                                <input
-                                    className="register-input"
-                                    ref={emailRef}
-                                    name="email"
-                                    type="email"
-                                    placeholder="Correo electrónico"
-                                    onChange={updateData}
-                                    required
-                                />
+                        <button type="submit" disabled={loading} className="w-full bg-[#0095f6] text-white py-3 rounded-full font-bold cursor-pointer hover:bg-blue-600 transition-colors mt-2 disabled:bg-[#262626]">
+                            {loading ? 'Registrando...' : 'Registrarse'}
+                        </button>
+                    </form>
 
-                                <input
-                                    className="register-input"
-                                    ref={passwordRef}
-                                    name="password"
-                                    type="password"
-                                    placeholder="Contraseña"
-                                    onChange={updateData}
-                                    required
-                                />
-
-                                <button type="submit" className="register-btn">
-                                    Registrarse
-                                </button>
-                            </form>
-
-                            <div className="register-login-text">
-                                ¿Ya tienes cuenta? <span className="register-login-link" onClick={() => navigate("/login")}>Inicia sesión</span>
-                            </div>
-                        </div>
+                    <div className="text-center mt-6 text-gray-500 text-sm">
+                        ¿Ya tienes cuenta? <span className="text-[#0095f6] font-bold cursor-pointer hover:underline" onClick={() => navigate("/login")}>Inicia sesión</span>
                     </div>
                 </div>
             </div>
-        </Fragment>
+        </div>
     );
 };
 

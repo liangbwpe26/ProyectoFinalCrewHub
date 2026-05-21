@@ -18,7 +18,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // 🔥 AVISAMOS AL SERVIDOR QUE LO LEÍMOS
     const markAsReadBackend = async () => {
         try {
             await fetchAPI(`/chats/${targetUsername}/read`, { method: 'POST' }, token);
@@ -92,20 +91,30 @@ export const useChatRoomLogic = (targetUsername, token) => {
         };
     }, [conversationId, token]);
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
+    const handleSendMessage = async (e, imageFile = null) => {
+        if (e) e.preventDefault();
+        if (!newMessage.trim() && !imageFile) return;
 
         const contentToSend = newMessage;
         setNewMessage("");
 
-        try {
-            const data = await fetchAPI(`/messages/${targetUsername}`, {
-                method: 'POST',
-                body: { content: contentToSend }
-            }, token);
+        const formData = new FormData();
+        if (contentToSend) formData.append('content', contentToSend);
+        if (imageFile) formData.append('image', imageFile);
 
-            if (data.success) {
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/api/messages/${targetUsername}`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json' 
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+
+            if (response.ok && data.success) {
                 setMessages(prev => {
                     const incomingId = data.message._id || data.message.id;
                     if (prev.some(m => (m._id || m.id) === incomingId)) return prev;
@@ -113,12 +122,14 @@ export const useChatRoomLogic = (targetUsername, token) => {
                 });
                 setTimeout(scrollToBottom, 50);
             } else {
+                console.error("Detalle del error del servidor:", data);
                 setNewMessage(contentToSend);
-                showToast(data.message || ERRORS.DEFAULT, "error");
+                showToast(data.message || data.error_detail || "Error al enviar el mensaje", "error");
             }
         } catch (error) {
+            console.error("Error de conexión:", error);
             setNewMessage(contentToSend);
-            showToast(ERRORS.SERVER_500, "error");
+            showToast("Error interno del servidor", "error");
         }
     };
 

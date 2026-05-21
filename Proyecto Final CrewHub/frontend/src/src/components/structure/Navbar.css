@@ -1,0 +1,43 @@
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    height: 55px;
+    pointer-events: auto;
+    background-color: #121212;
+    border-bottom: 1px solid #262626;
+}
+
+.nav-tab {
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a3a3a3;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tab:hover, .nav-tab.active {
+    background-color: #262626;
+    color: #ffffff;
+}
+
+.tab-left {
+    width: 200px;
+    clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+}
+
+.tab-center {
+    width: 350px;
+    background-color: #0a0a0a;
+    clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+    color: #ffffff;
+}
+
+.tab-right {
+    width: 200px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 15% 100%);
+}

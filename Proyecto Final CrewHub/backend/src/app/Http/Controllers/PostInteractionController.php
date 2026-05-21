@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Follow;
 use App\Models\Reaction;
 use App\Events\NotificationSent;
+use App\Models\SavedPost;
 
 class PostInteractionController extends Controller
 {
@@ -27,12 +28,29 @@ class PostInteractionController extends Controller
 
         if ($existingReaction) {
             $existingReaction->delete();
+            // Borrar notificación si quita el like
+            Notification::where('sender_id', $me->_id)->where('post_id', $postId)->where('type', 'post_reaction')->delete();
             return response()->json(['success' => true, 'reacted' => false]);
         } else {
             Reaction::create([
                 'user_id' => $me->_id,
                 'post_id' => $postId
             ]);
+
+            // Disparar Notificación de Like en Post
+            $post = Post::find($postId);
+            if ($post && $post->user_id !== $me->_id) {
+                $notif = Notification::create([
+                    'recipient_id' => $post->user_id,
+                    'sender_id' => $me->_id,
+                    'type' => 'post_reaction',
+                    'post_id' => $postId,
+                    'is_read' => false
+                ]);
+                $notif->load(['sender', 'post']);
+                broadcast(new NotificationSent($notif));
+            }
+
             return response()->json(['success' => true, 'reacted' => true]);
         }
     }
@@ -271,6 +289,57 @@ class PostInteractionController extends Controller
         return response()->json([
             'success' => true,
             'replies' => $replies
+        ]);
+    }
+
+    public function toggleSave(Request $request, $postId)
+    {
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+        $postIdStr = (string) $postId;
+
+        $existing = SavedPost::where('user_id', $myId)
+            ->where('post_id', $postIdStr)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            return response()->json(['success' => true, 'saved' => false]);
+        } else {
+            SavedPost::create([
+                'user_id' => $myId,
+                'post_id' => $postIdStr
+            ]);
+            return response()->json(['success' => true, 'saved' => true]);
+        }
+    }
+
+    public function getSavedPosts(Request $request)
+    {
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+
+        $saved = SavedPost::with('post.user')
+            ->where('user_id', $myId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $posts = $saved->pluck('post')->filter();
+
+        $posts->transform(function ($post) use ($myId) {
+            $postId = (string) ($post->_id ?? $post->id);
+            
+            $post->reactions_count = Reaction::where('post_id', $postId)->count();
+            $post->comments_count = Comment::where('post_id', $postId)->count();
+            $post->has_reacted = Reaction::where('post_id', $postId)->where('user_id', $myId)->exists();
+            $post->has_saved = true; 
+            
+            return $post;
+        });
+
+        return response()->json([
+            'success' => true,
+            'posts' => $posts->values()
         ]);
     }
 }

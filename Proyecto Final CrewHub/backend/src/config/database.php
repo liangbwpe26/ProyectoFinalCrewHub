@@ -115,15 +115,8 @@ return [
         ],
         'mongodb' => [
             'driver'   => 'mongodb',
-            'host'     => env('DB_HOST', '127.0.0.1'),
-            'port'     => env('DB_PORT', 27017),
-            'database' => env('DB_DATABASE', 'social_db'),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
-            'options'  => [
-                // Opciones avanzadas de MongoDB si fueran necesarias
-                'database' => env('DB_AUTHENTICATION_DATABASE', 'admin'),
-            ],
+            'dsn'      => env('DB_URI'),
+            'database' => env('DB_DATABASE', 'crewhub'),
         ],
 
     ],

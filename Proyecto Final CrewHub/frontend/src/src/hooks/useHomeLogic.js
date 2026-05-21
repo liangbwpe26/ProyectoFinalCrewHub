@@ -8,17 +8,18 @@ export const useHomeLogic = (token) => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     
-    // Estados del Buscador y Contactos
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [mutuals, setMutuals] = useState([]);
     
-    // Estados del Muro (Feed)
     const [feed, setFeed] = useState([]);
     const [loadingFeed, setLoadingFeed] = useState(true);
+    
+    const [feedOffset, setFeedOffset] = useState(0);
+    const [feedHasMore, setFeedHasMore] = useState(true);
+    const [loadingMoreFeed, setLoadingMoreFeed] = useState(false);
 
-    // 1. Obtener amigos (Mutuals)
     const fetchMutuals = useCallback(async () => {
         if (!token) return;
         try {
@@ -31,26 +32,35 @@ export const useHomeLogic = (token) => {
         }
     }, [token]);
 
-    // 2. Obtener el Muro de publicaciones
-    const fetchFeed = useCallback(async () => {
+    const loadFeed = useCallback(async (currentOffset = 0) => {
         if (!token) return;
-        setLoadingFeed(true);
+        
+        if (currentOffset === 0) setLoadingFeed(true);
+        else setLoadingMoreFeed(true);
+
         try {
-            const data = await fetchAPI('/posts/feed', {}, token);
+            const data = await fetchAPI(`/posts/feed?offset=${currentOffset}`, {}, token);
             if (data.success) {
-                setFeed(data.posts);
+                if (currentOffset === 0) {
+                    setFeed(data.posts);
+                } else {
+                    setFeed(prev => [...prev, ...data.posts]);
+                }
+                setFeedHasMore(data.hasMore);
+                setFeedOffset(currentOffset);
             }
         } catch (error) {
-            showToast("No pudimos cargar tu feed. Intenta recargar la página.", 'error');
+            console.error("Error cargando el feed principal", error);
         } finally {
             setLoadingFeed(false);
+            setLoadingMoreFeed(false);
         }
     }, [token]);
 
     useEffect(() => {
         fetchMutuals();
-        fetchFeed();
-    }, [fetchMutuals, fetchFeed]);
+        loadFeed();
+    }, [fetchMutuals, loadFeed]);
 
     const addNewPostToFeed = (newPost) => {
         setFeed(prevFeed => [newPost, ...prevFeed]);
@@ -82,7 +92,6 @@ export const useHomeLogic = (token) => {
         }
     };
 
-    // 5. Seguir / Dejar de seguir / Cancelar Solicitud
     const toggleFollow = async (userId, currentStatus) => {
         const targetId = userId; 
         const endpoint = (currentStatus === 'none') ? `/follow/${targetId}` : `/unfollow/${targetId}`;
@@ -113,5 +122,6 @@ export const useHomeLogic = (token) => {
     return {
         searchQuery, searchResults, isSearching, mutuals, feed, loadingFeed,
         addNewPostToFeed, handleSearch, toggleFollow,
+        feedOffset, feedHasMore, loadingMoreFeed, loadFeed
     };
 };

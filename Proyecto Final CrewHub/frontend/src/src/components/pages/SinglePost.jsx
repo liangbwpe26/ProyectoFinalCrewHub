@@ -4,6 +4,7 @@ import { fetchAPI } from "../../services/api.js";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import PostCard from "../PostCard.jsx";
+import Layout from "../structure/Layout.jsx";
 
 const SinglePost = () => {
     const { id } = useParams(); 
@@ -36,11 +37,11 @@ const SinglePost = () => {
     }, [id, token, navigate]);
 
     if (loading) return (
-        <Fragment>
-            <div style={{ color: "white", textAlign: "center", padding: "50px", backgroundColor: "#000", minHeight: "100vh" }}>
+        <Layout>
+            <div className="text-white text-center p-12">
                 Cargando publicación...
             </div>
-        </Fragment>
+        </Layout>
     );
     
     if (!post) return null;
@@ -48,25 +49,24 @@ const SinglePost = () => {
     const getAvatar = (user) => user?.profile_picture ? (user.profile_picture.startsWith("http") ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=262626&color=fff&bold=true`;
 
     return (
-        <Fragment>
-            <div style={{ minHeight: "100vh", backgroundColor: "#000", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "40px", paddingBottom: "50px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-                
-                <div style={{ width: "100%", maxWidth: "600px", padding: "0 20px", marginBottom: "20px" }}>
-                    <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", color: "#0095f6", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", padding: 0 }}>
-                        &larr; Volver
-                    </button>
-                </div>
-
-                <div style={{ width: "100%", maxWidth: "600px" }}>
-                    {/* Reemplazamos toda la vista manual por la PostCard */}
-                    <PostCard 
-                        initialPost={post} 
-                        getAvatar={getAvatar} 
-                        onDeleteSuccess={() => navigate("/")} 
-                    />
-                </div>
+        <Layout>
+            <div className="w-full max-w-[600px] mx-auto mb-6">
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="bg-transparent border-none text-[#0095f6] text-base font-bold cursor-pointer p-0 hover:text-blue-400 transition-colors flex items-center gap-2"
+                >
+                    &larr; Volver
+                </button>
             </div>
-        </Fragment>
+
+            <div className="w-full max-w-[600px] mx-auto">
+                <PostCard 
+                    initialPost={post} 
+                    getAvatar={getAvatar} 
+                    onDeleteSuccess={() => navigate("/")} 
+                />
+            </div>
+        </Layout>
     );
 };
 

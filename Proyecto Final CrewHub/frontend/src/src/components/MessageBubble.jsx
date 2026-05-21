@@ -4,10 +4,9 @@ const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
     const myId = activeUser._id || activeUser.id;
     const isMe = message.sender_id === myId;
     
-    const [isHovered, setIsHovered] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [editContent, setEditContent] = useState(message.content);
+    const [editContent, setEditContent] = useState(message.content || '');
     
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -25,77 +24,98 @@ const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
 
     return (
         <Fragment>
-            <div 
-                onMouseEnter={() => setIsHovered(true)} 
-                onMouseLeave={() => { setIsHovered(false); setShowMenu(false); }}
-                style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: '15px', position: 'relative' }}
-            >
-                {/* MENÚ DE 3 PUNTOS */}
-                {isMe && isHovered && !isEditing && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginRight: '10px', position: 'relative' }}>
-                        <button onClick={() => setShowMenu(!showMenu)} style={{ background: 'none', border: 'none', color: 'gray', cursor: 'pointer', fontSize: '1.2rem', padding: '0 5px' }}>
+            <div className={`flex mb-4 relative group ${isMe ? 'justify-end' : 'justify-start'}`}>
+                
+                {/* MENÚ DE 3 PUNTOS (Solo visible al pasar el ratón usando clases "group" de Tailwind) */}
+                {isMe && !isEditing && (
+                    <div className="hidden group-hover:flex items-center mr-2 relative">
+                        <button onClick={() => setShowMenu(!showMenu)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xl px-1 hover:text-white transition">
                             ⋮
                         </button>
 
                         {showMenu && (
-                            <div style={{ position: 'absolute', right: '100%', top: '0', backgroundColor: '#262626', padding: '5px', borderRadius: '8px', zIndex: 10, display: 'flex', flexDirection: 'column', width: '120px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                            <div className="absolute right-full top-0 bg-[#262626] p-1 rounded-lg z-10 flex flex-col w-[120px] shadow-lg">
                                 {canEdit && (
-                                    <button onClick={() => setIsEditing(true)} style={{ color: 'white', background: 'none', border: 'none', padding: '10px', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid #333' }}>Editar</button>
+                                    <button onClick={() => setIsEditing(true)} className="text-white bg-transparent border-none p-2.5 text-left cursor-pointer border-b border-[#333] text-sm hover:bg-[#333] transition rounded-t-md">Editar</button>
                                 )}
-                                {/* 🔥 ABRIMOS NUESTRO MODAL EN LUGAR DEL CONFIRM FEO */}
-                                <button onClick={() => { setShowDeleteModal(true); setShowMenu(false); }} style={{ color: '#ff4d4d', background: 'none', border: 'none', padding: '10px', textAlign: 'left', cursor: 'pointer' }}>Eliminar</button>
+                                <button onClick={() => { setShowDeleteModal(true); setShowMenu(false); }} className="text-[#ff4d4d] bg-transparent border-none p-2.5 text-left cursor-pointer text-sm hover:bg-[#333] transition rounded-b-md">Eliminar</button>
                             </div>
                         )}
                     </div>
                 )}
 
                 {/* EL GLOBO DE TEXTO */}
-                <div style={{ backgroundColor: isMe ? '#0095f6' : '#262626', padding: '10px 15px', borderRadius: '18px', maxWidth: '65%', position: 'relative' }}>
+                <div className={`p-3 rounded-2xl max-w-[65%] relative ${isMe ? 'bg-[#0095f6] rounded-tr-sm' : 'bg-[#262626] rounded-tl-sm'}`}>
+                    
+                    {message.story_media_path && (
+                        <div className="mb-2 rounded-lg overflow-hidden border border-white/20 w-[150px] h-[200px] relative">
+                            {message.story_media_type === 'video' ? (
+                                <video src={message.story_media_path.startsWith('http') ? message.story_media_path : `http://127.0.0.1:8000${message.story_media_path}`} className="w-full h-full object-cover" muted />
+                            ) : (
+                                <img src={message.story_media_path.startsWith('http') ? message.story_media_path : `http://127.0.0.1:8000${message.story_media_path}`} alt="Story Reply" className="w-full h-full object-cover" />
+                            )}
+                            <div className="absolute bottom-0 left-0 right-0 text-[10px] text-center bg-black/70 p-1.5 text-white font-bold">
+                                Respuesta a historia
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* IMAGEN DEL CHAT */}
+                    {message.image_path && (
+                        <div className={`rounded-lg overflow-hidden ${message.content ? 'mb-2' : 'm-0'}`}>
+                            <img 
+                                src={message.image_path.startsWith('http') ? message.image_path : `http://127.0.0.1:8000${message.image_path}`} 
+                                alt="Chat" 
+                                className="max-w-full max-h-[300px] object-contain rounded-lg block" 
+                            />
+                        </div>
+                    )}
+
                     {isEditing ? (
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div className="flex gap-2 items-center mt-1">
                             <input 
                                 autoFocus
                                 value={editContent} 
                                 onChange={(e) => setEditContent(e.target.value)} 
                                 onKeyDown={(e) => e.key === 'Enter' && handleEditSubmit()}
-                                style={{ background: 'rgba(0,0,0,0.2)', border: 'none', color: '#fff', borderRadius: '4px', padding: '5px', outline: 'none' }} 
+                                className="bg-black/20 border-none text-white rounded p-1.5 outline-none text-sm w-full" 
                             />
-                            <button onClick={handleEditSubmit} style={{ background: '#fff', color: '#000', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontWeight: 'bold' }}>✓</button>
-                            <button onClick={() => setIsEditing(false)} style={{ background: 'transparent', color: '#fff', border: 'none', cursor: 'pointer' }}>✕</button>
+                            <button onClick={handleEditSubmit} className="bg-white text-black border-none rounded cursor-pointer px-2 py-1 font-bold text-xs hover:bg-gray-200">✓</button>
+                            <button onClick={() => setIsEditing(false)} className="bg-transparent text-white border-none cursor-pointer text-xs hover:text-gray-300">✕</button>
                         </div>
                     ) : (
-                        <span style={{ color: 'white', wordBreak: 'break-word', lineHeight: '1.4' }}>{message.content}</span>
+                        <span className="text-white break-words leading-relaxed text-sm">{message.content}</span>
                     )}
                     
                     {message.is_edited && !isEditing && (
-                        <span style={{ display: 'block', fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textAlign: isMe ? 'right' : 'left' }}>(editado)</span>
+                        <span className={`block text-[10px] text-white/60 mt-1 ${isMe ? 'text-right' : 'text-left'}`}>(editado)</span>
                     )}
                 </div>
             </div>
 
-            {/* 🔥 EL MODAL DE ELIMINACIÓN MODERNO */}
+            {/* MODAL DE ELIMINACIÓN DE MENSAJE */}
             {showDeleteModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-                    <div style={{ backgroundColor: '#1a1a1a', padding: '25px', borderRadius: '16px', width: '320px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                        <h3 style={{ marginTop: 0, color: '#fff', fontSize: '1.3rem' }}>Eliminar mensaje</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'gray', marginBottom: '25px' }}>¿Para quién quieres eliminar este mensaje?</p>
+                <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-[9999]">
+                    <div className="bg-[#1a1a1a] p-6 rounded-2xl w-[320px] text-center border border-[#333] shadow-2xl">
+                        <h3 className="mt-0 text-white text-lg font-bold mb-2">Eliminar mensaje</h3>
+                        <p className="text-sm text-gray-400 mb-6">¿Para quién quieres eliminar este mensaje?</p>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="flex flex-col gap-3">
                             <button 
                                 onClick={() => { onDelete(message._id || message.id, 'everyone'); setShowDeleteModal(false); }} 
-                                style={{ padding: '12px', backgroundColor: '#ff4d4d', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s' }}
+                                className="p-3 bg-[#ff4d4d] text-white border-none rounded-lg cursor-pointer font-bold text-sm hover:bg-red-600 transition"
                             >
                                 Eliminar para todos
                             </button>
                             <button 
                                 onClick={() => { onDelete(message._id || message.id, 'me'); setShowDeleteModal(false); }} 
-                                style={{ padding: '12px', backgroundColor: '#262626', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s' }}
+                                className="p-3 bg-[#262626] text-white border-none rounded-lg cursor-pointer font-bold text-sm hover:bg-[#333] transition"
                             >
                                 Eliminar para mí
                             </button>
                             <button 
                                 onClick={() => setShowDeleteModal(false)} 
-                                style={{ padding: '12px', backgroundColor: 'transparent', color: '#fff', border: '1px solid #444', borderRadius: '8px', cursor: 'pointer', marginTop: '5px' }}
+                                className="p-3 bg-transparent text-white border border-[#444] rounded-lg cursor-pointer text-sm mt-1 hover:bg-[#262626] transition"
                             >
                                 Cancelar
                             </button>

@@ -10,7 +10,6 @@ const AuthProvider = ({ children }) => {
     const [activeUser, setActiveUser] = useState(null);
     const [loading, setLoading] = useState(true);
     
-    // Inyectamos nuestro Toast
     const { showToast } = useToast();
 
     useEffect(() => {
@@ -30,19 +29,30 @@ const AuthProvider = ({ children }) => {
         verifySession();
     }, [token]);
 
+    // Función auxiliar pública para inyectar la sesión desde VerifyEmail
+    const login = (userData, authToken) => {
+        localStorage.setItem('token', authToken);
+        setToken(authToken);
+        setActiveUser(userData);
+    };
+
     const loginAPI = async (credentials) => {
         try {
-            const data = await fetchAPI('/login', {
+            // Usamos fetch directamente para poder leer el status 403
+            const response = await fetch('http://127.0.0.1:8000/api/login', {
                 method: 'POST',
-                body: credentials
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(credentials)
             });
+            const data = await response.json();
 
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                setToken(data.token);
-                setActiveUser(data.user);
+            if (response.ok && data.token) {
+                login(data.user, data.token);
                 showToast("¡Bienvenido de vuelta!", "success");
-                return data; 
+                return { success: true, data };
+            } else if (response.status === 403 && data.needs_verification) {
+                showToast(data.message, "error");
+                return { success: false, needs_verification: true, email: data.email };
             } else {
                 throw new Error(data.message || "Error al iniciar sesión");
             }
@@ -54,17 +64,16 @@ const AuthProvider = ({ children }) => {
 
     const registerAPI = async (userData) => {
         try {
-            const data = await fetchAPI('/register', {
+            const response = await fetch('http://127.0.0.1:8000/api/register', {
                 method: 'POST',
-                body: userData
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(userData)
             });
+            const data = await response.json();
 
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                setToken(data.token);
-                setActiveUser(data.user);
-                showToast("Cuenta creada exitosamente.", "success");
-                return data; 
+            if (response.ok && data.success) {
+                showToast(data.message, "success");
+                return { success: true, email: data.email }; 
             } else {
                 throw new Error(data.message || "Error al registrarse");
             }
@@ -80,7 +89,7 @@ const AuthProvider = ({ children }) => {
         setActiveUser(null);
     };
 
-    const contextValue = { token, activeUser, setActiveUser, loginAPI, registerAPI, logout, loading };
+    const contextValue = { token, activeUser, setActiveUser, loginAPI, registerAPI, logout, login, loading };
 
     return (
         <AuthContext.Provider value={contextValue}>

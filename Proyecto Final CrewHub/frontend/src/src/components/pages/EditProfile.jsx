@@ -1,25 +1,22 @@
-import React, { Fragment, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { Fragment, useContext, useRef } from 'react';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import { useProfileForm } from '../../hooks/useProfileForm.js';
+import ImageCropperModal from '../ImageCropperModal.jsx';
 
 const EditProfile = () => {
     const { activeUser, token, setActiveUser } = useContext(AuthContext); 
-    const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
-    // 👇 Eliminados "errors" y "successMsg" de aquí[cite: 22]
     const { 
         displayName, setDisplayName, dateOfBirth, setDateOfBirth,
-        isPrivate, setIsPrivate, previewUrl, handleImageChange, loading, submitProfile 
+        isPrivate, setIsPrivate, previewUrl, handleImageChange, loading, submitProfile,
+        cropImageSrc, setCropImageSrc, handleCropComplete
     } = useProfileForm(token, activeUser || {});
 
     const handleSubmit = (e) => {
         e.preventDefault();
         submitProfile((updatedUser) => {
             if (setActiveUser) setActiveUser(updatedUser);
-            setTimeout(() => {
-                navigate(`/${updatedUser.username}`);
-            }, 1500);
         });
     };
 
@@ -27,59 +24,57 @@ const EditProfile = () => {
 
     return (
         <Fragment>
-            <div style={{ minHeight: "100vh", backgroundColor: "#000", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "40px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-                
-                <div style={{ width: "100%", maxWidth: "500px", padding: "0 20px", marginBottom: "20px", display: "flex", justifyContent: "space-between" }}>
-                    <Link to={`/${activeUser.username}`} style={{ color: "#0095f6", textDecoration: "none", fontSize: "1.1rem", fontWeight: "bold" }}>&larr; Volver al perfil</Link>
-                    <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Editar Perfil</h2>
-                </div>
+            <div className="w-full max-w-[550px]">
+                <h2 className="m-0 mb-6 text-xl font-bold text-white">Editar Perfil</h2>
 
-                <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "500px", padding: "20px", backgroundColor: "#121212", borderRadius: "10px", border: "1px solid #262626", display: "flex", flexDirection: "column", gap: "20px" }}>
+                <form onSubmit={handleSubmit} className="p-8 bg-[#121212] rounded-2xl border border-[#262626] flex flex-col gap-6 shadow-xl">
                     
-                    {/* 👇 Eliminamos los divs de alerta rojos y verdes que estaban aquí[cite: 22] */}
-
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-                        <img src={previewUrl} alt="Previsualización" style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", border: "2px solid #363636" }} />
-                        <label style={{ cursor: "pointer", color: "#0095f6", fontWeight: "bold", fontSize: "0.9rem" }}>
+                    <div className="flex flex-col items-center gap-4">
+                        <img src={previewUrl} alt="Previsualización" className="w-28 h-28 rounded-full object-cover border-4 border-[#1a1a1a] shadow-lg" />
+                        <label className="cursor-pointer text-[#0095f6] font-bold text-sm hover:text-blue-400 transition-colors">
                             Cambiar foto
-                            <input type="file" accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} style={{ display: "none" }} />
+                            <input type="file" ref={fileInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} className="hidden" />
                         </label>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                        <label style={{ fontSize: "0.9rem", color: "gray" }}>Nombre a mostrar</label>
-                        <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ej. Juan Pérez" maxLength={50} style={{ padding: "12px", borderRadius: "8px", border: "1px solid #363636", backgroundColor: "#000", color: "#fff", outline: "none" }} />
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Nombre a mostrar</label>
+                        <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ej. Juan Pérez" maxLength={50} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition-colors text-sm" />
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                        <label style={{ fontSize: "0.9rem", color: "gray" }}>Fecha de nacimiento</label>
-                        <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} style={{ padding: "12px", borderRadius: "8px", border: "1px solid #363636", backgroundColor: "#000", color: "#fff", outline: "none", colorScheme: "dark" }} />
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Fecha de nacimiento</label>
+                        <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition-colors text-sm [color-scheme:dark]" />
                     </div>
 
-                    {/* INTERRUPTOR DE PRIVACIDAD */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px", backgroundColor: "#0a0a0a", borderRadius: "8px", border: "1px solid #363636" }}>
+                    <div className="flex justify-between items-center p-5 bg-[#0a0a0a] rounded-xl border border-[#333]">
                         <div>
-                            <span style={{ display: "block", fontWeight: "bold", fontSize: "0.95rem" }}>Cuenta Privada</span>
-                            <span style={{ fontSize: "0.8rem", color: "gray" }}>Solo quienes apruebes podrán seguirte y ver tu muro.</span>
+                            <span className="block font-bold text-sm text-white">Cuenta Privada</span>
+                            <span className="text-xs text-gray-500 mt-1 block">Solo quienes apruebes podrán seguirte.</span>
                         </div>
-                        <label style={{ position: "relative", display: "inline-block", width: "44px", height: "24px" }}>
-                            <input 
-                                type="checkbox" 
-                                checked={isPrivate} 
-                                onChange={(e) => setIsPrivate(e.target.checked)} 
-                                style={{ opacity: 0, width: 0, height: 0 }} 
-                            />
-                            <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: isPrivate ? "#0095f6" : "#363636", borderRadius: "24px", transition: "0.3s" }}>
-                                <span style={{ position: "absolute", height: "18px", width: "18px", left: isPrivate ? "22px" : "3px", bottom: "3px", backgroundColor: "white", borderRadius: "50%", transition: "0.3s" }}></span>
+                        {/* Toggle animado con Tailwind */}
+                        <label className="relative inline-block w-12 h-6 cursor-pointer shrink-0">
+                            <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="opacity-0 w-0 h-0 peer" />
+                            <span className={`absolute inset-0 rounded-full transition-colors duration-300 ${isPrivate ? 'bg-[#0095f6]' : 'bg-[#363636]'}`}>
+                                <span className={`absolute w-4 h-4 bg-white rounded-full bottom-1 transition-transform duration-300 ${isPrivate ? 'translate-x-7' : 'translate-x-1'}`}></span>
                             </span>
                         </label>
                     </div>
 
-                    <button type="submit" disabled={loading} style={{ marginTop: "10px", padding: "12px", borderRadius: "8px", border: "none", backgroundColor: loading ? "#363636" : "#0095f6", color: "white", cursor: loading ? "default" : "pointer", fontWeight: "bold", transition: "0.2s" }}>
+                    <button type="submit" disabled={loading} className={`mt-4 p-4 rounded-xl border-none font-bold text-sm transition-all ${loading ? 'bg-[#262626] text-gray-500 cursor-not-allowed' : 'bg-[#0095f6] text-white hover:bg-blue-600 cursor-pointer shadow-lg shadow-blue-500/20'}`}>
                         {loading ? "Guardando..." : "Guardar cambios"}
                     </button>
                 </form>
             </div>
+
+            {cropImageSrc && (
+                <ImageCropperModal 
+                    imageSrc={cropImageSrc}
+                    aspectRatio={1}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }}
+                />
+            )}
         </Fragment>
     );
 };

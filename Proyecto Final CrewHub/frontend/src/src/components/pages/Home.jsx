@@ -1,26 +1,78 @@
-import React, { Fragment, useContext } from "react";
+import React, { Fragment, useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { Link } from "react-router-dom";
-import { useHomeLogic } from "../../hooks/useHomeLogic.js";
-import { useUnreadChats } from "../../hooks/useUnreadChats.js";
+import { fetchAPI } from "../../services/api.js";
+import { useFeed } from "../../hooks/useFeed.js";
+import Layout from "../structure/Layout.jsx";
 import PostCard from "../PostCard.jsx";
-import NotificationBell from "../NotificationBell.jsx";
 import CreatePost from "../CreatePost.jsx";
-import PostActions from "../PostActions.jsx";
-import StoriesBar from "../StoriesBar.jsx";
-import './Home.css';
 
 const Home = () => {
-    const { activeUser, logout, token } = useContext(AuthContext);
+    const { activeUser, token } = useContext(AuthContext);
 
-    // Lógica del Home (buscador, feed, etc.)
-    const {
-        searchQuery, searchResults, isSearching, mutuals,
-        feed, loadingFeed, addNewPostToFeed,
-        handleSearch, toggleFollow
-    } = useHomeLogic(token);
+    // 1. ESTADOS DEL FEED (Usando el hook que creamos para los filtros)
+    const { posts, filter, setFilter, loading, loadingMore, hasMore, loadMore } = useFeed(token);
 
-    const { unreadCount } = useUnreadChats();
+    // 2. ESTADOS DE LA BÚSQUEDA
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // 3. SCROLL INFINITO PARA EL FEED
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+                if (!loading && !loadingMore && hasMore) {
+                    loadMore();
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loading, loadingMore, hasMore, loadMore]);
+
+    // 4. LÓGICA DE BÚSQUEDA (Con retraso para no saturar MongoDB)
+    useEffect(() => {
+        const delaySearch = setTimeout(async () => {
+            if (searchQuery.trim() !== '') {
+                setIsSearching(true);
+                try {
+                    const data = await fetchAPI(`/users/search?q=${searchQuery}`, {}, token);
+                    if (data.success) {
+                        setSearchResults(data.users);
+                    }
+                } catch (error) {
+                    console.error("Error en la búsqueda:", error);
+                } finally {
+                    setIsSearching(false);
+                }
+            } else {
+                setSearchResults([]);
+            }
+        }, 500);
+
+        return () => clearTimeout(delaySearch);
+    }, [searchQuery, token]);
+
+    // 5. FUNCIÓN PARA SEGUIR/DEJAR DE SEGUIR DESDE EL BUSCADOR
+    const toggleFollowSearch = async (targetUserId, currentStatus) => {
+        try {
+            const data = await fetchAPI(`/users/${targetUserId}/follow`, { method: 'POST' }, token);
+            if (data.success) {
+                // Actualizamos el estado local de los resultados de búsqueda para reflejar el cambio del botón
+                setSearchResults(prevResults => prevResults.map(u => {
+                    const uid = u.id || u._id;
+                    if (uid === targetUserId) {
+                        return { ...u, follow_status: data.status };
+                    }
+                    return u;
+                }));
+            }
+        } catch (error) {
+            console.error("Error al actualizar seguimiento:", error);
+        }
+    };
 
     const getAvatar = (user) => {
         if (user && user.profile_picture) {
@@ -31,151 +83,144 @@ const Home = () => {
         return `https://ui-avatars.com/api/?name=${name}&background=262626&color=fff&bold=true`;
     };
 
+    // Función que pasaremos al CreatePost para que añada el post al principio de la lista
+    const addNewPostToFeed = (newPost) => {
+        // Esto asume que tienes acceso al setter de posts en useFeed o simplemente recarga el feed
+        // Para simplificar, podemos forzar una recarga o manejarlo en el hook.
+        // Si recargar es suficiente:
+        setFilter('all'); 
+    };
+
+    if (!token || !activeUser) return null;
+
     return (
-        <Fragment>
-            <div style={{ minHeight: "100vh", backgroundColor: "#000", color: "#fff", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        <Layout>
+            <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12">
+                
+                {/* 1. BUSCADOR (Tu diseño) */}
+                <div className="bg-[#121212] p-6 rounded-xl border border-[#262626] mb-6 shadow-lg">
+                    <h3 className="text-xl font-bold mb-4 text-white m-0">Buscar Personas</h3>
+                    <input
+                        type="text"
+                        placeholder="Busca por nombre de usuario..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-5 py-3 rounded-full border border-[#363636] bg-black text-white mb-2 outline-none focus:border-[#0095f6] transition box-border"
+                    />
+                    
+                    {isSearching && <p className="text-gray-400 text-sm mt-2">Buscando...</p>}
+                    
+                    {searchResults.length > 0 && (
+                        <ul className="flex flex-col gap-3 p-0 m-0 mt-4 list-none">
+                            {searchResults.map((user) => {
+                                const userId = user.id || user._id;
+                                const status = user.follow_status || 'none';
 
-                {/* HEADER DARK MODE */}
-                <header style={{ padding: "15px 30px", borderBottom: "1px solid #262626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#000", position: "sticky", top: 0, zIndex: 100 }}>
-                    <Link to="/" style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold", color: "#fff", textDecoration: "none" }}>Crew Hub</Link>
-
-                    <nav style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                        {token && activeUser && (
-                            <Fragment>
-                                <NotificationBell />
-
-                                {/* BOTÓN DE CHATS CON EL GLOBITO ROJO */}
-                                <Link to="/chats" style={{ position: "relative", color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", transition: "0.2s" }}>
-                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.58 2 10c0 2.6 1.48 4.9 3.75 6.33V22l4.37-2.33c.6.1 1.23.16 1.88.16 5.52 0 10-3.58 10-8s-4.48-8-10-8z" /></svg>
-
-                                    {/* Muestra el badge SOLO si hay mensajes sin leer */}
-                                    {unreadCount > 0 && (
-                                        <span style={{
-                                            position: 'absolute', top: -8, right: -8,
-                                            backgroundColor: '#ff4d4d', color: 'white',
-                                            borderRadius: '50%', padding: '2px 6px',
-                                            fontSize: '0.75rem', fontWeight: 'bold'
-                                        }}>
-                                            {unreadCount}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <Link to={`/${activeUser.username}`} style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff", textDecoration: "none", transition: "opacity 0.2s" }}>
-                                    <img src={getAvatar(activeUser)} alt="Mi perfil" style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #363636" }} />
-                                    <span style={{ fontWeight: "500" }}>{activeUser.username}</span>
-                                </Link>
-                                <button onClick={logout} style={{ backgroundColor: "transparent", color: "#ff4d4d", border: "1px solid #ff4d4d", padding: "6px 15px", cursor: "pointer", borderRadius: "20px", fontWeight: "bold", transition: "0.2s" }}>
-                                    Salir
-                                </button>
-                            </Fragment>
-                        )}
-                    </nav>
-                </header>
-
-                <main style={{ padding: "30px 20px", maxWidth: "1100px", margin: "0 auto", display: "flex", gap: "30px", flexWrap: "wrap" }}>
-                    {token && activeUser && (
-                        <Fragment>
-                            {/* COLUMNA IZQUIERDA: Buscador, Crear Post y Muro */}
-                            <div style={{ flex: "2 1 600px", display: "flex", flexDirection: "column", gap: "30px" }}>
-                                <StoriesBar />
-                                {/* 1. SECCIÓN DEL BUSCADOR */}
-                                <div style={{ backgroundColor: "#121212", padding: "25px", borderRadius: "12px", border: "1px solid #262626" }}>
-                                    <h3 style={{ marginTop: 0, fontSize: "1.2rem", marginBottom: "15px" }}>Explorar</h3>
-                                    <input
-                                        type="text" placeholder="Busca por nombre de usuario..."
-                                        value={searchQuery} onChange={handleSearch}
-                                        style={{ width: "100%", padding: "12px 15px", borderRadius: "30px", border: "1px solid #363636", backgroundColor: "#000", color: "#fff", marginBottom: "15px", boxSizing: "border-box", outline: "none" }}
-                                    />
-                                    {isSearching && <p style={{ color: "gray", fontSize: "0.9rem" }}>Buscando...</p>}
-                                    {searchResults.length > 0 && (
-                                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
-                                            {searchResults.map((user) => {
-                                                const userId = user.id || user._id;
-                                                const status = user.follow_status || 'none';
-
-                                                return (
-                                                    <li key={userId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderRadius: "8px", backgroundColor: "#0a0a0a", border: "1px solid #262626" }}>
-                                                        <Link to={`/${user.username}`} style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}>
-                                                            <img src={getAvatar(user)} alt={user.username} style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} />
-                                                            <div>
-                                                                <strong style={{ fontSize: "1rem", color: "#fff" }}>{user.display_name || user.username}</strong> <br />
-                                                                <small style={{ color: "gray" }}>@{user.username}</small>
-                                                            </div>
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => toggleFollow(userId, status)}
-                                                            style={{
-                                                                padding: "8px 16px", cursor: "pointer", borderRadius: "20px", fontWeight: "bold", transition: "0.2s",
-                                                                border: status === 'none' ? "none" : "1px solid #363636",
-                                                                backgroundColor: status === 'none' ? "#0095f6" : "#262626",
-                                                                color: "white"
-                                                            }}
-                                                        >
-                                                            {status === 'pending' ? 'Pendiente' : (status === 'accepted' ? 'Siguiendo' : 'Seguir')}
-                                                        </button>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    )}
-                                </div>
-
-                                {/* 2. CREADOR DE PUBLICACIONES */}
-                                <CreatePost onPostCreated={addNewPostToFeed} />
-
-                                {/* 3. SECCIÓN DEL MURO (FEED) */}
-                                <div style={{ minHeight: "200px", display: "flex", flexDirection: "column", gap: "25px" }}>
-                                    {loadingFeed ? (
-                                        <p style={{ textAlign: "center", color: "gray" }}>Cargando publicaciones...</p>
-                                    ) : feed.length === 0 ? (
-                                        <div style={{ backgroundColor: "#121212", padding: "40px", borderRadius: "12px", border: "1px solid #262626", textAlign: "center", color: "gray" }}>
-                                            <h2 style={{ marginTop: 0, fontSize: "1.3rem", color: "#fff" }}>Tu Muro está vacío</h2>
-                                            <p>Empieza a seguir a otros tripulantes o haz tu primera publicación.</p>
-                                        </div>
-                                    ) : (
-                                        feed.map(post => (
-                                            <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* COLUMNA DERECHA: Lista de Mutuals (Chats) */}
-                            <div style={{ flex: "1 1 300px", backgroundColor: "#121212", border: "1px solid #262626", padding: "25px", borderRadius: "12px", alignSelf: "flex-start", position: "sticky", top: "90px" }}>
-                                <h3 style={{ marginTop: 0, fontSize: "1.2rem" }}>Tus Contactos</h3>
-                                <p style={{ fontSize: "0.85rem", color: "gray", marginTop: "5px", marginBottom: "20px" }}>Solo puedes chatear con quienes te siguen de vuelta.</p>
-
-                                {mutuals.length === 0 ? (
-                                    <div style={{ textAlign: "center", color: "gray", padding: "20px 0" }}><p style={{ fontSize: "0.9rem", margin: 0 }}>Aún no tienes contactos mutuos.</p></div>
-                                ) : (
-                                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
-                                        {mutuals.map((mutual) => {
-                                            const mutualId = mutual.id || mutual._id;
-                                            return (
-                                                <li key={mutualId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", borderRadius: "8px" }}>
-                                                    <Link to={`/${mutual.username}`} style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", color: "inherit" }}>
-                                                        <img src={getAvatar(mutual)} alt={mutual.username} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }} />
-                                                        <strong style={{ fontSize: "0.95rem", color: "#fff" }}>{mutual.username}</strong>
-                                                    </Link>
-
-                                                    <Link
-                                                        to={`/chats/${mutual.username}`}
-                                                        style={{ backgroundColor: "transparent", color: "#0095f6", border: "1px solid #0095f6", padding: "6px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "bold", textDecoration: "none" }}
-                                                    >
-                                                        Chat
-                                                    </Link>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-                            </div>
-                        </Fragment>
+                                return (
+                                    <li key={userId} className="flex justify-between items-center p-3 rounded-lg bg-[#0a0a0a] border border-[#262626]">
+                                        <Link to={`/${user.username}`} className="flex items-center gap-3 hover:opacity-80 transition text-white no-underline">
+                                            <img src={getAvatar(user)} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                                            <div>
+                                                <strong className="text-base text-white block leading-tight">{user.display_name || user.username}</strong>
+                                                <small className="text-gray-400">@{user.username}</small>
+                                            </div>
+                                        </Link>
+                                        
+                                        <button
+                                            onClick={() => toggleFollowSearch(userId, status)}
+                                            className={`px-4 py-2 rounded-full font-bold transition text-sm cursor-pointer ${
+                                                status === 'none' 
+                                                ? 'bg-[#0095f6] hover:bg-blue-600 text-white border-none' 
+                                                : 'bg-[#262626] hover:bg-[#333] text-white border border-[#363636]'
+                                            }`}
+                                        >
+                                            {status === 'pending' ? 'Pendiente' : (status === 'accepted' ? 'Siguiendo' : 'Seguir')}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     )}
-                </main>
+                    
+                    {searchQuery.trim() !== '' && !isSearching && searchResults.length === 0 && (
+                        <p className="text-gray-500 text-sm mt-4 text-center">No se encontraron resultados.</p>
+                    )}
+                </div>
+
+                {/* 2. CREAR PUBLICACIÓN */}
+                <div className="mb-6">
+                    <CreatePost onPostCreated={addNewPostToFeed} />
+                </div>
+
+                {/* 3. BARRA DE PESTAÑAS DEL FEED */}
+                <div className="flex w-full bg-[#121212] border border-[#262626] rounded-xl overflow-hidden shadow-lg mb-6">
+                    <button 
+                        onClick={() => setFilter('all')} 
+                        className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${
+                            filter === 'all' 
+                            ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#fff] border-none' 
+                            : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-[#151515] border-none'
+                        }`}
+                    >
+                        Explorar
+                    </button>
+                    <button 
+                        onClick={() => setFilter('interests')} 
+                        className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-r border-[#262626] ${
+                            filter === 'interests' 
+                            ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-t-0 border-b-0' 
+                            : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-[#151515] border-t-0 border-b-0'
+                        }`}
+                    >
+                        Para ti
+                    </button>
+                    <button 
+                        onClick={() => setFilter('following')} 
+                        className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${
+                            filter === 'following' 
+                            ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#fff] border-none' 
+                            : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-[#151515] border-none'
+                        }`}
+                    >
+                        Siguiendo
+                    </button>
+                </div>
+
+                {/* 4. CONTENIDO DEL FEED (Con Scroll Infinito) */}
+                <div className="flex flex-col gap-6 min-h-[200px]">
+                    {loading ? (
+                        <p className="text-center text-gray-400 font-bold tracking-widest uppercase py-10">Cargando publicaciones...</p>
+                    ) : posts.length === 0 ? (
+                        <div className="bg-[#121212] p-10 rounded-xl border border-[#262626] text-center shadow-lg">
+                            <h2 className="text-xl text-white font-bold mb-2 mt-0">No hay publicaciones</h2>
+                            <p className="text-gray-400">
+                                {filter === 'interests' 
+                                    ? 'Aún no hay contenido relacionado con tus intereses.' 
+                                    : filter === 'following' 
+                                    ? 'Sigue a más personas para ver sus publicaciones aquí.' 
+                                    : 'Sé el primero en publicar algo.'}
+                            </p>
+                        </div>
+                    ) : (
+                        posts.map(post => (
+                            <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />
+                        ))
+                    )}
+                    
+                    {/* Indicadores de paginación */}
+                    {loadingMore && (
+                        <div className="text-center text-[#0095f6] font-bold py-4 mt-2">
+                            Cargando más publicaciones...
+                        </div>
+                    )}
+                    {!hasMore && posts.length > 0 && (
+                        <div className="text-center text-gray-500 py-4 mt-2 text-sm font-bold tracking-widest uppercase border-t border-[#262626]">
+                            Has llegado al final
+                        </div>
+                    )}
+                </div>
             </div>
-        </Fragment>
+        </Layout>
     );
 };
 

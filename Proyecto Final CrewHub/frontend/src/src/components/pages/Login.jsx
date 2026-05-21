@@ -1,96 +1,54 @@
-import React, { Fragment, useContext, useRef, useState } from "react";
-import { AuthContext } from "../../contexts/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "../../contexts/ToastContext.jsx";
-import "./Login.css"; 
+import React, { Fragment } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useLoginLogic } from "../../hooks/useLoginLogic.js";
 import logoImg from "../../assets/logo.png"; 
 
-const initialCredentials = {
-    login: "",
-    password: ""
-};
-
 const Login = () => {
-    const { loginAPI } = useContext(AuthContext);
-    const [credentials, setCredentials] = useState(initialCredentials);
     const navigate = useNavigate();
-    const { showToast } = useToast();
-
-    const loginRef = useRef(null);
-    const passwordRef = useRef(null);
-
-    const updateData = (event) => {
-        let { name, value } = event.target;
-        setCredentials({ ...credentials, [name]: value });
-    };
-
-    const validateForm = () => {
-        if (!loginRef.current.value || !passwordRef.current.value) {
-            showToast("Todos los campos son obligatorios.", "error");
-            return false;
-        }
-        return true;
-    };
-
-    const handleLogin = (e) => {
-        e.preventDefault(); 
-        if (validateForm()) {
-            loginAPI(credentials)
-                .then(() => navigate("/"))
-                .catch((error) => {
-                });
-        }
-    };
+    const { credentials, updateData, handleLogin, loading } = useLoginLogic();
 
     return (
-        <Fragment>
-            <div className="login-page">
-                <div className="login-split">
-                    <div className="login-left">
-                        <div className="brand-text">CREW HUB</div>
-                        <img src={logoImg} alt="Crew Hub Logo" className="brand-logo" />
-                    </div>
+        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+            <div className="flex flex-col md:flex-row items-center gap-20 max-w-5xl w-full">
+                {/* Lado Izquierdo: Logo */}
+                <div className="flex flex-col items-center flex-1">
+                    <div className="text-white text-7xl font-extrabold tracking-widest mb-6 text-center">CREW HUB</div>
+                    <img src={logoImg} alt="Crew Hub Logo" className="w-[350px] h-[350px] rounded-full object-cover shadow-2xl" />
+                </div>
 
-                    <div className="login-right">
-                        <div className="login-card">
-                            <div className="login-white-band">
-                                <div className="form-title">Inicia Sesión en CrewHub</div>
-                                
-                                <form onSubmit={handleLogin}>
-                                    <input
-                                        className="login-input"
-                                        ref={loginRef}
-                                        name="login"
-                                        type="text"
-                                        placeholder="Usuario o correo electrónico"
-                                        onChange={updateData}
-                                        required
-                                    />
-                                    
-                                    <input
-                                        className="login-input"
-                                        ref={passwordRef}
-                                        name="password"
-                                        type="password"
-                                        placeholder="Contraseña"
-                                        onChange={updateData}
-                                        required
-                                    />
-                                    
-                                    <button type="submit" className="login-btn">
-                                        Inicia Sesión
-                                    </button>
-                                </form>
+                {/* Lado Derecho: Formulario */}
+                <div className="w-full max-w-[400px] bg-[#121212] border border-[#262626] rounded-2xl p-10 shadow-2xl">
+                    <h2 className="text-white text-xl font-bold mb-6 text-center">Inicia Sesión</h2>
+                    
+                    <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                        <input
+                            className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm"
+                            name="login" type="text" placeholder="Usuario o correo electrónico"
+                            value={credentials.login} onChange={updateData} required
+                        />
+                        <input
+                            className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm"
+                            name="password" type="password" placeholder="Contraseña"
+                            value={credentials.password} onChange={updateData} required
+                        />
 
-                                <div className="login-register-text">
-                                    ¿No tienes cuenta? <span className="login-register-link" onClick={() => navigate("/register")}>Regístrate</span>
-                                </div>
-                            </div>
+                        <div className="text-right">
+                            <Link to="/forgot-password" className="text-[#0095f6] text-xs font-bold no-underline hover:underline">
+                                ¿Olvidaste tu contraseña?
+                            </Link>
                         </div>
+                        
+                        <button type="submit" disabled={loading} className="w-full bg-[#0095f6] text-white py-3 rounded-full font-bold cursor-pointer hover:bg-blue-600 transition-colors mt-2 disabled:bg-[#262626]">
+                            {loading ? 'Iniciando...' : 'Inicia Sesión'}
+                        </button>
+                    </form>
+
+                    <div className="text-center mt-6 text-gray-500 text-sm">
+                        ¿No tienes cuenta? <span className="text-[#0095f6] font-bold cursor-pointer hover:underline" onClick={() => navigate("/register")}>Regístrate</span>
                     </div>
                 </div>
             </div>
-        </Fragment>
+        </div>
     );
 };
 

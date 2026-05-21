@@ -2,10 +2,7 @@
 
 namespace App\Models;
 
-// 1. ¡ESTA ES LA LÍNEA CRÍTICA QUE FALTA!
 use Laravel\Sanctum\HasApiTokens;
-
-// 2. Importaciones de MongoDB y utilidades
 use MongoDB\Laravel\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,7 +20,15 @@ class User extends Authenticatable
         'password',
         'display_name', 
         'profile_picture',
-        'date_of_birth',   
+        'date_of_birth',
+        'email_verified_at',
+        'verification_code',
+        'reset_password_code',
+        'interests',
+    ];
+
+    protected $attributes = [
+        'interests' => '[]',
     ];
 
     protected $hidden = [
@@ -41,6 +46,7 @@ class User extends Authenticatable
         return [
             'fecha_registro' => 'datetime',
             'date_of_birth' => 'date',
+            'interests' => 'array',
         ];
     }
 }

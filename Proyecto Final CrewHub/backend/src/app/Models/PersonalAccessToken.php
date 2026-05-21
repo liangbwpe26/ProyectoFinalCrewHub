@@ -11,8 +11,5 @@ class PersonalAccessToken extends SanctumToken
 
     protected $connection = 'mongodb';
     protected $collection = 'personal_access_tokens';
-
-    // MAGIA PURA: Le decimos que el ID es un texto (para evitar el error del número 69),
-    // pero dejamos que MongoDB siga insertando el ID automáticamente.
     protected $keyType = 'string';
 }

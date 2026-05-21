@@ -12,7 +12,6 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
     const [previewUrl, setPreviewUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // Estados para el recorte
     const [cropImageSrc, setCropImageSrc] = useState(null);
     const fileInputRef = useRef(null);
 
@@ -23,11 +22,8 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
         if (selectedFile.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.readAsDataURL(selectedFile);
-            reader.onload = () => {
-                setCropImageSrc(reader.result);
-            };
+            reader.onload = () => setCropImageSrc(reader.result);
         } else {
-            // Si tuvieras videos en posts, pasarían por aquí
             setFile(selectedFile);
             setPreviewUrl(URL.createObjectURL(selectedFile));
         }
@@ -41,10 +37,7 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!file) {
-            showToast('Por favor selecciona una imagen', 'error');
-            return;
-        }
+        if (!file) return showToast('Por favor selecciona una imagen', 'error');
 
         setIsSubmitting(true);
         const formData = new FormData();
@@ -62,9 +55,7 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
             if (data.success) {
                 showToast('Publicación creada con éxito', 'success');
                 if (onPostCreated) onPostCreated(data.post);
-                setFile(null);
-                setPreviewUrl('');
-                setDescription('');
+                setFile(null); setPreviewUrl(''); setDescription('');
             } else {
                 showToast(data.message || 'Error al publicar', 'error');
             }
@@ -77,24 +68,24 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
 
     return (
         <Fragment>
-            <div style={{ backgroundColor: '#121212', padding: '20px', borderRadius: '12px', border: '1px solid #262626' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#fff' }}>Crear Publicación</h3>
+            <div className="bg-[#121212] p-6 rounded-2xl border border-[#262626] shadow-lg">
+                <h3 className="mt-0 mb-4 text-white text-lg font-bold">Crear Publicación</h3>
                 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <textarea 
                         placeholder="¿Qué estás pensando?" 
                         value={description} 
                         onChange={(e) => setDescription(e.target.value)}
-                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#000', color: '#fff', minHeight: '80px', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
+                        className="w-full p-4 rounded-xl border border-[#333] bg-[#000] text-white min-h-[80px] resize-y outline-none focus:border-[#0095f6] transition text-sm"
                     />
 
                     {previewUrl ? (
-                        <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                            <img src={previewUrl} alt="Preview" style={{ width: '100%', borderRadius: '8px', display: 'block', border: '1px solid #333' }} />
+                        <div className="relative w-full max-w-[300px] mx-auto">
+                            <img src={previewUrl} alt="Preview" className="w-full rounded-xl border border-[#333] block" />
                             <button 
                                 type="button" 
                                 onClick={() => { setFile(null); setPreviewUrl(''); }}
-                                style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}
+                                className="absolute top-2 right-2 bg-black/70 text-white border-none rounded-full w-8 h-8 flex justify-center items-center cursor-pointer font-bold hover:bg-red-500 transition"
                             >
                                 ✕
                             </button>
@@ -102,21 +93,21 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
                     ) : (
                         <div 
                             onClick={() => fileInputRef.current.click()}
-                            style={{ border: '2px dashed #333', borderRadius: '8px', padding: '30px', textAlign: 'center', cursor: 'pointer', color: 'gray', transition: '0.2s' }}
+                            className="border-2 border-dashed border-[#333] rounded-xl p-8 text-center cursor-pointer text-gray-500 hover:bg-[#1a1a1a] transition text-sm font-medium"
                         >
                             Haz clic para seleccionar una foto
                         </div>
                     )}
                     
-                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" style={{ display: 'none' }} />
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" className="hidden" />
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                    <div className="flex justify-end gap-3 mt-2">
                         {onCancel && (
-                            <button type="button" onClick={onCancel} style={{ padding: '10px 20px', borderRadius: '20px', border: 'none', backgroundColor: 'transparent', color: 'gray', cursor: 'pointer', fontWeight: 'bold' }}>
+                            <button type="button" onClick={onCancel} className="px-5 py-2 rounded-full border-none bg-transparent text-gray-400 cursor-pointer font-bold hover:bg-[#262626] transition text-sm">
                                 Cancelar
                             </button>
                         )}
-                        <button type="submit" disabled={isSubmitting || !file} style={{ padding: '10px 20px', borderRadius: '20px', border: 'none', backgroundColor: file ? '#0095f6' : '#262626', color: file ? '#fff' : 'gray', cursor: file ? 'pointer' : 'default', fontWeight: 'bold', transition: '0.2s' }}>
+                        <button type="submit" disabled={isSubmitting || !file} className={`px-6 py-2 rounded-full border-none font-bold text-sm transition ${file ? 'bg-[#0095f6] text-white cursor-pointer hover:bg-blue-600' : 'bg-[#262626] text-gray-500 cursor-not-allowed'}`}>
                             {isSubmitting ? 'Publicando...' : 'Publicar'}
                         </button>
                     </div>
@@ -124,12 +115,7 @@ const CreatePost = ({ onPostCreated, onCancel }) => {
             </div>
 
             {cropImageSrc && (
-                <ImageCropperModal 
-                    imageSrc={cropImageSrc}
-                    aspectRatio={1} // Formato Cuadrado (1:1) para Publicaciones
-                    onCropComplete={handleCropComplete}
-                    onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }}
-                />
+                <ImageCropperModal imageSrc={cropImageSrc} aspectRatio={1} onCropComplete={handleCropComplete} onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }} />
             )}
         </Fragment>
     );

@@ -9,6 +9,7 @@ use App\Models\Message;
 use App\Events\MessageSent;
 use App\Events\MessageEdited;
 use App\Events\MessageDeleted;
+use Carbon\Carbon;
 
 class ChatController extends Controller
 {
@@ -51,9 +52,6 @@ class ChatController extends Controller
         return null;
     }
 
-    // ==========================================
-    // NUEVO: CONTAR PERSONAS NO LEÍDAS (EL BADGE)
-    // ==========================================
     public function getUnreadCount(Request $request)
     {
         $me = $request->user();
@@ -83,7 +81,7 @@ class ChatController extends Controller
                 if (is_object($readBy)) $readBy = (array)$readBy;
 
                 if (!in_array($myIdStr, $readBy)) {
-                    $unreadCount++; // Cuenta como +1 persona no leída
+                    $unreadCount++;
                 }
             }
         }
@@ -91,9 +89,7 @@ class ChatController extends Controller
         return response()->json(['success' => true, 'unread_count' => $unreadCount]);
     }
 
-    // ==========================================
-    // NUEVO: MARCAR CHAT COMO LEÍDO AL ABRIRLO
-    // ==========================================
+
     public function markChatAsRead(Request $request, $username)
     {
         $me = $request->user();
@@ -156,19 +152,34 @@ class ChatController extends Controller
     public function sendMessage(Request $request, $username)
     {
         try {
-            $request->validate(['content' => 'required|string|max:1000']);
+            $request->validate([
+                'content' => 'nullable|string|max:1000',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+            ]);
+
+            if (!$request->input('content') && !$request->hasFile('image')) {
+                return response()->json(['success' => false, 'message' => 'El mensaje no puede estar vacío.'], 400);
+            }
+
             $me = $request->user();
-            
             $targetUser = User::where('username', $username)->first();
+            
             if (!$targetUser) return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
 
             $conversation = $this->getOrCreateConversation($me->id, $targetUser->id);
+
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $path = $request->file('image')->store('chat_images', 'public');
+                $imagePath = '/storage/' . $path;
+            }
 
             $message = Message::create([
                 'conversation_id' => (string) $conversation->id,
                 'sender_id' => (string) $me->id,
                 'content' => $request->input('content'),
-                'read_by' => [(string) $me->id], // Yo ya lo leí porque lo envié
+                'image_path' => $imagePath,
+                'read_by' => [(string) $me->id],
             ]);
 
             $conversation->update(['last_message_at' => now()]);
@@ -225,7 +236,6 @@ class ChatController extends Controller
                 }
             }
 
-            // 🔥 COMPROBAMOS SI ESTÁ LEÍDO PARA LA BANDEJA
             $unread = false;
             if ($validLastMessage && $validLastMessage->sender_id !== $myIdStr) {
                 $readBy = $validLastMessage->read_by ?? [];
@@ -239,13 +249,13 @@ class ChatController extends Controller
                 'conversation_id' => (string) $conv->id,
                 'user' => $otherUser,
                 'last_message' => $validLastMessage,
-                'unread' => $unread, // ¡El backend nos da la respuesta!
+                'unread' => $unread,
             ];
         }
 
         usort($chatList, function($a, $b) {
-            $timeA = $a['last_message'] ? \Carbon\Carbon::parse($a['last_message']->created_at)->timestamp : 0;
-            $timeB = $b['last_message'] ? \Carbon\Carbon::parse($b['last_message']->created_at)->timestamp : 0;
+            $timeA = $a['last_message'] ? Carbon::parse($a['last_message']->created_at)->timestamp : 0;
+            $timeB = $b['last_message'] ? Carbon::parse($b['last_message']->created_at)->timestamp : 0;
             return $timeB <=> $timeA;
         });
 
@@ -305,5 +315,44 @@ class ChatController extends Controller
             }
         }
         return response()->json(['success' => true]);
+    }
+
+    public function replyToStory(Request $request, $userId)
+    {
+        $me = $request->user();
+        
+        $request->validate([
+            'content' => 'required|string|max:500',
+            'story_media_path' => 'required|string',
+            'story_media_type' => 'required|string',
+        ]);
+
+        $targetUser = User::find($userId);
+        if (!$targetUser) {
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
+        }
+
+        $conversation = $this->getOrCreateConversation($me->id, $targetUser->id);
+
+        $message = Message::create([
+            'conversation_id' => (string) $conversation->id,
+            'sender_id' => (string) $me->id,
+            'content' => $request->input('content'),
+            'story_media_path' => $request->input('story_media_path'),
+            'story_media_type' => $request->input('story_media_type'),
+            'read_by' => [(string) $me->id], // Yo ya lo leí porque lo envié
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
+
+        $cleanMessage = $message->fresh();
+        $cleanArray = $this->prepareMessageForBroadcast($cleanMessage);
+
+        event(new MessageSent($cleanArray, (string)$targetUser->id));
+
+        return response()->json([
+            'success' => true,
+            'message' => $cleanMessage
+        ]);
     }
 }

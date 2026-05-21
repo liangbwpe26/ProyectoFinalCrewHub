@@ -87,8 +87,14 @@ class StoryController extends Controller
                 $groupedStories[$userId]['all_viewed'] = false;
             }
 
+            // Sanitizar el arreglo de likes para MongoDB
+            $likedBy = $story->liked_by ?? [];
+            if (is_object($likedBy)) $likedBy = (array) $likedBy;
+
             $storyArray = $story->toArray();
             $storyArray['has_viewed'] = $hasViewed;
+            $storyArray['has_liked'] = in_array($myId, $likedBy);
+            $storyArray['likes_count'] = count($likedBy);
             
             $groupedStories[$userId]['stories'][] = $storyArray;
         }
@@ -151,5 +157,82 @@ class StoryController extends Controller
         $story->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function toggleLike(Request $request, $id)
+    {
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+        $story = Story::find($id);
+        
+        if (!$story) return response()->json(['success' => false], 404);
+
+        $likedBy = $story->liked_by ?? [];
+        if (is_object($likedBy)) $likedBy = (array)$likedBy;
+
+        $isLiked = in_array($myId, $likedBy);
+
+        if ($isLiked) {
+            // Quitar like
+            $likedBy = array_values(array_diff($likedBy, [$myId]));
+            \App\Models\Notification::where('sender_id', $myId)
+                ->where('story_id', $story->_id)
+                ->where('type', 'story_reaction')
+                ->delete();
+        } else {
+            // Dar like
+            $likedBy[] = $myId;
+            
+            if ((string)$story->user_id !== $myId) {
+                $notif = \App\Models\Notification::create([
+                    'recipient_id' => $story->user_id,
+                    'sender_id' => $myId,
+                    'type' => 'story_reaction',
+                    'story_id' => $story->_id,
+                    'is_read' => false
+                ]);
+                $notif->load('sender');
+                broadcast(new \App\Events\NotificationSent($notif));
+            }
+        }
+        
+        $story->forceFill(['liked_by' => array_values($likedBy)])->save();
+        return response()->json(['success' => true, 'reacted' => !$isLiked]);
+    }
+
+    // 6. OBTENER ESTADÍSTICAS DE LA HISTORIA (Solo para el dueño)
+    public function getStats(Request $request, $id)
+    {
+        $me = $request->user();
+        $story = Story::find($id);
+
+        if (!$story) return response()->json(['success' => false], 404);
+
+        // Seguridad: Solo el creador de la historia puede ver esto
+        if ((string)$story->user_id !== (string)($me->_id ?? $me->id)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $viewedByIds = is_object($story->viewed_by) ? (array)$story->viewed_by : ($story->viewed_by ?? []);
+        $likedByIds = is_object($story->liked_by) ? (array)$story->liked_by : ($story->liked_by ?? []);
+
+        // Obtenemos los datos reales de los usuarios
+        $viewers = User::whereIn('_id', $viewedByIds)->get(['_id', 'username', 'profile_picture', 'display_name']);
+
+        // Añadimos una bandera para saber si, además de verla, le dieron like
+        $viewers->transform(function ($user) use ($likedByIds) {
+            $user->has_liked = in_array((string)$user->_id, $likedByIds);
+            return $user;
+        });
+
+        // Ordenamos: Primero los que dieron like
+        $sortedViewers = $viewers->sortByDesc('has_liked')->values();
+
+        return response()->json([
+            'success' => true,
+            'viewers' => $sortedViewers,
+            'views_count' => count($viewedByIds),
+            'likes_count' => count($likedByIds)
+        ]);
     }
 }

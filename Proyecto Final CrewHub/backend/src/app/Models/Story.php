@@ -11,14 +11,16 @@ class Story extends Model
     protected $fillable = [
         'user_id',
         'media_path',
-        'media_type', // Puede ser 'image' o 'video'
-        'expires_at', // Aquí guardaremos la fecha actual + 8 horas
-        'viewed_by',  // Arreglo con los IDs de quienes ya la vieron
+        'media_type',
+        'expires_at',
+        'viewed_by',
+        'liked_by',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'viewed_by' => 'array',
+        'liked_by' => 'array',
     ];
 
     public function user()

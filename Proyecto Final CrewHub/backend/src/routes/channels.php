@@ -15,3 +15,12 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     \Log::info("Validando canal. User: {$user->_id}, ID buscado: {$id}");
     return (string) $user->_id === (string) $id;
 });
+
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (string) $user->id === (string) $id;
+});
+
+Broadcast::channel('chat.{conversationId}', function ($user, $conversationId) {
+
+    return true; 
+});

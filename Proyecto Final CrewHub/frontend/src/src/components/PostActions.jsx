@@ -2,12 +2,14 @@ import React, { useContext, useRef, useEffect, useState, Fragment } from 'react'
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { usePostInteractions } from '../hooks/usePostInteractions';
+import { fetchAPI } from '../services/api.js';
 
 const PostActions = ({ post, targetCommentId = null }) => {
     const { token, activeUser } = useContext(AuthContext);
     const inputRef = useRef(null);
 
     const [hasScrolledToTarget, setHasScrolledToTarget] = useState(false);
+    const [hasSaved, setHasSaved] = useState(post.has_saved || false);
 
     const {
         hasReacted, reactionsCount, handlePostReact,
@@ -15,12 +17,8 @@ const PostActions = ({ post, targetCommentId = null }) => {
         newComment, setNewComment, submitComment,
         replyingTo, setReplyingTo,
         mentionResults, showMentions, isSearchingMentions, handleInputChange, selectMention,
-        handleCommentReact,
-        commentsCount,
-        hasMore, loadingMore, loadMoreComments
+        handleCommentReact, commentsCount, hasMore, loadingMore, loadMoreComments
     } = usePostInteractions(post, token, targetCommentId);
-
-    const isMyPost = activeUser && post.user && activeUser.username === post.user.username;
 
     const getAvatar = (user) => {
         if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
@@ -33,13 +31,13 @@ const PostActions = ({ post, targetCommentId = null }) => {
         return parts.map((part, index) => {
             if (part.startsWith('@')) {
                 const username = part.substring(1);
-                return <Link key={index} to={`/${username}`} style={{ color: "#0095f6", textDecoration: "underline", fontWeight: "bold" }} onClick={(e) => e.stopPropagation()}>{part}</Link>;
+                return <Link key={index} to={`/${username}`} className="text-[#0095f6] underline font-bold" onClick={(e) => e.stopPropagation()}>{part}</Link>;
             }
             return <span key={index}>{part}</span>;
         });
     };
 
-    const HappyFace = ({ filled, size = 20 }) => (
+    const HappyFace = ({ filled, size = 24 }) => (
         <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "#ffdd00" : "none"} stroke={filled ? "#000" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
@@ -47,6 +45,23 @@ const PostActions = ({ post, targetCommentId = null }) => {
             <line x1="15" y1="9" x2="15.01" y2="9"></line>
         </svg>
     );
+
+    const BookmarkIcon = ({ filled, size = 24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "#fff" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+    );
+
+    const handlePostSave = async () => {
+        const previousState = hasSaved;
+        setHasSaved(!hasSaved);
+        try {
+            const data = await fetchAPI(`/posts/${post._id || post.id}/save`, { method: 'POST' }, token);
+            if (!data.success) setHasSaved(previousState);
+        } catch (error) {
+            setHasSaved(previousState);
+        }
+    };
 
     useEffect(() => {
         if (targetCommentId && comments.length > 0 && !hasScrolledToTarget) {
@@ -60,11 +75,7 @@ const PostActions = ({ post, targetCommentId = null }) => {
                     element.style.backgroundColor = "rgba(0, 149, 246, 0.3)";
                     element.style.transition = "background-color 0.5s ease-out";
                     element.style.borderRadius = "8px";
-
-                    setTimeout(() => {
-                        element.style.backgroundColor = originalBg;
-                    }, 2000);
-
+                    setTimeout(() => { element.style.backgroundColor = originalBg; }, 2000);
                     setHasScrolledToTarget(true);
                     return true;
                 }
@@ -73,10 +84,9 @@ const PostActions = ({ post, targetCommentId = null }) => {
 
             if (!attemptScroll()) {
                 let attempts = 0;
-                const maxAttempts = 20;
                 const pollInterval = setInterval(() => {
                     attempts++;
-                    if (attemptScroll() || attempts >= maxAttempts) clearInterval(pollInterval);
+                    if (attemptScroll() || attempts >= 20) clearInterval(pollInterval);
                 }, 100);
                 return () => clearInterval(pollInterval);
             }
@@ -85,73 +95,91 @@ const PostActions = ({ post, targetCommentId = null }) => {
 
     return (
         <Fragment>
-            <div style={{ padding: "0 15px 15px 15px", textAlign: "left" }}>
+            <div className="w-full">
+                
+                {/* ICONOS PRINCIPALES */}
+                <div className="flex justify-between items-center mb-1">
+                    <div className="flex gap-5 items-center">
+                        
+                        {/* Like */}
+                        <div className="flex items-center gap-2">
+                            <button onClick={handlePostReact} className={`bg-transparent border-none cursor-pointer p-0 transition-transform active:scale-90 ${hasReacted ? 'text-[#ffdd00]' : 'text-white hover:text-gray-300'}`}>
+                                <HappyFace filled={hasReacted} size={26} />
+                            </button>
+                            {reactionsCount > 0 && <span className="text-white text-sm font-bold">{reactionsCount}</span>}
+                        </div>
 
-                <div style={{ display: "flex", gap: "20px", alignItems: "center", marginBottom: "10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <button onClick={handlePostReact} style={{ background: "none", border: "none", color: hasReacted ? "#ffdd00" : "#fff", cursor: "pointer", padding: 0, transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.9)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-                            <HappyFace filled={hasReacted} size={24} />
-                        </button>
-                        {reactionsCount > 0 && <span style={{ color: "gray", fontSize: "0.95rem", fontWeight: "bold" }}>{reactionsCount}</span>}
+                        {/* Comentarios */}
+                        <div className="flex items-center gap-2">
+                            <button onClick={toggleComments} className="bg-transparent border-none text-white cursor-pointer p-0 hover:text-gray-300 transition">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            {commentsCount > 0 && <span className="text-white text-sm font-bold">{commentsCount}</span>}
+                        </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <button onClick={toggleComments} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0 }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    {/* Guardar */}
+                    <div>
+                        <button onClick={handlePostSave} className="bg-transparent border-none text-white cursor-pointer p-0 transition-transform active:scale-90 hover:text-gray-300">
+                            <BookmarkIcon filled={hasSaved} size={26} />
                         </button>
-                        {commentsCount > 0 && <span style={{ color: "gray", fontSize: "0.95rem", fontWeight: "bold" }}>{commentsCount}</span>}
                     </div>
                 </div>
 
+                {/* SECCIÓN DE COMENTARIOS */}
                 {showComments && (
-                    <div style={{ borderTop: "1px solid #262626", paddingTop: "15px" }}>
-
+                    <div className="mt-4 border-t border-[#333] pt-4">
                         {loadingComments ? (
-                            <p style={{ color: "gray", fontSize: "0.85rem", margin: 0, marginBottom: "15px" }}>Cargando comentarios...</p>
+                            <p className="text-gray-500 text-sm m-0 mb-4">Cargando comentarios...</p>
                         ) : comments.length === 0 ? (
-                            <p style={{ color: "gray", fontSize: "0.85rem", margin: 0, marginBottom: "15px" }}>Aún no hay comentarios. ¡Sé el primero!</p>
+                            <p className="text-gray-500 text-sm m-0 mb-4">Aún no hay comentarios. ¡Sé el primero!</p>
                         ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "18px", marginBottom: "20px" }}>
+                            <div className="flex flex-col gap-4 mb-5">
                                 {comments.map(comment => (
-                                    <div key={comment._id || comment.id} id={`comment-${comment._id || comment.id}`} style={{ padding: "8px", transition: "background-color 0.3s ease", borderRadius: "8px" }}>
-                                        
-                                        <div style={{ display: "flex", gap: "12px" }}>
-                                            <Link to={`/${comment.user.username}`}><img src={getAvatar(comment.user)} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }} alt="" /></Link>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: "0.9rem", color: "#e0e0e0", lineHeight: "1.4" }}>
-                                                    <Link to={`/${comment.user.username}`} style={{ color: "#fff", fontWeight: "bold", textDecoration: "none", marginRight: "8px" }}>{comment.user.username}</Link>
+                                    <div key={comment._id || comment.id} id={`comment-${comment._id || comment.id}`} className="p-2 transition-colors duration-300 rounded-lg">
+                                        <div className="flex gap-3">
+                                            <Link to={`/${comment.user.username}`}>
+                                                <img src={getAvatar(comment.user)} className="w-8 h-8 rounded-full object-cover" alt="" />
+                                            </Link>
+                                            <div className="flex-1">
+                                                <div className="text-sm text-gray-300 leading-relaxed">
+                                                    <Link to={`/${comment.user.username}`} className="text-white font-bold no-underline mr-2 hover:underline">{comment.user.username}</Link>
                                                     {renderTextWithMentions(comment.content)}
                                                 </div>
-                                                <div style={{ display: "flex", alignItems: "center", gap: "15px", marginTop: "6px", fontSize: "0.8rem", color: "gray" }}>
-                                                    <button onClick={() => handleCommentReact(comment._id || comment.id)} style={{ background: "none", border: "none", color: comment.has_reacted ? "#ffdd00" : "inherit", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0 }}>
+                                                <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                                                    <button onClick={() => handleCommentReact(comment._id || comment.id)} className={`bg-transparent border-none cursor-pointer flex items-center gap-1 p-0 ${comment.has_reacted ? 'text-[#ffdd00]' : 'text-inherit hover:text-gray-400'}`}>
                                                         <HappyFace filled={comment.has_reacted} size={16} /> {comment.reactions_count > 0 && <span>{comment.reactions_count}</span>}
                                                     </button>
-                                                    <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${comment.user.username} `); inputRef.current.focus(); }} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: "bold", padding: 0 }}>Responder</button>
+                                                    <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${comment.user.username} `); inputRef.current.focus(); }} className="bg-transparent border-none text-inherit cursor-pointer font-bold p-0 hover:text-gray-300">Responder</button>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {comment.replies_preview && comment.replies_preview.length > 0 && (
-                                            <div style={{ marginLeft: "44px", display: "flex", flexDirection: "column", gap: "12px", borderLeft: "1px solid #262626", paddingLeft: "15px", marginTop: "12px" }}>
+                                            <div className="ml-11 flex flex-col gap-3 border-l border-[#262626] pl-4 mt-3">
                                                 {comment.replies_preview.map(reply => (
-                                                    <div key={reply._id || reply.id} id={`comment-${reply._id || reply.id}`} style={{ padding: "6px", transition: "background-color 0.3s ease", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                                                        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                                                            <Link to={`/${reply.user.username}`}><img src={getAvatar(reply.user)} style={{ width: "24px", height: "24px", borderRadius: "50%", objectFit: "cover" }} alt="" /></Link>
-                                                            <div style={{ fontSize: "0.85rem", color: "#e0e0e0", lineHeight: "1.3" }}>
-                                                                <Link to={`/${reply.user.username}`} style={{ color: "#fff", fontWeight: "bold", textDecoration: "none", marginRight: "6px" }}>{reply.user.username}</Link>
+                                                    <div key={reply._id || reply.id} id={`comment-${reply._id || reply.id}`} className="p-1 transition-colors duration-300 rounded-lg flex flex-col gap-1">
+                                                        <div className="flex gap-2 items-start">
+                                                            <Link to={`/${reply.user.username}`}>
+                                                                <img src={getAvatar(reply.user)} className="w-6 h-6 rounded-full object-cover" alt="" />
+                                                            </Link>
+                                                            <div className="text-xs text-gray-300 leading-relaxed">
+                                                                <Link to={`/${reply.user.username}`} className="text-white font-bold no-underline mr-1 hover:underline">{reply.user.username}</Link>
                                                                 {renderTextWithMentions(reply.content)}
                                                             </div>
                                                         </div>
-                                                        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginLeft: "34px", fontSize: "0.75rem", color: "gray" }}>
-                                                            <button onClick={() => handleCommentReact(reply._id || reply.id)} style={{ background: "none", border: "none", color: reply.has_reacted ? "#ffdd00" : "inherit", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0 }}>
+                                                        <div className="flex items-center gap-4 ml-8 text-[11px] text-gray-500">
+                                                            <button onClick={() => handleCommentReact(reply._id || reply.id)} className={`bg-transparent border-none cursor-pointer flex items-center gap-1 p-0 ${reply.has_reacted ? 'text-[#ffdd00]' : 'text-inherit hover:text-gray-400'}`}>
                                                                 <HappyFace filled={reply.has_reacted} size={14} /> {reply.reactions_count > 0 && <span>{reply.reactions_count}</span>}
                                                             </button>
-                                                            <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${reply.user.username} `); inputRef.current.focus(); }} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: "bold", padding: 0 }}>Responder</button>
+                                                            <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${reply.user.username} `); inputRef.current.focus(); }} className="bg-transparent border-none text-inherit cursor-pointer font-bold p-0 hover:text-gray-300">Responder</button>
                                                         </div>
                                                     </div>
                                                 ))}
                                                 {comment.replies_count > (comment.replies_preview?.length || 0) && (
-                                                    <button onClick={() => loadAllReplies(comment._id || comment.id)} style={{ background: "none", border: "none", color: "gray", fontSize: "0.75rem", fontWeight: "bold", cursor: "pointer", textAlign: "left", padding: "5px 0" }}>
+                                                    <button onClick={() => loadAllReplies(comment._id || comment.id)} className="bg-transparent border-none text-gray-500 text-[11px] font-bold cursor-pointer text-left py-1 hover:text-gray-300">
                                                         ——— Mostrar {comment.replies_count - (comment.replies_preview?.length || 0)} respuestas más
                                                     </button>
                                                 )}
@@ -161,57 +189,50 @@ const PostActions = ({ post, targetCommentId = null }) => {
                                 ))}
                                 
                                 {hasMore && (
-                                    <div style={{ textAlign: "center", marginTop: "10px", marginBottom: "10px" }}>
+                                    <div className="text-center my-2">
                                         <button 
                                             onClick={loadMoreComments}
                                             disabled={loadingMore}
-                                            style={{ 
-                                                background: "none", color: "#0095f6", border: "none", 
-                                                cursor: loadingMore ? "default" : "pointer", 
-                                                fontSize: "0.9rem", fontWeight: "bold",
-                                                opacity: loadingMore ? 0.5 : 1, transition: "0.2s"
-                                            }}
+                                            className={`bg-transparent text-[#0095f6] border-none text-sm font-bold transition-opacity ${loadingMore ? 'cursor-default opacity-50' : 'cursor-pointer hover:text-blue-500'}`}
                                         >
                                             {loadingMore ? 'Cargando...' : 'Cargar más comentarios'}
                                         </button>
                                     </div>
                                 )}
-
                             </div>
                         )}
 
-                        <div style={{ position: "relative" }}>
+                        <div className="relative mt-2">
                             {showMentions && (
-                                <div style={{ position: "absolute", bottom: "100%", left: 0, width: "220px", backgroundColor: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", zIndex: 10, overflow: "hidden", marginBottom: "5px", boxShadow: "0 -4px 12px rgba(0,0,0,0.5)" }}>
+                                <div className="absolute bottom-full left-0 w-[220px] bg-[#1a1a1a] border border-[#333] rounded-lg z-10 overflow-hidden mb-1 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
                                     {isSearchingMentions ? (
-                                        <div style={{ padding: "12px", color: "gray", fontSize: "0.85rem", textAlign: "center" }}>Cargando...</div>
+                                        <div className="p-3 text-gray-500 text-sm text-center">Cargando...</div>
                                     ) : mentionResults.length > 0 ? (
                                         mentionResults.map(user => (
-                                            <div key={user._id || user.id} onClick={() => selectMention(user.username, inputRef)} style={{ padding: "10px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #262626" }}>
-                                                <img src={getAvatar(user)} style={{ width: "24px", height: "24px", borderRadius: "50%", objectFit: "cover" }} alt="" />
-                                                <span style={{ fontSize: "0.85rem", color: "#fff" }}>@{user.username}</span>
+                                            <div key={user._id || user.id} onClick={() => selectMention(user.username, inputRef)} className="p-2.5 cursor-pointer flex items-center gap-2 border-b border-[#262626] hover:bg-[#262626] transition">
+                                                <img src={getAvatar(user)} className="w-6 h-6 rounded-full object-cover" alt="" />
+                                                <span className="text-sm text-white">@{user.username}</span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div style={{ padding: "12px", color: "gray", fontSize: "0.85rem", textAlign: "center" }}>No se encontraron usuarios</div>
+                                        <div className="p-3 text-gray-500 text-sm text-center">No se encontraron usuarios</div>
                                     )}
                                 </div>
                             )}
 
                             {replyingTo && (
-                                <div style={{ fontSize: "0.8rem", color: "#0095f6", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(0,149,246,0.1)", padding: "5px 10px", borderRadius: "5px" }}>
+                                <div className="text-xs text-[#0095f6] mb-2 flex justify-between items-center bg-[#0095f6]/10 px-3 py-1.5 rounded-md relative z-10">
                                     <span>Respondiendo...</span>
-                                    <button onClick={() => { setReplyingTo(null); setNewComment(""); }} style={{ background: "none", border: "none", color: "gray", cursor: "pointer", fontSize: "0.9rem", fontWeight: "bold" }}>✕</button>
+                                    <button onClick={() => { setReplyingTo(null); setNewComment(""); }} className="bg-transparent border-none text-gray-500 cursor-pointer text-sm font-bold hover:text-white">✕</button>
                                 </div>
                             )}
 
-                            <form onSubmit={(e) => submitComment(e)} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                                <img src={getAvatar(activeUser)} style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }} alt="" />
-                                <input ref={inputRef} type="text" value={newComment} onChange={handleInputChange} placeholder="Escribe un comentario o @ para mencionar..." style={{ flex: 1, backgroundColor: "transparent", border: "none", color: "#fff", outline: "none", fontSize: "0.9rem" }} />
-                                <button type="submit" disabled={!newComment.trim()} style={{ background: "none", border: "none", color: newComment.trim() ? "#0095f6" : "#262626", fontWeight: "bold", cursor: newComment.trim() ? "pointer" : "default" }}>Publicar</button>
+                            <form onSubmit={(e) => submitComment(e)} className="flex gap-3 items-center">
+                                <img src={getAvatar(activeUser)} className="w-7 h-7 rounded-full object-cover" alt="" />
+                                <input ref={inputRef} type="text" value={newComment} onChange={handleInputChange} placeholder="Escribe un comentario o @ para mencionar..." className="flex-1 bg-transparent border-none text-white outline-none text-sm placeholder-gray-500" />
+                                <button type="submit" disabled={!newComment.trim()} className={`bg-transparent border-none font-bold text-sm ${newComment.trim() ? 'text-[#0095f6] cursor-pointer hover:text-blue-500' : 'text-[#262626] cursor-default'}`}>Publicar</button>
                             </form>
                         </div>
-
                     </div>
                 )}
             </div>

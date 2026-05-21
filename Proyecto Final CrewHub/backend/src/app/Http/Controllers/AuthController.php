@@ -6,53 +6,54 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Mail\VerificationCodeMail;
+use Illuminate\Support\Facades\Mail; // 🔥 Importante para enviar correos
 use Exception;
 
 class AuthController extends Controller
 {
     /**
-     * Registro de usuarios (Saneado y Validado)
+     * Registro de usuarios (Saneado, Validado y con Verificación de Correo)
      */
     public function register(Request $request)
     {
         try {
-            // SANEAMIENTO PREVIO: Convertimos el username a minúsculas antes de validar.
-            // Así evitamos que alguien se registre como "Login" o "CHAT" y rompa las rutas.
+            // SANEAMIENTO PREVIO
             if ($request->has('username')) {
                 $request->merge(['username' => strtolower($request->username)]);
             }
 
-            // 1. Validación de datos (El Muro de Seguridad)
+            // 1. Validación de datos
             $validatedData = $request->validate([
                 'username' => [
-                    'required',
-                    'string',
-                    'min:3',
-                    'max:20',
-                    'unique:users,username',
-                    'regex:/^[a-z0-9_]+$/', // Solo letras minúsculas, números y guiones bajos permitidos
-                    'not_in:login,register,chat,home,api,admin,perfil,config,index' // Palabras reservadas (Rutas de React)
+                    'required', 'string', 'min:3', 'max:20', 'unique:users,username',
+                    'regex:/^[a-z0-9_]+$/', 
+                    'not_in:login,register,chat,home,api,admin,perfil,config,index'
                 ],
                 'email' => 'required|string|email|max:100|unique:users,email',
                 'password' => 'required|string|min:8',
             ]);
 
-            // 2. Creación del documento en MongoDB (Operación Atómica)
+            // 2. Generamos el código de 6 dígitos
+            $verificationCode = rand(100000, 999999);
+
+            // 3. Creación del documento en MongoDB
             $user = User::create([
                 'username' => $validatedData['username'],
                 'email' => $validatedData['email'],
-                'password_hash' => Hash::make($validatedData['password']), // Contraseña hasheada
+                'password' => Hash::make($validatedData['password']),
                 'fecha_registro' => now(),
+                'verification_code' => (string) $verificationCode // 🔥 Guardamos el código
             ]);
 
-            // 3. Generación de Token REST (Sanctum)
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // 4. Enviamos el correo REAL usando Resend
+            Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, 'registro'));
 
+            // OJO: Ya no generamos el token aquí. El usuario debe verificar su correo primero.
             return response()->json([
                 'success' => true,
-                'message' => 'Usuario registrado exitosamente',
-                'data' => $user,
-                'token' => $token
+                'message' => 'Usuario registrado exitosamente. Por favor verifica tu correo.',
+                'email' => $user->email // Devolvemos el correo para que React sepa a dónde se envió
             ], 201);
 
         } catch (ValidationException $e) {
@@ -71,48 +72,160 @@ class AuthController extends Controller
     }
 
     /**
-     * Login de usuarios
+     * Verificar el correo electrónico con el código
+     */
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        // Validamos si el usuario existe y si el código coincide
+        if (!$user || $user->verification_code !== $request->code) {
+            return response()->json(['success' => false, 'message' => 'Código incorrecto o usuario no encontrado.'], 400);
+        }
+
+        // Marcamos como verificado y borramos el código para que no se pueda reusar
+        $user->update([
+            'email_verified_at' => now(),
+            'verification_code' => null
+        ]);
+
+        // Ahora sí, le damos acceso
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user,
+            'message' => 'Cuenta verificada correctamente.'
+        ]);
+    }
+
+    /**
+     * Login de usuarios (Con escudo de verificación)
      */
     public function login(Request $request)
     {
-        // 1. Validamos que nos envíen un campo genérico "login" y la contraseña
         $request->validate([
             'login' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Saneamiento en el login: si intentan entrar con username, lo pasamos a minúsculas
         $loginInput = $request->login;
         if (!filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
             $loginInput = strtolower($loginInput);
         }
 
-        // 2. ¿Es un correo o un usuario? PHP lo detecta automáticamente
         $loginType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
-        // 3. Buscamos al usuario en MongoDB usando el campo detectado y saneado
         $user = User::where($loginType, $loginInput)->first();
 
-        // 4. Verificamos que exista y la contraseña sea correcta
-        if (!$user || !Hash::check($request->password, $user->password_hash)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Las credenciales proporcionadas son incorrectas.'
             ], 401);
         }
 
-        // 5. CREACIÓN DEL TOKEN REFINADO
-        $token = $user->createToken(
-            'auth_token',
-            ['*'],
-            now()->addDays(7)
-        )->plainTextToken;
+        // Comprobamos si ha verificado su correo
+        if (is_null($user->email_verified_at)) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Debes verificar tu correo electrónico antes de iniciar sesión.', 
+                'needs_verification' => true,
+                'email' => $user->email
+            ], 403);
+        }
+
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
         return response()->json([
             'success' => true,
             'user' => $user,
             'token' => $token,
             'message' => 'Inicio de sesión exitoso'
+        ]);
+    }
+
+    /**
+     * Solicitar recuperación de contraseña
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Falso positivo por seguridad (para que no averigüen qué correos existen)
+            return response()->json(['success' => true]);
+        }
+
+        $resetCode = rand(100000, 999999);
+        $user->update(['reset_password_code' => (string) $resetCode]);
+
+        // Enviamos el correo REAL usando Resend
+        Mail::to($user->email)->send(new VerificationCodeMail($resetCode, 'recuperacion'));
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Establecer la nueva contraseña
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string',
+            'new_password' => 'required|string|min:8'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || $user->reset_password_code !== $request->code) {
+            return response()->json(['success' => false, 'message' => 'Código incorrecto o expirado.'], 400);
+        }
+
+        // Actualizamos la contraseña y borramos el código
+        $user->update([
+            'password' => Hash::make($request->new_password),
+            'reset_password_code' => null
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.']);
+    }
+
+    /**
+     * Reenviar el código de verificación
+     */
+    public function resendVerificationCode(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
+        }
+
+        if (!is_null($user->email_verified_at)) {
+            return response()->json(['success' => false, 'message' => 'Este correo ya está verificado.'], 400);
+        }
+
+        // Generamos un código nuevo
+        $newCode = rand(100000, 999999);
+        $user->update(['verification_code' => (string) $newCode]);
+
+        // Lo enviamos (Recuerda: solo llegará si el correo es tu matbenesc@alu.edu.gva.es)
+        Mail::to($user->email)->send(new \App\Mail\VerificationCodeMail($newCode, 'registro'));
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Nuevo código enviado. Revisa tu bandeja de entrada.'
         ]);
     }
 }

@@ -3,12 +3,21 @@ import { fetchAPI } from '../services/api.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
-export const usePostForm = (token, onSuccessCallback) => {
-    const [description, setDescription] = useState("");
+export const useProfileForm = (token, initialData = {}) => {
+    const [displayName, setDisplayName] = useState(initialData.display_name || "");
+    const [dateOfBirth, setDateOfBirth] = useState(initialData.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
     const [imageFile, setImageFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
+    const [isPrivate, setIsPrivate] = useState(initialData.is_private || false);
+    
+    const defaultAvatar = initialData.profile_picture 
+        ? (initialData.profile_picture.startsWith('http') ? initialData.profile_picture : `http://127.0.0.1:8000${initialData.profile_picture}`)
+        : `https://ui-avatars.com/api/?name=${initialData.username || 'U'}&background=262626&color=fff&bold=true&size=150`;
+
+    const [previewUrl, setPreviewUrl] = useState(defaultAvatar);
     const [loading, setLoading] = useState(false);
     
+    const [cropImageSrc, setCropImageSrc] = useState(null);
+
     const { showToast } = useToast();
 
     const handleImageChange = (e) => {
@@ -19,51 +28,55 @@ export const usePostForm = (token, onSuccessCallback) => {
             showToast("Solo se permiten imágenes (JPG, PNG, GIF).", "error");
             return;
         }
-
-        setImageFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-    };
-
-    const submitPost = async (e) => {
-        e.preventDefault();
-        if (!imageFile) {
-            showToast("Debes seleccionar una imagen para publicar.", "error");
+        if (file.size > 2 * 1024 * 1024) {
+            showToast("La imagen es demasiado pesada. Máximo 2MB.", "error");
             return;
         }
 
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            setCropImageSrc(reader.result);
+        };
+    };
+
+    const handleCropComplete = (croppedFile) => {
+        setImageFile(croppedFile);
+        setPreviewUrl(URL.createObjectURL(croppedFile));
+        setCropImageSrc(null);
+    };
+
+    const submitProfile = async (onSuccessCallback) => {
         setLoading(true);
+
         const formData = new FormData();
-        formData.append('image', imageFile);
-        if (description) formData.append('description', description);
+        if (displayName) formData.append('display_name', displayName);
+        if (dateOfBirth) formData.append('date_of_birth', dateOfBirth);
+        if (imageFile) formData.append('profile_picture', imageFile);
+        formData.append('is_private', isPrivate ? 'true' : 'false');
 
         try {
-            const data = await fetchAPI('/posts', { method: 'POST', body: formData }, token);
+            const data = await fetchAPI('/profile/update', { method: 'POST', body: formData }, token);
 
             if (data.success) {
-                setDescription("");
-                setImageFile(null);
-                setPreviewUrl(null);
-                showToast("¡Publicación subida con éxito!", "success");
-                if (onSuccessCallback) onSuccessCallback(data.post);
+                showToast('Perfil actualizado correctamente.', 'success');
+                if (onSuccessCallback) onSuccessCallback(data.user);
             } else {
-                showToast(data.message || ERRORS.DEFAULT, "error");
+                showToast(data.message || 'Error al actualizar el perfil.', 'error');
             }
         } catch (err) {
-            showToast(ERRORS.SERVER_500, "error");
+            showToast(ERRORS.SERVER_500, 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const cancelPost = () => {
-        setDescription("");
-        setImageFile(null);
-        setPreviewUrl(null);
-    };
-
-    return { 
-        description, setDescription, 
-        previewUrl, handleImageChange, 
-        loading, submitPost, cancelPost 
+    return {
+        displayName, setDisplayName,
+        dateOfBirth, setDateOfBirth,
+        previewUrl, handleImageChange,
+        isPrivate, setIsPrivate,
+        loading, submitProfile,
+        cropImageSrc, setCropImageSrc, handleCropComplete
     };
 };

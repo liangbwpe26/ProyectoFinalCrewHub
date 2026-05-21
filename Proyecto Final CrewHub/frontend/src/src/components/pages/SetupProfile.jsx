@@ -1,9 +1,7 @@
-import React, { Fragment, useContext } from "react";
+import React, { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { useProfileForm } from "../../hooks/useProfileForm.js";
-import "./Register.css"; 
-import logoImg from "../../assets/logo.png";
 
 const SetupProfile = () => {
     const { token, activeUser, setActiveUser } = useContext(AuthContext); 
@@ -23,44 +21,33 @@ const SetupProfile = () => {
     };
 
     return (
-        <Fragment>
-            <div className="register-page">
-                <div className="register-split">
-                    <div className="register-left">
-                        <div className="register-brand-text">CREW HUB</div>
-                        <img src={logoImg} alt="Crew Hub Logo" className="register-brand-logo" />
+        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+            <div className="w-full max-w-[400px] bg-[#121212] border border-[#262626] rounded-2xl p-8 text-center shadow-2xl">
+                <h2 className="text-white text-2xl font-bold mb-2">Configura tu Perfil</h2>
+                <p className="text-gray-400 text-sm mb-8">Haz que otros tripulantes te reconozcan.</p>
+
+                <form onSubmit={handleSetup} className="flex flex-col gap-5">
+                    <div className="flex flex-col items-center gap-3">
+                        <img src={previewUrl} alt="Previsualización" className="w-24 h-24 rounded-full object-cover border border-[#333]" />
+                        <label className="cursor-pointer text-[#0095f6] font-bold text-xs hover:text-blue-400">
+                            Subir foto (Opcional)
+                            <input type="file" accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} className="hidden" />
+                        </label>
                     </div>
 
-                    <div className="register-right">
-                        <div className="register-card">
-                            <div className="register-form-title">Configura tu Perfil</div>
-                            <p style={{ color: "gray", textAlign: "center", marginBottom: "20px", fontSize: "0.9rem" }}>Haz que otros tripulantes te reconozcan fácilmente.</p>
+                    <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="displayName" type="text" placeholder="Tu nombre real (Opcional)" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={50} />
+                    <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm [color-scheme:dark]" name="dateOfBirth" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
 
-                            <form onSubmit={handleSetup} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                                    <img src={previewUrl} alt="Previsualización" style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", border: "2px solid #363636" }} />
-                                    <label style={{ cursor: "pointer", color: "#0095f6", fontWeight: "bold", fontSize: "0.9rem" }}>
-                                        Subir foto (Opcional)
-                                        <input type="file" accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} style={{ display: "none" }} />
-                                    </label>
-                                </div>
+                    <button type="submit" disabled={loading} className="w-full bg-[#0095f6] text-white py-3 rounded-full font-bold cursor-pointer hover:bg-blue-600 transition-colors disabled:bg-[#262626]">
+                        {loading ? "Guardando..." : "Guardar y Continuar"}
+                    </button>
+                </form>
 
-                                <input className="register-input" name="displayName" type="text" placeholder="Tu nombre real (Opcional)" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={50} />
-                                <input className="register-input" name="dateOfBirth" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} style={{ colorScheme: "dark" }} />
-
-                                <button type="submit" className="register-btn" disabled={loading}>
-                                    {loading ? "Guardando..." : "Guardar y Continuar"}
-                                </button>
-                            </form>
-
-                            <div className="register-login-text" style={{ marginTop: "15px" }}>
-                                <span className="register-login-link" onClick={() => navigate("/")} style={{ color: "gray" }}>Omitir este paso por ahora</span>
-                            </div>
-                        </div>
-                    </div>
+                <div className="mt-6 text-gray-500 text-sm cursor-pointer hover:text-gray-300" onClick={() => navigate("/")}>
+                    Omitir este paso por ahora
                 </div>
             </div>
-        </Fragment>
+        </div>
     );
 };
 

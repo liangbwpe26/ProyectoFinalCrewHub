@@ -10,10 +10,16 @@ class Message extends Model
     protected $collection = 'messages';
 
     protected $fillable = [
-        'conversation_id', // A qué chat pertenece
-        'sender_id',       // Quién lo envió
-        'content',         // El texto del mensaje
-        'read_by',         // Arreglo de IDs para saber quién ya lo vio (tick azul)
+        'conversation_id',
+        'sender_id',
+        'content',
+        'is_read',
+        'is_edited',
+        'read_by',
+        'deleted_by',
+        'story_media_path',
+        'story_media_type',
+        'image_path',
     ];
 
     protected $casts = [

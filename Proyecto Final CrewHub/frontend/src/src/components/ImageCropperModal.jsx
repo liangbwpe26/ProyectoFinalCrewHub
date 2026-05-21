@@ -31,17 +31,17 @@ const ImageCropperModal = ({ imageSrc, aspectRatio, onCropComplete, onCancel }) 
 
     return (
         <Fragment>
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', flexDirection: 'column' }}>
+            <div className="fixed inset-0 bg-black/95 z-[10000] flex flex-col">
                 
-                <div style={{ padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', backgroundColor: '#111' }}>
-                    <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}>Cancelar</button>
-                    <strong style={{ color: '#fff' }}>Ajustar Imagen</strong>
-                    <button onClick={handleConfirm} disabled={isProcessing} style={{ background: 'none', border: 'none', color: '#0095f6', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                <div className="p-4 flex justify-between items-center border-b border-[#333] bg-[#111]">
+                    <button onClick={onCancel} className="bg-transparent border-none text-white text-sm cursor-pointer font-bold hover:text-gray-300">Cancelar</button>
+                    <strong className="text-white text-sm">Ajustar Imagen</strong>
+                    <button onClick={handleConfirm} disabled={isProcessing} className="bg-transparent border-none text-[#0095f6] text-sm cursor-pointer font-bold hover:text-blue-400">
                         {isProcessing ? 'Procesando...' : 'Aplicar'}
                     </button>
                 </div>
 
-                <div style={{ position: 'relative', flex: 1, backgroundColor: '#000' }}>
+                <div className="relative flex-1 bg-black">
                     <Cropper
                         image={imageSrc}
                         crop={crop}
@@ -57,12 +57,12 @@ const ImageCropperModal = ({ imageSrc, aspectRatio, onCropComplete, onCancel }) 
                     />
                 </div>
 
-                <div style={{ padding: '20px', backgroundColor: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="p-6 bg-[#111] flex justify-center items-center">
                     <input 
                         type="range" 
                         value={zoom} min={1} max={3} step={0.1} 
                         onChange={(e) => setZoom(e.target.value)} 
-                        style={{ width: '60%' }} 
+                        className="w-[60%] cursor-pointer accent-[#0095f6]" 
                     />
                 </div>
             </div>

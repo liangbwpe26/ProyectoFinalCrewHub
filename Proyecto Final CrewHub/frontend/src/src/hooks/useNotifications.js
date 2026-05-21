@@ -113,6 +113,16 @@ const useNotifications = (token, userId) => {
     useEffect(() => {
         if (!token || !userId) return;
 
+        if (echo.connector && echo.connector.pusher) {
+            echo.connector.pusher.config.authEndpoint = 'http://127.0.0.1:8000/api/broadcasting/auth';
+            echo.connector.pusher.config.auth = {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json'
+                }
+            };
+        }
+
         const channelName = `App.Models.User.${userId}`;
         const channel = echo.private(channelName);
 

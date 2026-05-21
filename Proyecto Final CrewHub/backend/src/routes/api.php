@@ -14,8 +14,13 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StoryController;
 
 // Rutas Públicas
-Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/resend-verification', [AuthController::class, 'resendVerificationCode']);
+
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 // RUTAS PROTEGIDAS (Requieren Token de Sesión)
@@ -25,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return collect($request->user())->except(['password_hash']);
     });
+
+    Route::put('/user/interests', [UserController::class, 'updateInterests']);
+    Route::get('/interests', [UserController::class, 'getAvailableInterests']);
 
     // Rutas del Sistema de Seguidores
     Route::post('/follow/{id}', [FollowController::class, 'follow']);
@@ -44,8 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/requests/reject/{followerId}', [FollowController::class, 'rejectRequest']);
 
     // Rutas para Publicaciones (Posts)
+    Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/feed', [PostController::class, 'index']);
+    
 
     // Reacciones y Comentarios en Posts
     Route::post('/posts/{postId}/react', [PostInteractionController::class, 'toggleReaction']);
@@ -74,6 +84,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations', [ChatController::class, 'getConversations']); // Lista lateral de chats
     Route::get('/messages/{username}', [ChatController::class, 'getMessages']); // Cargar un chat específico
     Route::post('/messages/{username}', [ChatController::class, 'sendMessage']); // Enviar mensaje
+    Route::post('/posts/{postId}/save', [PostInteractionController::class, 'toggleSave']);
+    Route::get('/saved-posts', [PostInteractionController::class, 'getSavedPosts']);
 
     // Rutas para Editar y Eliminar mensajes
     Route::put('/messages/{messageId}', [ChatController::class, 'editMessage']); // Editar mensaje (usa PUT)
@@ -91,4 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stories', [StoryController::class, 'getFeedStories']);
     Route::post('/stories/{id}/view', [StoryController::class, 'markAsViewed']);
     Route::delete('/stories/{id}', [StoryController::class, 'destroy']);
+    Route::post('/stories/{id}/like', [StoryController::class, 'toggleLike']);
+    Route::get('/stories/{id}/stats', [StoryController::class, 'getStats']);
+    Route::post('/chat/story-reply/{userId}', [ChatController::class, 'replyToStory']);
 });

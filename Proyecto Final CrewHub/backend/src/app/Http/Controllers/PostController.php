@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Follow;
 use App\Models\Reaction;
 use App\Models\Comment;
+use App\Models\SavedPost;
 
 class PostController extends Controller
 {
@@ -42,48 +43,59 @@ class PostController extends Controller
 
     // 2. OBTENER EL MURO (FEED)
     public function index(Request $request)
-    {
-        $me = $request->user();
+{
+    $me = $request->user();
+    $myIdStr = (string) ($me->_id ?? $me->id);
+    
+    // Obtenemos el filtro desde React (por defecto será 'all')
+    $filter = $request->query('filter', 'all');
+    
+    // Paginación
+    $offset = (int) $request->query('offset', 0);
+    $limit = 10;
 
-        // A. Obtener IDs de las personas que sigo (y me aceptaron)
-        $followingIds = Follow::where('follower_id', $me->_id)
-            ->where(function($query) {
-                $query->where('status', 'accepted')->orWhereNull('status');
-            })->pluck('followed_id')->toArray();
+    // Iniciamos la consulta base
+    $postsQuery = Post::with('user')->orderBy('created_at', 'desc');
 
-        // B. Sumar mi propio ID a la lista (quiero ver mis posts en el muro)
-        $followingIds[] = $me->_id;
+    // APLICAMOS LOS FILTROS SEGÚN LA PESTAÑA
+    if ($filter === 'interests' && !empty($me->interests)) {
+        // Pestaña "Para ti": Busca posts que tengan una categoría/slug que coincida con los intereses del usuario
+        // IMPORTANTE: Tus posts en MongoDB deben tener un campo 'category' (o similar) que guarde el interés.
+        $postsQuery->whereIn('category', $me->interests);
+    } 
+    elseif ($filter === 'following') {
+        // Pestaña "Siguiendo": Tu lógica original intacta
+        $followingIds = Follow::where('follower_id', $myIdStr)
+            ->where('status', 'accepted')
+            ->pluck('followed_id')
+            ->toArray();
+            
+        $followingIds[] = $myIdStr;
 
-        // C. Obtener IDs de todos los usuarios públicos
-        $publicUserIds = User::where(function($query) {
-            $query->where('is_private', false)->orWhereNull('is_private');
-        })->pluck('_id')->toArray();
-
-        // Mezclamos ambas listas y quitamos duplicados
-        $allowedIds = array_values(array_unique(array_merge($followingIds, $publicUserIds)));
-
-        // D. Buscar los posts, ordenarlos por fecha y traer los datos del creador
-        $posts = Post::with('user')
-            ->whereIn('user_id', $allowedIds)
-            ->orderBy('created_at', 'desc')
-            ->take(50)
-            ->get();
-
-        // NUEVO: Añadimos las estadísticas de reacciones a cada post
-        $posts->transform(function($post) use ($me) {
-            $post->reactions_count = Reaction::where('post_id', $post->_id)->count();
-            $post->comments_count = Comment::where('post_id', $post->_id)->count();
-            $post->has_reacted = Reaction::where('post_id', $post->_id)
-                                         ->where('user_id', $me->_id)
-                                         ->exists();
-            return $post;
-        });
-
-        return response()->json([
-            'success' => true,
-            'posts' => $posts
-        ]);
+        $postsQuery->whereIn('user_id', $followingIds);
     }
+    // Si $filter === 'all', no aplicamos whereIn, así que traerá TODO el contenido global (Explorar).
+
+    // Ejecutamos conteo y paginación
+    $totalPosts = $postsQuery->count();
+    $posts = $postsQuery->skip($offset)->take($limit)->get();
+
+    // Transformamos los posts con tu lógica intacta
+    $posts->transform(function ($post) use ($myIdStr) {
+        $postId = (string) ($post->_id ?? $post->id);
+        $post->reactions_count = Reaction::where('post_id', $postId)->count();
+        $post->comments_count = Comment::where('post_id', $postId)->count();
+        $post->has_reacted = Reaction::where('post_id', $postId)->where('user_id', $myIdStr)->exists();
+        $post->has_saved = SavedPost::where('post_id', $postId)->where('user_id', $myIdStr)->exists();
+        return $post;
+    });
+
+    return response()->json([
+        'success' => true,
+        'posts' => $posts,
+        'hasMore' => ($offset + $limit) < $totalPosts
+    ]);
+}
 
     // Obtener un solo post por su ID
     public function show(Request $request, $id)
@@ -97,7 +109,8 @@ class PostController extends Controller
 
         $post->reactions_count = Reaction::where('post_id', $post->_id)->count();
         $post->has_reacted = $me ? Reaction::where('post_id', $post->_id)->where('user_id', $me->_id)->exists() : false;
-        
+        $post->has_saved = $me ? SavedPost::where('post_id', $post->_id)->where('user_id', $me->_id)->exists() : false;
+
         // NUEVO: Contamos TODOS los comentarios (padres e hijos) de este post
         $post->comments_count = Comment::where('post_id', $post->_id)->count();
 
