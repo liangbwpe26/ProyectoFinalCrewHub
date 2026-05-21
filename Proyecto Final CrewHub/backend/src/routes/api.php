@@ -35,8 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/interests', [UserController::class, 'getAvailableInterests']);
 
     // Rutas del Sistema de Seguidores
-    Route::post('/follow/{id}', [FollowController::class, 'follow']);
-    Route::delete('/unfollow/{id}', [FollowController::class, 'unfollow']);
+    Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
+    Route::delete('/users/{id}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('/mutuals', [FollowController::class, 'getMutuals']);
     Route::get('/users/search', [UserController::class, 'search']);
     Route::post('/chat/start/{friendId}', [ChatController::class, 'startConversation']);
@@ -55,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/feed', [PostController::class, 'index']);
-    
+
 
     // Reacciones y Comentarios en Posts
     Route::post('/posts/{postId}/react', [PostInteractionController::class, 'toggleReaction']);
