@@ -232,7 +232,7 @@ const Profile = () => {
 
                                             {!isSelf && (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); toggleModalUserFollow(user._id || user.id, status); }}
+                                                    onClick={(e) => { e.stopPropagation(); toggleModalUserFollow(user.user_id || user._id || user.id, status); }}
                                                     className={`px-5 py-2 rounded-full font-bold text-xs transition-colors shrink-0 ${status === 'none' ? 'bg-[#0095f6] hover:bg-blue-600 text-white border-none' : 'bg-[#262626] hover:bg-[#333] text-white border border-[#363636]'
                                                         }`}
                                                 >

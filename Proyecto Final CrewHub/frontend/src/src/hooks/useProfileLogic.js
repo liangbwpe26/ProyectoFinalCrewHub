@@ -50,7 +50,11 @@ export const useProfileLogic = (username, token) => {
     const toggleFollow = async () => {
         if (!profile) return;
         const currentStatus = profile.follow_status;
-        const targetId = profile.id || profile._id;
+        
+        const targetId = profile.user_id || profile._id || profile.id;
+        
+        console.log("DEBUG BOTÓN PERFIL -> ID enviado:", targetId, "| Objeto completo:", profile);
+
         const endpoint = (currentStatus === 'none') ? `/follow/${targetId}` : `/unfollow/${targetId}`;
         const method = (currentStatus === 'none') ? 'POST' : 'DELETE';
 
@@ -118,6 +122,8 @@ export const useProfileLogic = (username, token) => {
 
     const toggleModalUserFollow = async (targetUserId, currentStatus) => {
         try {
+            console.log("DEBUG MODAL SEGUIDORES -> ID enviado:", targetUserId);
+
             const isUnfollowing = currentStatus === 'accepted' || currentStatus === 'pending';
             const endpoint = isUnfollowing ? `/unfollow/${targetUserId}` : `/follow/${targetUserId}`;
             const httpMethod = isUnfollowing ? 'DELETE' : 'POST';
@@ -126,7 +132,7 @@ export const useProfileLogic = (username, token) => {
 
             if (data.success) {
                 setFollowUsers(prev => prev.map(user => {
-                    const id = user._id || user.id;
+                    const id = user.user_id || user._id || user.id;
                     if (id === targetUserId) {
                         return { ...user, follow_status: isUnfollowing ? 'none' : data.status };
                     }
