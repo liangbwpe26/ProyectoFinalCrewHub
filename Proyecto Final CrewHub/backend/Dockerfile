@@ -1,25 +1,25 @@
-FROM php:8.4-fpm-alpine
-# Instalamos extensiones necesarias
-RUN apk add --no-cache \
-    autoconf g++ make openssl-dev icu-dev zlib-dev libzip-dev linux-headers
+FROM php:8.3-fpm
 
-RUN pecl install mongodb \
-    && docker-php-ext-enable mongodb \
-    && docker-php-ext-install pdo_mysql zip intl
+# Descargamos el instalador oficial de extensiones de PHP para Docker
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-RUN docker-php-ext-install pdo pdo_mysql pcntl
+# Instalamos las extensiones sin tener que lidiar con dependencias de Alpine/Debian
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions mongodb pdo_mysql zip intl pcntl
 
-# Composer y Caddy
+# Copiamos Composer y Caddy
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --from=caddy:latest /usr/bin/caddy /usr/bin/caddy
 
 WORKDIR /var/www/html
 
-# Copiamos solo el contenido de nuestra carpeta src
+# Copiamos el contenido
 COPY src/ ./
 
 RUN chown -R www-data:www-data storage bootstrap/cache
-RUN php artisan storage:link
+
+# Evitamos que la compilación se detenga si no hay conexión a BD en este paso
+RUN php artisan storage:link || true
 
 EXPOSE 80
 
