@@ -11,6 +11,8 @@ services:
       - ./backend/Caddyfile:/etc/caddy/Caddyfile
     networks:
       - app_network
+    depends_on:
+      - mongodb
 
   frontend:
     build: ./frontend
@@ -34,7 +36,7 @@ services:
     networks:
       - app_network
     profiles:
-      - local # Este contenedor SOLO arrancará si activamos el perfil "local"
+      - local
 
 networks:
   app_network:
