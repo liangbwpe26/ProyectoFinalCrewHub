@@ -53,8 +53,6 @@ export const useProfileLogic = (username, token) => {
         
         const targetId = profile.user_id || profile._id || profile.id;
         
-        console.log("DEBUG BOTÓN PERFIL -> ID enviado:", targetId, "| Objeto completo:", profile);
-
         const endpoint = (currentStatus === 'none') ? `/follow/${targetId}` : `/unfollow/${targetId}`;
         const method = (currentStatus === 'none') ? 'POST' : 'DELETE';
 
