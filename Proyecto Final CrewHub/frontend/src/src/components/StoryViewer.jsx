@@ -10,9 +10,7 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
     const [storyIndex, setStoryIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     
-    // Pausas del sistema (al mantener pulsado o abrir modales)
     const [isPaused, setIsPaused] = useState(false);
-    // Pausa manual (botón de pausa o al escribir un mensaje)
     const [isManuallyPaused, setIsManuallyPaused] = useState(false);
     
     const [replyText, setReplyText] = useState("");
@@ -25,21 +23,21 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
     const videoRef = useRef(null);
     const STORY_DURATION = 5000;
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     const currentUserGroup = feed[userIndex];
     const currentStory = currentUserGroup?.stories[storyIndex];
     const isMyStory = activeUser && (currentUserGroup?.user?.username === activeUser.username);
 
-    // Reinicios al cambiar de historia
     useEffect(() => {
         if (currentStory && !currentStory.has_viewed && !isMyStory) {
             onStoryViewed(currentStory._id || currentStory.id);
         }
         setProgress(0);
         setShowStatsPanel(false); 
-        setIsManuallyPaused(false); // Quitamos la pausa al pasar a la siguiente
+        setIsManuallyPaused(false); 
     }, [userIndex, storyIndex, currentStory, onStoryViewed, isMyStory]);
 
-    // Progreso automático
     useEffect(() => {
         if (isPaused || isManuallyPaused || isDeleteModalOpen || showStatsPanel || currentStory?.media_type === 'video') return;
         const interval = setInterval(() => {
@@ -48,7 +46,6 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
         return () => clearInterval(interval);
     }, [userIndex, storyIndex, isPaused, isManuallyPaused, isDeleteModalOpen, showStatsPanel, currentStory]);
 
-    // Control real del reproductor de video
     useEffect(() => {
         if (currentStory?.media_type === 'video' && videoRef.current) {
             if (isPaused || isManuallyPaused || isDeleteModalOpen || showStatsPanel) {
@@ -114,7 +111,7 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
 
     if (!currentStory) return null;
 
-    const mediaUrl = currentStory.media_path.startsWith('http') ? currentStory.media_path : `http://127.0.0.1:8000${currentStory.media_path}`;
+    const mediaUrl = currentStory.media_path.startsWith('http') ? currentStory.media_path : `${BACKEND_URL}${currentStory.media_path}`;
 
     return createPortal(
         <Fragment>
@@ -128,7 +125,6 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent z-10 pointer-events-none"></div>
                     <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
 
-                    {/* Barras de Progreso */}
                     <div className="absolute top-3 left-3 right-3 flex gap-1 z-20">
                         {currentUserGroup.stories.map((s, idx) => (
                             <div key={idx} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
@@ -137,15 +133,13 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                         ))}
                     </div>
 
-                    {/* Cabecera */}
                     <div className="absolute top-8 left-4 right-4 flex justify-between items-center z-20">
                         <div className="flex items-center gap-3">
-                            <img src={currentUserGroup.user.profile_picture ? (currentUserGroup.user.profile_picture.startsWith('http') ? currentUserGroup.user.profile_picture : `http://127.0.0.1:8000${currentUserGroup.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${currentUserGroup.user.username}&background=262626&color=fff`} className="w-10 h-10 rounded-full object-cover border border-[#333]" alt="avatar" />
+                            <img src={currentUserGroup.user.profile_picture ? (currentUserGroup.user.profile_picture.startsWith('http') ? currentUserGroup.user.profile_picture : `${BACKEND_URL}${currentUserGroup.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${currentUserGroup.user.username}&background=262626&color=fff`} className="w-10 h-10 rounded-full object-cover border border-[#333]" alt="avatar" />
                             <strong className="text-white text-sm drop-shadow-md">{currentUserGroup.user.username}</strong>
                         </div>
                         
                         <div className="flex items-center gap-4">
-                            {/* Botón de Pausar / Reanudar */}
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setIsManuallyPaused(!isManuallyPaused); }} 
                                 className="bg-transparent border-none text-white cursor-pointer flex items-center drop-shadow-md hover:scale-110 transition-transform"
@@ -181,7 +175,6 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                         </div>
                     )}
 
-                    {/* Responder a Historia con anulación de eventos de clic del contenedor */}
                     {!isMyStory && onReply && (
                         <div 
                             className="absolute bottom-6 left-4 right-[70px] z-30 flex items-center gap-3" 
@@ -247,7 +240,7 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                                     statsData.viewers.map(user => (
                                         <div key={user._id || user.id} className="flex items-center justify-between px-6 py-3 hover:bg-[#262626] transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <img src={user.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user.username}&background=262626&color=fff`} className="w-10 h-10 rounded-full object-cover border border-[#333]" alt="avatar" />
+                                                <img src={user.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user.username}&background=262626&color=fff`} className="w-10 h-10 rounded-full object-cover border border-[#333]" alt="avatar" />
                                                 <strong className="text-white text-sm">{user.username}</strong>
                                             </div>
                                             {user.has_liked && (

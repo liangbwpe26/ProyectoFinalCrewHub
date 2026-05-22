@@ -23,10 +23,13 @@ const LeftSidebar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Variable de entorno dinámica
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     const getAvatar = (user) => {
         if (user && user.profile_picture) {
             if (user.profile_picture.startsWith('http')) return user.profile_picture;
-            return `http://127.0.0.1:8000${user.profile_picture}`;
+            return `${BACKEND_URL}${user.profile_picture}`;
         }
         const name = user && user.username ? user.username : 'U';
         return `https://ui-avatars.com/api/?name=${name}&background=262626&color=fff&bold=true`;

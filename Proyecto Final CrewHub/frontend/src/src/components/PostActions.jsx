@@ -20,8 +20,10 @@ const PostActions = ({ post, targetCommentId = null }) => {
         handleCommentReact, commentsCount, hasMore, loadingMore, loadMoreComments
     } = usePostInteractions(post, token, targetCommentId);
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     const getAvatar = (user) => {
-        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
     };
 
@@ -96,12 +98,8 @@ const PostActions = ({ post, targetCommentId = null }) => {
     return (
         <Fragment>
             <div className="w-full">
-                
-                {/* ICONOS PRINCIPALES */}
                 <div className="flex justify-between items-center mb-1">
                     <div className="flex gap-5 items-center">
-                        
-                        {/* Like */}
                         <div className="flex items-center gap-2">
                             <button onClick={handlePostReact} className={`bg-transparent border-none cursor-pointer p-0 transition-transform active:scale-90 ${hasReacted ? 'text-[#ffdd00]' : 'text-white hover:text-gray-300'}`}>
                                 <HappyFace filled={hasReacted} size={26} />
@@ -109,7 +107,6 @@ const PostActions = ({ post, targetCommentId = null }) => {
                             {reactionsCount > 0 && <span className="text-white text-sm font-bold">{reactionsCount}</span>}
                         </div>
 
-                        {/* Comentarios */}
                         <div className="flex items-center gap-2">
                             <button onClick={toggleComments} className="bg-transparent border-none text-white cursor-pointer p-0 hover:text-gray-300 transition">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -120,7 +117,6 @@ const PostActions = ({ post, targetCommentId = null }) => {
                         </div>
                     </div>
 
-                    {/* Guardar */}
                     <div>
                         <button onClick={handlePostSave} className="bg-transparent border-none text-white cursor-pointer p-0 transition-transform active:scale-90 hover:text-gray-300">
                             <BookmarkIcon filled={hasSaved} size={26} />
@@ -128,7 +124,6 @@ const PostActions = ({ post, targetCommentId = null }) => {
                     </div>
                 </div>
 
-                {/* SECCIÓN DE COMENTARIOS */}
                 {showComments && (
                     <div className="mt-4 border-t border-[#333] pt-4">
                         {loadingComments ? (

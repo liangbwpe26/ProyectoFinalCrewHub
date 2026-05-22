@@ -14,6 +14,9 @@ const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
     const now = new Date();
     const canEdit = isMe && (now - messageDate) <= 180000;
 
+    // Constante para cargar la URL dinámicamente
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     const handleEditSubmit = () => {
         if (editContent.trim() && editContent !== message.content) {
             onEdit(message._id || message.id, editContent);
@@ -50,9 +53,9 @@ const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
                     {message.story_media_path && (
                         <div className="mb-2 rounded-lg overflow-hidden border border-white/20 w-[150px] h-[200px] relative">
                             {message.story_media_type === 'video' ? (
-                                <video src={message.story_media_path.startsWith('http') ? message.story_media_path : `http://127.0.0.1:8000${message.story_media_path}`} className="w-full h-full object-cover" muted />
+                                <video src={message.story_media_path.startsWith('http') ? message.story_media_path : `${BACKEND_URL}${message.story_media_path}`} className="w-full h-full object-cover" muted />
                             ) : (
-                                <img src={message.story_media_path.startsWith('http') ? message.story_media_path : `http://127.0.0.1:8000${message.story_media_path}`} alt="Story Reply" className="w-full h-full object-cover" />
+                                <img src={message.story_media_path.startsWith('http') ? message.story_media_path : `${BACKEND_URL}${message.story_media_path}`} alt="Story Reply" className="w-full h-full object-cover" />
                             )}
                             <div className="absolute bottom-0 left-0 right-0 text-[10px] text-center bg-black/70 p-1.5 text-white font-bold">
                                 Respuesta a historia
@@ -64,7 +67,7 @@ const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
                     {message.image_path && (
                         <div className={`rounded-lg overflow-hidden ${message.content ? 'mb-2' : 'm-0'}`}>
                             <img 
-                                src={message.image_path.startsWith('http') ? message.image_path : `http://127.0.0.1:8000${message.image_path}`} 
+                                src={message.image_path.startsWith('http') ? message.image_path : `${BACKEND_URL}${message.image_path}`} 
                                 alt="Chat" 
                                 className="max-w-full max-h-[300px] object-contain rounded-lg block" 
                             />

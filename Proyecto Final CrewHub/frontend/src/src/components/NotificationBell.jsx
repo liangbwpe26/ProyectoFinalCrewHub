@@ -23,8 +23,11 @@ const NotificationBell = () => {
         targetCommentId,
     } = useNotifications(token, activeUser?._id || activeUser?.id);
 
+    // Constante para cargar la URL dinámicamente
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     const getAvatar = (user) => {
-        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
     };
 
@@ -88,7 +91,7 @@ const NotificationBell = () => {
                                                     <strong className="text-white mr-1">{notif.sender?.username}</strong>
                                                     {notif.type === 'tag' ? 'te etiquetó.' : notif.type === 'comment_reaction' ? 'reaccionó a tu comentario.' : 'le dio me gusta a tu post.'}
                                                 </div>
-                                                {notif.post && <img src={`http://127.0.0.1:8000${notif.post.image_path}`} className="w-10 h-10 rounded object-cover" alt="" />}
+                                                {notif.post && <img src={notif.post.image_path.startsWith('http') ? notif.post.image_path : `${BACKEND_URL}${notif.post.image_path}`} className="w-10 h-10 rounded object-cover" alt="" />}
                                             </div>
                                         );
                                     })
@@ -131,7 +134,7 @@ const NotificationBell = () => {
                                 <button onClick={() => setSelectedPostModal(null)} className="bg-transparent text-gray-500 hover:text-white border-none text-xl cursor-pointer font-bold">✕</button>
                             </div>
                             <div className="overflow-y-auto flex-1 flex flex-col custom-scrollbar">
-                                <div className="bg-black flex justify-center items-center"><img src={selectedPostModal.image_path.startsWith('http') ? selectedPostModal.image_path : `http://127.0.0.1:8000${selectedPostModal.image_path}`} alt="Post" className="w-full max-h-[60vh] object-contain" /></div>
+                                <div className="bg-black flex justify-center items-center"><img src={selectedPostModal.image_path.startsWith('http') ? selectedPostModal.image_path : `${BACKEND_URL}${selectedPostModal.image_path}`} alt="Post" className="w-full max-h-[60vh] object-contain" /></div>
                                 <div className="p-5 pb-0"><p className="m-0 text-[15px] text-gray-300"><strong className="text-white mr-2">@{selectedPostModal.user?.username}</strong>{selectedPostModal.description}</p></div>
                                 <PostActions post={selectedPostModal} targetCommentId={targetCommentId} />
                             </div>

@@ -1,11 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchAPI } from '../services/api.js';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
-
-window.Pusher = Pusher;
+import echo from '../services/echo.js';
 
 export const useChatRoomLogic = (targetUsername, token) => {
     // ... estados mantenidos ...
@@ -51,25 +48,15 @@ export const useChatRoomLogic = (targetUsername, token) => {
     useEffect(() => {
         if (!token || !conversationId) return;
 
-        const echo = new Echo({
-            broadcaster: 'reverb',
-            key: import.meta.env.VITE_REVERB_APP_KEY,
-            wsHost: import.meta.env.VITE_REVERB_HOST,
-            wsPort: import.meta.env.VITE_REVERB_PORT,
-            wssPort: import.meta.env.VITE_REVERB_PORT,
-            forceTLS: false,
-            enabledTransports: ['ws', 'wss'],
-            // CORRECCIÓN: Autenticación dinámica para Reverb
-            authEndpoint: `${BACKEND_URL}/api/broadcasting/auth`,
-            auth: { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }
-        });
-
+        // Usamos la instancia GLOBAL de echo, no creamos una nueva
         const channel = echo.private(`chat.${conversationId}`);
 
         channel.listen('.MessageSent', (e) => {
             setMessages((prev) => {
                 const incomingId = e.message._id || e.message.id;
+                // Evitamos duplicados
                 if (prev.some(m => (m._id || m.id) === incomingId)) return prev;
+                
                 setTimeout(scrollToBottom, 50);
                 return [...prev, e.message];
             });
@@ -87,6 +74,7 @@ export const useChatRoomLogic = (targetUsername, token) => {
         });
 
         return () => {
+            // Limpiamos los eventos y salimos del canal al desmontar
             channel.stopListening('.MessageSent');
             channel.stopListening('.MessageEdited');
             channel.stopListening('.MessageDeleted');
@@ -130,7 +118,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
     };
 
     const handleEditMessage = async (messageId, newContent) => {
-        // ... (Tu lógica original usando fetchAPI está perfecta aquí) ...
         setMessages(prev => prev.map(msg => (msg._id || msg.id) === messageId ? { ...msg, content: newContent, is_edited: true } : msg));
         try {
             await fetchAPI(`/messages/${messageId}`, { method: 'PUT', body: { content: newContent } }, token);

@@ -10,15 +10,14 @@ import CreatePost from "../CreatePost.jsx";
 const Home = () => {
     const { activeUser, token } = useContext(AuthContext);
 
-    // 1. ESTADOS DEL FEED (Usando el hook que creamos para los filtros)
     const { posts, filter, setFilter, loading, loadingMore, hasMore, loadMore } = useFeed(token);
 
-    // 2. ESTADOS DE LA BÚSQUEDA
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // 3. SCROLL INFINITO PARA EL FEED
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     useEffect(() => {
         const handleScroll = () => {
             if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
@@ -32,7 +31,6 @@ const Home = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [loading, loadingMore, hasMore, loadMore]);
 
-    // 4. LÓGICA DE BÚSQUEDA (Con retraso para no saturar MongoDB)
     useEffect(() => {
         const delaySearch = setTimeout(async () => {
             if (searchQuery.trim() !== '') {
@@ -55,12 +53,10 @@ const Home = () => {
         return () => clearTimeout(delaySearch);
     }, [searchQuery, token]);
 
-    // 5. FUNCIÓN PARA SEGUIR/DEJAR DE SEGUIR DESDE EL BUSCADOR
     const toggleFollowSearch = async (targetUserId, currentStatus) => {
         try {
             const data = await fetchAPI(`/users/${targetUserId}/follow`, { method: 'POST' }, token);
             if (data.success) {
-                // Actualizamos el estado local de los resultados de búsqueda para reflejar el cambio del botón
                 setSearchResults(prevResults => prevResults.map(u => {
                     const uid = u.id || u._id;
                     if (uid === targetUserId) {
@@ -77,17 +73,13 @@ const Home = () => {
     const getAvatar = (user) => {
         if (user && user.profile_picture) {
             if (user.profile_picture.startsWith('http')) return user.profile_picture;
-            return `http://127.0.0.1:8000${user.profile_picture}`;
+            return `${BACKEND_URL}${user.profile_picture}`;
         }
         const name = user && user.username ? user.username : 'U';
         return `https://ui-avatars.com/api/?name=${name}&background=262626&color=fff&bold=true`;
     };
 
-    // Función que pasaremos al CreatePost para que añada el post al principio de la lista
     const addNewPostToFeed = (newPost) => {
-        // Esto asume que tienes acceso al setter de posts en useFeed o simplemente recarga el feed
-        // Para simplificar, podemos forzar una recarga o manejarlo en el hook.
-        // Si recargar es suficiente:
         setFilter('all'); 
     };
 
@@ -97,7 +89,6 @@ const Home = () => {
         <Layout>
             <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12">
                 
-                {/* 1. BUSCADOR (Tu diseño) */}
                 <div className="bg-[#121212] p-6 rounded-xl border border-[#262626] mb-6 shadow-lg">
                     <h3 className="text-xl font-bold mb-4 text-white m-0">Buscar Personas</h3>
                     <input
@@ -147,12 +138,10 @@ const Home = () => {
                     )}
                 </div>
 
-                {/* 2. CREAR PUBLICACIÓN */}
                 <div className="mb-6">
                     <CreatePost onPostCreated={addNewPostToFeed} />
                 </div>
 
-                {/* 3. BARRA DE PESTAÑAS DEL FEED */}
                 <div className="flex w-full bg-[#121212] border border-[#262626] rounded-xl overflow-hidden shadow-lg mb-6">
                     <button 
                         onClick={() => setFilter('all')} 
@@ -186,7 +175,6 @@ const Home = () => {
                     </button>
                 </div>
 
-                {/* 4. CONTENIDO DEL FEED (Con Scroll Infinito) */}
                 <div className="flex flex-col gap-6 min-h-[200px]">
                     {loading ? (
                         <p className="text-center text-gray-400 font-bold tracking-widest uppercase py-10">Cargando publicaciones...</p>
@@ -207,7 +195,6 @@ const Home = () => {
                         ))
                     )}
                     
-                    {/* Indicadores de paginación */}
                     {loadingMore && (
                         <div className="text-center text-[#0095f6] font-bold py-4 mt-2">
                             Cargando más publicaciones...

@@ -15,6 +15,8 @@ const SinglePost = () => {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
     useEffect(() => {
         const getPost = async () => {
             try {
@@ -46,7 +48,7 @@ const SinglePost = () => {
     
     if (!post) return null;
 
-    const getAvatar = (user) => user?.profile_picture ? (user.profile_picture.startsWith("http") ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=262626&color=fff&bold=true`;
+    const getAvatar = (user) => user?.profile_picture ? (user.profile_picture.startsWith("http") ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`) : `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=262626&color=fff&bold=true`;
 
     return (
         <Layout>

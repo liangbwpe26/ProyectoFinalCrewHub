@@ -14,6 +14,7 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState('posts');
     const [savedPosts, setSavedPosts] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(false);
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     const {
         profile, loading, error, toggleFollow,
@@ -48,19 +49,19 @@ const Profile = () => {
     if (!profile) return null;
 
     const profileImageUrl = profile.profile_picture
-        ? (profile.profile_picture.startsWith('http') ? profile.profile_picture : `http://127.0.0.1:8000${profile.profile_picture}`)
+        ? (profile.profile_picture.startsWith('http') ? profile.profile_picture : `${BACKEND_URL}${profile.profile_picture}`)
         : `https://ui-avatars.com/api/?name=${profile.username}&background=262626&color=fff&bold=true&size=150`;
 
     const getAvatar = (user) => {
         if (user && user.profile_picture) {
-            return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+            return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         }
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
     };
 
     const getPostImage = (path) => {
         if (!path) return '';
-        return path.startsWith('http') ? path : `http://127.0.0.1:8000${path}`;
+        return path.startsWith('http') ? path : `${BACKEND_URL}${path}`;
     };
 
     const isLocked = profile.is_private && profile.follow_status !== 'accepted' && !isMyProfile;

@@ -4,7 +4,7 @@ import { useStories } from '../hooks/useStories.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import StoryViewer from './StoryViewer.jsx';
 import ImageCropperModal from './ImageCropperModal.jsx';
-import './StoriesBar.css'; // Importamos el CSS para ocultar el scroll
+import './StoriesBar.css'; 
 
 const StoriesBar = () => {
     const { token, activeUser } = useContext(AuthContext);
@@ -15,6 +15,8 @@ const StoriesBar = () => {
     const [viewerState, setViewerState] = useState({ isOpen: false, initialIndex: 0 });
     const [isUploading, setIsUploading] = useState(false);
     const [cropImageSrc, setCropImageSrc] = useState(null);
+
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     useEffect(() => { loadStories(); }, [loadStories]);
 
@@ -45,7 +47,7 @@ const StoriesBar = () => {
     };
 
     const getAvatar = (user) => {
-        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`;
+        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
     };
 
@@ -57,8 +59,6 @@ const StoriesBar = () => {
     return (
         <Fragment>
             <div className="flex gap-4 overflow-x-auto whitespace-nowrap hide-scrollbar pb-2 pt-1 px-1">
-                
-                {/* Tu Historia */}
                 <div className="flex flex-col items-center cursor-pointer shrink-0 relative">
                     <div 
                         onClick={() => hasMyStory ? setViewerState({ isOpen: true, initialIndex: myStoryGroupIndex }) : fileInputRef.current.click()}
@@ -80,7 +80,6 @@ const StoriesBar = () => {
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/mp4,video/quicktime" className="hidden" />
                 </div>
 
-                {/* Historias de otros */}
                 {storiesFeed.map((group, index) => {
                     if ((group.user._id || group.user.id) === (activeUser?._id || activeUser?.id)) return null;
 
