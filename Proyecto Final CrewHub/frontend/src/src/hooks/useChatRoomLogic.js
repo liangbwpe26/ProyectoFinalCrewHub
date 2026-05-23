@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchAPI } from '../services/api.js';
+import echo from '../services/echo.js'; 
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
-import echo from '../services/echo.js';
 
 export const useChatRoomLogic = (targetUsername, token) => {
-    // ... estados mantenidos ...
     const [messages, setMessages] = useState([]);
     const [conversationId, setConversationId] = useState(null);
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef(null);
     const { showToast } = useToast();
-
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,15 +45,13 @@ export const useChatRoomLogic = (targetUsername, token) => {
     useEffect(() => {
         if (!token || !conversationId) return;
 
-        // Usamos la instancia GLOBAL de echo, no creamos una nueva
+        // Utilizamos la instancia GLOBAL, sin crear una nueva
         const channel = echo.private(`chat.${conversationId}`);
 
         channel.listen('.MessageSent', (e) => {
             setMessages((prev) => {
                 const incomingId = e.message._id || e.message.id;
-                // Evitamos duplicados
                 if (prev.some(m => (m._id || m.id) === incomingId)) return prev;
-                
                 setTimeout(scrollToBottom, 50);
                 return [...prev, e.message];
             });
@@ -74,7 +69,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
         });
 
         return () => {
-            // Limpiamos los eventos y salimos del canal al desmontar
             channel.stopListening('.MessageSent');
             channel.stopListening('.MessageEdited');
             channel.stopListening('.MessageDeleted');
@@ -82,7 +76,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
         };
     }, [conversationId, token]);
 
-    // CORRECCIÓN: Usando fetchAPI para enviar FormData en lugar de fetch nativo
     const handleSendMessage = async (e, imageFile = null) => {
         if (e) e.preventDefault();
         if (!newMessage.trim() && !imageFile) return;
@@ -126,7 +119,6 @@ export const useChatRoomLogic = (targetUsername, token) => {
     };
 
     const handleDeleteMessage = async (messageId, type) => {
-        // ... (Tu lógica original usando fetchAPI está perfecta aquí) ...
         setMessages(prev => prev.filter(msg => (msg._id || msg.id) !== messageId));
         try {
             await fetchAPI(`/messages/${messageId}?type=${type}`, { method: 'DELETE' }, token);
