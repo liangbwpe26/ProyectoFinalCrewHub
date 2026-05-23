@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchAPI } from '../services/api.js';
-import echo from '../services/echo.js'; 
+import echo from '../services/echo.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
@@ -45,12 +45,12 @@ export const useChatRoomLogic = (targetUsername, token) => {
     useEffect(() => {
         if (!token || !conversationId) return;
 
-        // Utilizamos la instancia GLOBAL, sin crear una nueva
         const channel = echo.private(`chat.${conversationId}`);
 
         channel.listen('.MessageSent', (e) => {
             setMessages((prev) => {
                 const incomingId = e.message._id || e.message.id;
+                // Evitamos duplicados en pantalla
                 if (prev.some(m => (m._id || m.id) === incomingId)) return prev;
                 setTimeout(scrollToBottom, 50);
                 return [...prev, e.message];
