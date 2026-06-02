@@ -1,14 +1,13 @@
 import { useState, useCallback } from 'react';
 import { fetchAPI } from '../services/api.js';
 
-export const useStories = (token) => {
+export const useStories = () => {
     const [storiesFeed, setStoriesFeed] = useState([]);
     const [loadingStories, setLoadingStories] = useState(true);
 
     const loadStories = useCallback(async () => {
-        if (!token) return;
         try {
-            const data = await fetchAPI('/stories', {}, token);
+            const data = await fetchAPI('/stories');
             if (data.success) {
                 setStoriesFeed(data.feed);
             }
@@ -17,7 +16,7 @@ export const useStories = (token) => {
         } finally {
             setLoadingStories(false);
         }
-    }, [token]);
+    }, []);
 
     const uploadStory = async (file) => {
         const formData = new FormData();
@@ -27,8 +26,8 @@ export const useStories = (token) => {
             const data = await fetchAPI('/stories', {
                 method: 'POST',
                 body: formData
-            }, token);
-            
+            });
+
             if (data.success) loadStories();
             return data;
         } catch (error) {
@@ -38,7 +37,7 @@ export const useStories = (token) => {
 
     const markStoryAsViewed = async (storyId) => {
         try {
-            await fetchAPI(`/stories/${storyId}/view`, { method: 'POST' }, token);
+            await fetchAPI(`/stories/${storyId}/view`, { method: 'POST' });
         } catch (error) { }
     };
 
@@ -60,7 +59,7 @@ export const useStories = (token) => {
         }));
 
         try {
-            await fetchAPI(`/stories/${storyId}/like`, { method: 'POST' }, token);
+            await fetchAPI(`/stories/${storyId}/like`, { method: 'POST' });
         } catch (error) {
             console.error("Error al dar like a la historia", error);
         }
@@ -68,7 +67,7 @@ export const useStories = (token) => {
 
     const deleteStory = async (storyId) => {
         try {
-            const data = await fetchAPI(`/stories/${storyId}`, { method: 'DELETE' }, token);
+            const data = await fetchAPI(`/stories/${storyId}`, { method: 'DELETE' });
             if (data.success) loadStories();
             return data;
         } catch (error) {
@@ -78,7 +77,7 @@ export const useStories = (token) => {
 
     const getStoryStats = async (storyId) => {
         try {
-            const data = await fetchAPI(`/stories/${storyId}/stats`, {}, token);
+            const data = await fetchAPI(`/stories/${storyId}/stats`);
             return data;
         } catch (error) {
             return { success: false };
@@ -92,7 +91,7 @@ export const useStories = (token) => {
                 story_media_path: mediaPath,
                 story_media_type: mediaType
             };
-            const data = await fetchAPI(`/chat/story-reply/${targetUserId}`, { method: 'POST', body }, token);
+            const data = await fetchAPI(`/chat/story-reply/${targetUserId}`, { method: 'POST', body });
             return data;
         } catch (error) {
             return { success: false };

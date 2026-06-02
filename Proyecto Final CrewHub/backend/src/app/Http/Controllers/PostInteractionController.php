@@ -48,7 +48,12 @@ class PostInteractionController extends Controller
                     'is_read' => false
                 ]);
                 $notif->load(['sender', 'post']);
-                broadcast(new NotificationSent($notif));
+                
+                try {
+                    broadcast(new NotificationSent($notif));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Error WS: ' . $e->getMessage());
+                }
             }
 
             return response()->json(['success' => true, 'reacted' => true]);
@@ -118,6 +123,32 @@ class PostInteractionController extends Controller
         ]);
 
         $me = $request->user();
+        $myIdStr = (string) ($me->_id ?? $me->id);
+        
+        // --- FILTRO DE PRIVACIDAD PARA COMENTARIOS ---
+        $post = Post::with('user')->find($postId);
+        if (!$post) return response()->json(['success' => false, 'message' => 'Post no encontrado'], 404);
+
+        $postOwner = $post->user;
+        if ($postOwner && (string) ($postOwner->_id ?? $postOwner->id) !== $myIdStr) {
+            $privacy = $postOwner->privacy_comments ?? 'everyone';
+            
+            if ($privacy === 'none') {
+                return response()->json(['success' => false, 'message' => 'Los comentarios están desactivados para esta publicación.'], 403);
+            }
+            
+            if ($privacy === 'following') {
+                $doesFollow = Follow::where('follower_id', (string) ($postOwner->_id ?? $postOwner->id))
+                    ->where('followed_id', $myIdStr)
+                    ->where('status', 'accepted')
+                    ->exists();
+                    
+                if (!$doesFollow) {
+                    return response()->json(['success' => false, 'message' => 'Solo las personas a las que sigue este usuario pueden comentar.'], 403);
+                }
+            }
+        }
+
         $content = $request->input('content');
         $parentId = $request->input('parent_id');
 
@@ -147,7 +178,11 @@ class PostInteractionController extends Controller
                 ]);
 
                 // Disparar WebSocket para la respuesta
-                broadcast(new NotificationSent($notif));
+                try {
+                    broadcast(new NotificationSent($notif));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Error WS: ' . $e->getMessage());
+                }
             }
         }
 
@@ -176,7 +211,11 @@ class PostInteractionController extends Controller
                 $notif->load(['sender', 'post']);
 
                 // Disparar WebSocket para la etiqueta
-                broadcast(new NotificationSent($notif));
+                try {
+                    broadcast(new NotificationSent($notif));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Error WS: ' . $e->getMessage());
+                }
             }
         }
 
@@ -230,7 +269,11 @@ class PostInteractionController extends Controller
             ]);
 
             $notif->load(['sender', 'post']);
-            broadcast(new NotificationSent($notif));
+            try {
+                broadcast(new NotificationSent($notif));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error WS: ' . $e->getMessage());
+            }
         }
 
         return response()->json(['success' => true, 'reacted' => true]);

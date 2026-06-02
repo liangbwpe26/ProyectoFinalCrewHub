@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext, Fragment } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchAPI } from "../../services/api.js";
-import { AuthContext } from "../../contexts/AuthContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import PostCard from "../PostCard.jsx";
 import Layout from "../structure/Layout.jsx";
@@ -9,7 +8,6 @@ import Layout from "../structure/Layout.jsx";
 const SinglePost = () => {
     const { id } = useParams(); 
     const navigate = useNavigate();
-    const { token } = useContext(AuthContext);
     const { showToast } = useToast();
     
     const [post, setPost] = useState(null);
@@ -20,7 +18,7 @@ const SinglePost = () => {
     useEffect(() => {
         const getPost = async () => {
             try {
-                const data = await fetchAPI(`/posts/${id}`, {}, token);
+                const data = await fetchAPI(`/posts/${id}`);
                 if (data.success) {
                     setPost(data.post);
                 } else {
@@ -35,8 +33,8 @@ const SinglePost = () => {
             }
         };
 
-        if (token) getPost();
-    }, [id, token, navigate]);
+        getPost();
+    }, [id, navigate]);
 
     if (loading) return (
         <Layout>

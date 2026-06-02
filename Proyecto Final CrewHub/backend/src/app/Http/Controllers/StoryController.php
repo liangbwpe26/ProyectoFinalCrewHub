@@ -7,106 +7,204 @@ use App\Models\Story;
 use App\Models\User;
 use App\Models\Follow;
 use Carbon\Carbon;
+use App\Models\Community;
 use Illuminate\Support\Facades\Storage;
+use MongoDB\BSON\ObjectId;
 
 class StoryController extends Controller
 {
+    // FUNCIÓN AUXILIAR PARA EVITAR ERRORES DE STRING vs ARRAY EN MONGODB
+    private function safeArray($value) {
+        if (is_array($value)) return $value;
+        if (is_object($value)) return (array) $value;
+        if (is_string($value) && json_decode($value, true)) return json_decode($value, true);
+        if (empty($value)) return [];
+        return [$value]; 
+    }
+
     // 1. SUBIR UNA HISTORIA
     public function store(Request $request)
     {
         $request->validate([
-            'media' => 'required|file|mimes:jpeg,png,jpg,mp4,mov|max:10240', // Max 10MB
+            'media' => 'required|file|mimes:jpeg,png,jpg,mp4,mov|max:10240',
+            'community_id' => 'nullable|string'
         ]);
 
-        $me = $request->user();
-        $file = $request->file('media');
-        
-        $extension = $file->getClientOriginalExtension();
-        $type = in_array(strtolower($extension), ['mp4', 'mov']) ? 'video' : 'image';
-        
-        // Guardamos el archivo en la carpeta public/stories
-        $path = $file->store('stories', 'public');
-
-        $story = Story::create([
-            'user_id' => $me->_id ?? $me->id,
-            'media_path' => '/storage/' . $path,
-            'media_type' => $type,
-            'expires_at' => Carbon::now()->addHours(8), // Caduca exactamente en 8 horas
-            'viewed_by' => [],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'story' => $story
-        ]);
-    }
-
-    // 2. OBTENER LAS HISTORIAS DEL FEED
-    public function getFeedStories(Request $request)
-    {
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
+        $communityId = $request->input('community_id');
 
-        // Obtenemos a quiénes sigo
-        $followingIds = Follow::where('follower_id', $myId)
+        if ($communityId) {
+            $community = Community::find($communityId);
+            if (!$community)
+                return response()->json(['success' => false, 'message' => 'Comunidad no encontrada'], 404);
+            
+            $admins = $this->safeArray($community->admins);
+            
+            if (!in_array($myId, $admins)) {
+                return response()->json(['success' => false, 'message' => 'Solo los administradores pueden subir historias.'], 403);
+            }
+        }
+
+        $file = $request->file('media');
+        $extension = $file->getClientOriginalExtension();
+        $type = in_array(strtolower($extension), ['mp4', 'mov']) ? 'video' : 'image';
+
+        // S3 Upload
+        $path = $file->store('stories', 's3');
+
+        $story = Story::create([
+            'user_id' => $myId,
+            'community_id' => $communityId,
+            'media_path' => Storage::disk('s3')->url($path),
+            'media_type' => $type,
+            'expires_at' => Carbon::now()->addHours(24),
+            'viewed_by' => [],
+            'liked_by' => []
+        ]);
+
+        return response()->json(['success' => true, 'story' => $story]);
+    }
+
+    // 2. OBTENER LA BARRA DE HISTORIAS SUPERIOR
+    public function feed(Request $request)
+    {
+        $me = $request->user();
+        $myIdStr = (string) ($me->_id ?? $me->id);
+
+        $myMixedIds = [$myIdStr];
+        try { $myMixedIds[] = new ObjectId($myIdStr); } catch (\Exception $e) {}
+
+        $followingIds = Follow::whereIn('follower_id', $myMixedIds)
             ->where('status', 'accepted')
             ->pluck('followed_id')
             ->toArray();
-            
-        // Incluimos mi propio ID para ver mis propias historias
-        $followingIds[] = $myId;
+        $followingIds[] = $myIdStr;
 
-        // Buscamos historias activas (expires_at en el futuro)
-        $activeStories = Story::with('user')
-            ->whereIn('user_id', $followingIds)
+        $allowedUserIds = [];
+        foreach ($followingIds as $id) {
+            $allowedUserIds[] = (string)$id;
+            try { $allowedUserIds[] = new ObjectId((string)$id); } catch (\Exception $e) {}
+        }
+        $allowedUserIds = array_values(array_unique($allowedUserIds));
+
+        $myCommunitiesIds = Community::whereIn('members', $myMixedIds)
+            ->pluck('_id')
+            ->toArray();
+
+        $allowedCommunityIds = [];
+        foreach ($myCommunitiesIds as $id) {
+            $allowedCommunityIds[] = (string)$id;
+            try { $allowedCommunityIds[] = new ObjectId((string)$id); } catch (\Exception $e) {}
+        }
+        $allowedCommunityIds = array_values(array_unique($allowedCommunityIds));
+
+        // SOLUCIÓN ZONAS HORARIAS: Filtramos por la fecha de expiración para que no se oculten
+        $stories = Story::with(['user', 'community'])
             ->where('expires_at', '>', Carbon::now())
+            ->where(function ($query) use ($allowedUserIds, $allowedCommunityIds) {
+                $query->whereIn('user_id', $allowedUserIds);
+                if (!empty($allowedCommunityIds)) {
+                    $query->orWhereIn('community_id', $allowedCommunityIds);
+                }
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $stories->transform(function ($story) {
+            $story->viewed_by = $this->safeArray($story->viewed_by);
+            $story->liked_by = $this->safeArray($story->liked_by);
+            return $story;
+        });
+
+        return response()->json([
+            'success' => true,
+            'stories' => $stories
+        ]);
+    }
+
+    // 3. OBTENER LAS HISTORIAS AGRUPADAS AL HACER CLIC
+    public function getFeedStories(Request $request)
+    {
+        $me = $request->user();
+        $myIdStr = (string) ($me->_id ?? $me->id);
+        
+        $myMixedIds = [$myIdStr];
+        try { $myMixedIds[] = new ObjectId($myIdStr); } catch (\Exception $e) {}
+
+        $followingIds = Follow::whereIn('follower_id', $myMixedIds)
+            ->where('status', 'accepted')
+            ->pluck('followed_id')
+            ->toArray();
+        $followingIds[] = $myIdStr;
+
+        $allowedUserIds = [];
+        foreach ($followingIds as $id) {
+            $allowedUserIds[] = (string)$id;
+            try { $allowedUserIds[] = new ObjectId((string)$id); } catch (\Exception $e) {}
+        }
+        $allowedUserIds = array_values(array_unique($allowedUserIds));
+
+        $myCommunitiesIds = Community::whereIn('members', $myMixedIds)
+            ->pluck('_id')
+            ->toArray();
+
+        $allowedCommunityIds = [];
+        foreach ($myCommunitiesIds as $id) {
+            $allowedCommunityIds[] = (string)$id;
+            try { $allowedCommunityIds[] = new ObjectId((string)$id); } catch (\Exception $e) {}
+        }
+        $allowedCommunityIds = array_values(array_unique($allowedCommunityIds));
+
+        // SOLUCIÓN ZONAS HORARIAS APLICADA
+        $activeStories = Story::with(['user', 'community'])
+            ->where('expires_at', '>', Carbon::now())
+            ->where(function ($query) use ($allowedUserIds, $allowedCommunityIds) {
+                $query->whereIn('user_id', $allowedUserIds);
+                if (!empty($allowedCommunityIds)) {
+                    $query->orWhereIn('community_id', $allowedCommunityIds);
+                }
+            })
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Agrupamos las historias por usuario para que React las pueda renderizar fácilmente
         $groupedStories = [];
 
         foreach ($activeStories as $story) {
             $userId = (string) $story->user_id;
-            
+
             if (!isset($groupedStories[$userId])) {
                 $groupedStories[$userId] = [
                     'user' => $story->user,
                     'stories' => [],
-                    'all_viewed' => true // Asumimos que están vistas hasta demostrar lo contrario
+                    'all_viewed' => true
                 ];
             }
 
-            // Sanitizar el arreglo de vistas para MongoDB
-            $viewedBy = $story->viewed_by ?? [];
-            if (is_object($viewedBy)) $viewedBy = (array) $viewedBy;
-
-            $hasViewed = in_array($myId, $viewedBy);
+            $viewedBy = $this->safeArray($story->viewed_by);
+            $hasViewed = in_array($myIdStr, $viewedBy);
 
             if (!$hasViewed) {
                 $groupedStories[$userId]['all_viewed'] = false;
             }
 
-            // Sanitizar el arreglo de likes para MongoDB
-            $likedBy = $story->liked_by ?? [];
-            if (is_object($likedBy)) $likedBy = (array) $likedBy;
+            $likedBy = $this->safeArray($story->liked_by);
 
             $storyArray = $story->toArray();
+            $storyArray['viewed_by'] = $viewedBy;
+            $storyArray['liked_by'] = $likedBy;
             $storyArray['has_viewed'] = $hasViewed;
-            $storyArray['has_liked'] = in_array($myId, $likedBy);
+            $storyArray['has_liked'] = in_array($myIdStr, $likedBy);
             $storyArray['likes_count'] = count($likedBy);
-            
+
             $groupedStories[$userId]['stories'][] = $storyArray;
         }
 
-        // Ordenamos: Primero los usuarios con historias NO vistas, luego los que ya vimos
         $finalArray = array_values($groupedStories);
-        usort($finalArray, function ($a, $b) use ($myId) {
-            // Mis historias siempre van primero a la izquierda
-            if ((string) $a['user']['_id'] === $myId) return -1;
-            if ((string) $b['user']['_id'] === $myId) return 1;
-            
-            // Luego ordenamos por estado de visualización
+
+        usort($finalArray, function ($a, $b) use ($myIdStr) {
+            if ((string) $a['user']['_id'] === $myIdStr) return -1;
+            if ((string) $b['user']['_id'] === $myIdStr) return 1;
             return $a['all_viewed'] <=> $b['all_viewed'];
         });
 
@@ -116,18 +214,17 @@ class StoryController extends Controller
         ]);
     }
 
-    // 3. MARCAR HISTORIA COMO VISTA
+    // 4. MARCAR HISTORIA COMO VISTA
     public function markAsViewed(Request $request, $storyId)
     {
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
-        
+
         $story = Story::find($storyId);
-        
+
         if ($story) {
-            $viewedBy = $story->viewed_by ?? [];
-            if (is_object($viewedBy)) $viewedBy = (array) $viewedBy;
-            
+            $viewedBy = $this->safeArray($story->viewed_by);
+
             if (!in_array($myId, $viewedBy)) {
                 $viewedBy[] = $myId;
                 $story->forceFill(['viewed_by' => array_values($viewedBy)])->save();
@@ -137,53 +234,49 @@ class StoryController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // 4. ELIMINAR HISTORIA
+    // 5. ELIMINAR HISTORIA
     public function destroy(Request $request, $id)
     {
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
-        
+
         $story = Story::find($id);
 
-        if (!$story) return response()->json(['success' => false], 404);
+        if (!$story)
+            return response()->json(['success' => false], 404);
 
-        if ((string)$story->user_id !== $myId) {
+        if ((string) $story->user_id !== $myId) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
-
-        // Opcional: Eliminar archivo del disco si lo deseas
-        // \Illuminate\Support\Facades\Storage::disk('public')->delete(str_replace('/storage/', '', $story->media_path));
 
         $story->delete();
 
         return response()->json(['success' => true]);
     }
 
+    // 6. TOGGLE LIKE
     public function toggleLike(Request $request, $id)
     {
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
         $story = Story::find($id);
-        
-        if (!$story) return response()->json(['success' => false], 404);
 
-        $likedBy = $story->liked_by ?? [];
-        if (is_object($likedBy)) $likedBy = (array)$likedBy;
+        if (!$story)
+            return response()->json(['success' => false], 404);
 
+        $likedBy = $this->safeArray($story->liked_by);
         $isLiked = in_array($myId, $likedBy);
 
         if ($isLiked) {
-            // Quitar like
             $likedBy = array_values(array_diff($likedBy, [$myId]));
             \App\Models\Notification::where('sender_id', $myId)
                 ->where('story_id', $story->_id)
                 ->where('type', 'story_reaction')
                 ->delete();
         } else {
-            // Dar like
             $likedBy[] = $myId;
-            
-            if ((string)$story->user_id !== $myId) {
+
+            if ((string) $story->user_id !== $myId) {
                 $notif = \App\Models\Notification::create([
                     'recipient_id' => $story->user_id,
                     'sender_id' => $myId,
@@ -195,37 +288,34 @@ class StoryController extends Controller
                 broadcast(new \App\Events\NotificationSent($notif));
             }
         }
-        
+
         $story->forceFill(['liked_by' => array_values($likedBy)])->save();
         return response()->json(['success' => true, 'reacted' => !$isLiked]);
     }
 
-    // 6. OBTENER ESTADÍSTICAS DE LA HISTORIA (Solo para el dueño)
+    // 7. OBTENER ESTADÍSTICAS DE LA HISTORIA (Solo para el dueño)
     public function getStats(Request $request, $id)
     {
         $me = $request->user();
         $story = Story::find($id);
 
-        if (!$story) return response()->json(['success' => false], 404);
+        if (!$story)
+            return response()->json(['success' => false], 404);
 
-        // Seguridad: Solo el creador de la historia puede ver esto
-        if ((string)$story->user_id !== (string)($me->_id ?? $me->id)) {
+        if ((string) $story->user_id !== (string) ($me->_id ?? $me->id)) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
-        $viewedByIds = is_object($story->viewed_by) ? (array)$story->viewed_by : ($story->viewed_by ?? []);
-        $likedByIds = is_object($story->liked_by) ? (array)$story->liked_by : ($story->liked_by ?? []);
+        $viewedByIds = $this->safeArray($story->viewed_by);
+        $likedByIds = $this->safeArray($story->liked_by);
 
-        // Obtenemos los datos reales de los usuarios
         $viewers = User::whereIn('_id', $viewedByIds)->get(['_id', 'username', 'profile_picture', 'display_name']);
 
-        // Añadimos una bandera para saber si, además de verla, le dieron like
         $viewers->transform(function ($user) use ($likedByIds) {
-            $user->has_liked = in_array((string)$user->_id, $likedByIds);
+            $user->has_liked = in_array((string) $user->_id, $likedByIds);
             return $user;
         });
 
-        // Ordenamos: Primero los que dieron like
         $sortedViewers = $viewers->sortByDesc('has_liked')->values();
 
         return response()->json([

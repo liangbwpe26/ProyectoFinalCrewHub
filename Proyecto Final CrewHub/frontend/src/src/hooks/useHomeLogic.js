@@ -4,7 +4,7 @@ import { fetchAPI } from '../services/api.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
-export const useHomeLogic = (token) => {
+export const useHomeLogic = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     
@@ -21,25 +21,22 @@ export const useHomeLogic = (token) => {
     const [loadingMoreFeed, setLoadingMoreFeed] = useState(false);
 
     const fetchMutuals = useCallback(async () => {
-        if (!token) return;
         try {
-            const data = await fetchAPI('/mutuals', {}, token);
+            const data = await fetchAPI('/mutuals');
             if (data.success) {
                 setMutuals(data.mutuals);
             }
         } catch (error) {
             showToast("Error al cargar tus contactos.", 'error');
         }
-    }, [token]);
+    }, []);
 
     const loadFeed = useCallback(async (currentOffset = 0) => {
-        if (!token) return;
-        
         if (currentOffset === 0) setLoadingFeed(true);
         else setLoadingMoreFeed(true);
 
         try {
-            const data = await fetchAPI(`/posts/feed?offset=${currentOffset}`, {}, token);
+            const data = await fetchAPI(`/posts/feed?offset=${currentOffset}`);
             if (data.success) {
                 if (currentOffset === 0) {
                     setFeed(data.posts);
@@ -55,7 +52,7 @@ export const useHomeLogic = (token) => {
             setLoadingFeed(false);
             setLoadingMoreFeed(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => {
         fetchMutuals();
@@ -66,7 +63,6 @@ export const useHomeLogic = (token) => {
         setFeed(prevFeed => [newPost, ...prevFeed]);
     };
 
-    // 4. Buscador
     const handleSearch = async (e) => {
         const query = e.target.value;
         setSearchQuery(query);
@@ -78,7 +74,7 @@ export const useHomeLogic = (token) => {
 
         setIsSearching(true);
         try {
-            const data = await fetchAPI(`/users/search?q=${encodeURIComponent(query)}`, {}, token);
+            const data = await fetchAPI(`/users/search?q=${encodeURIComponent(query)}`);
             if (data.success) {
                 setSearchResults(data.users);
             } else {
@@ -98,7 +94,7 @@ export const useHomeLogic = (token) => {
         const method = (currentStatus === 'none') ? 'POST' : 'DELETE';
 
         try {
-            const data = await fetchAPI(endpoint, { method }, token);
+            const data = await fetchAPI(endpoint, { method });
 
             if (data.success) {
                 const newStatus = (currentStatus === 'none') ? (data.status || 'accepted') : 'none';

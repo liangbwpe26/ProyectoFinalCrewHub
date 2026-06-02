@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Mail\VerificationCodeMail;
-use Illuminate\Support\Facades\Mail; // 🔥 Importante para enviar correos
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Exception;
+use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
@@ -26,8 +28,12 @@ class AuthController extends Controller
             // 1. Validación de datos
             $validatedData = $request->validate([
                 'username' => [
-                    'required', 'string', 'min:3', 'max:20', 'unique:users,username',
-                    'regex:/^[a-z0-9_]+$/', 
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:20',
+                    'unique:users,username',
+                    'regex:/^[a-z0-9_]+$/',
                     'not_in:login,register,chat,home,api,admin,perfil,config,index'
                 ],
                 'email' => 'required|string|email|max:100|unique:users,email',
@@ -43,7 +49,7 @@ class AuthController extends Controller
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
                 'fecha_registro' => now(),
-                'verification_code' => (string) $verificationCode // 🔥 Guardamos el código
+                'verification_code' => (string) $verificationCode // Guardamos el código
             ]);
 
             // 4. Enviamos el correo REAL usando Resend
@@ -83,24 +89,22 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // Validamos si el usuario existe y si el código coincide
         if (!$user || $user->verification_code !== $request->code) {
             return response()->json(['success' => false, 'message' => 'Código incorrecto o usuario no encontrado.'], 400);
         }
 
-        // Marcamos como verificado y borramos el código para que no se pueda reusar
         $user->update([
             'email_verified_at' => now(),
             'verification_code' => null
         ]);
 
-        // Ahora sí, le damos acceso
-        $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
+        // INICIO DE SESIÓN AUTOMÁTICO
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return response()->json([
             'success' => true,
-            'token' => $token,
-            'user' => $user,
+            'user' => new UserResource($user),
             'message' => 'Cuenta verificada correctamente.'
         ]);
     }
@@ -108,6 +112,7 @@ class AuthController extends Controller
     /**
      * Login de usuarios (Con escudo de verificación)
      */
+
     public function login(Request $request)
     {
         $request->validate([
@@ -124,28 +129,24 @@ class AuthController extends Controller
         $user = User::where($loginType, $loginInput)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Las credenciales proporcionadas son incorrectas.'
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Credenciales incorrectas.'], 401);
         }
 
-        // Comprobamos si ha verificado su correo
         if (is_null($user->email_verified_at)) {
             return response()->json([
-                'success' => false, 
-                'message' => 'Debes verificar tu correo electrónico antes de iniciar sesión.', 
+                'success' => false,
+                'message' => 'Debes verificar tu correo.',
                 'needs_verification' => true,
                 'email' => $user->email
             ], 403);
         }
 
-        $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return response()->json([
             'success' => true,
-            'user' => $user,
-            'token' => $token,
+            'user' => new UserResource($user),
             'message' => 'Inicio de sesión exitoso'
         ]);
     }
@@ -224,8 +225,37 @@ class AuthController extends Controller
         Mail::to($user->email)->send(new \App\Mail\VerificationCodeMail($newCode, 'registro'));
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Nuevo código enviado. Revisa tu bandeja de entrada.'
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        // 1. Obtener al usuario (para verificar si hay alguien)
+        $user = Auth::user();
+
+        if ($user) {
+            // 2. Cerrar sesión
+            Auth::guard('web')->logout();
+
+            // 3. Invalidar la sesión en el servidor
+            $request->session()->invalidate();
+
+            // 4. Regenerar el token para evitar ataques CSRF con la sesión vieja
+            $request->session()->regenerateToken();
+        }
+
+        return response()->json([
+            'message' => 'Sesión cerrada correctamente'
+        ], 200);
+    }
+
+    /**
+     * Obtener el usuario autenticado enriquecido con su ubicación
+     */
+    public function show(Request $request)
+    {
+        return new UserResource($request->user());
     }
 }

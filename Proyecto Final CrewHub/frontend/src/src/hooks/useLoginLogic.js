@@ -26,9 +26,8 @@ export const useLoginLogic = () => {
         try {
             const res = await loginAPI(credentials);
             if (res && res.success) {
-                navigate("/"); // Éxito, al muro principal
+                navigate("/");
             } else if (res && res.needs_verification) {
-                // 🔥 Falta verificar el correo
                 navigate("/verify-email", { state: { email: res.email || credentials.login } });
             }
         } catch (error) {

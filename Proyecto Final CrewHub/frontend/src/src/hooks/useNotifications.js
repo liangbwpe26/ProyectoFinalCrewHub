@@ -10,7 +10,7 @@ export const getSafeId = (idField) => {
     return String(idField);
 };
 
-const useNotifications = (token, userId) => {
+const useNotifications = (userId) => {
     const [mainNotifications, setMainNotifications] = useState([]);
     const [followRequests, setFollowRequests] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -22,45 +22,35 @@ const useNotifications = (token, userId) => {
     const processedIds = useRef(new Set());
 
     const fetchAll = useCallback(async () => {
-        if (!token) return;
         try {
-            const data = await fetchAPI('/notifications', {}, token);
+            const data = await fetchAPI('/notifications');
             if (data.success) {
-                setMainNotifications(data.main);
-                setFollowRequests(data.requests);
-                setUnreadCount(data.unread_count);
+                setMainNotifications(data.main || []);
+                setFollowRequests(data.requests || []);
+                setUnreadCount(data.unread_count || 0);
             }
         } catch (error) {
-            showToast("Error al cargar notificaciones.", 'error');
+            console.error("Error cargando notificaciones:", error);
         }
-    }, [token]);
+    }, []);
 
     const markAllAsRead = async () => {
         if (unreadCount === 0) return;
         try {
-            await fetchAPI('/notifications/read', { method: 'PUT' }, token);
+            await fetchAPI('/notifications/read', { method: 'PUT' });
             setUnreadCount(0);
-        } catch (error) {
-            showToast("No pudimos marcar las notificaciones como leídas.", 'error');
-        }
+        } catch (error) {}
     };
 
     const handleAccept = async (notification) => {
         const followerId = getSafeId(notification.sender_id) || getSafeId(notification.sender?._id);
-
-        if (!followerId) {
-            showToast(ERRORS.DEFAULT, 'error');
-            return;
-        }
-
+        if (!followerId) return;
         try {
-            const data = await fetchAPI(`/requests/accept/${followerId}`, { method: 'POST' }, token);
+            const data = await fetchAPI(`/requests/accept/${followerId}`, { method: 'POST' });
             if (data.success) {
                 const notifId = getSafeId(notification._id) || getSafeId(notification.id);
                 setFollowRequests(prev => prev.filter(n => (getSafeId(n._id) || getSafeId(n.id)) !== notifId));
                 showToast("Solicitud aceptada.", 'success');
-            } else {
-                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
         } catch (error) {
             showToast(ERRORS.SERVER_500, 'error');
@@ -70,34 +60,29 @@ const useNotifications = (token, userId) => {
     const handleReject = async (notification) => {
         const followerId = getSafeId(notification.sender_id) || getSafeId(notification.sender?._id);
         if (!followerId) return;
-
         try {
-            const data = await fetchAPI(`/requests/reject/${followerId}`, { method: 'POST' }, token);
+            const data = await fetchAPI(`/requests/reject/${followerId}`, { method: 'POST' });
             if (data.success) {
                 const notifId = getSafeId(notification._id) || getSafeId(notification.id);
                 setFollowRequests(prev => prev.filter(n => (getSafeId(n._id) || getSafeId(n.id)) !== notifId));
-            } else {
-                showToast(data.message || ERRORS.DEFAULT, 'error');
             }
-        } catch (error) {
-            showToast(ERRORS.SERVER_500, 'error');
-        }
+        } catch (error) {}
     };
 
     const openNotificationPost = async (postId, commentId, closeDropdown) => {
         if (closeDropdown) closeDropdown();
         
         const safePostId = getSafeId(postId);
-        if (!safePostId) return;
+        if (!safePostId) return showToast("No se pudo identificar la publicación.", 'error');
 
         setIsLoadingPost(true);
         try {
-            const data = await fetchAPI(`/posts/${safePostId}`, {}, token);
-            if (data.success) {
+            const data = await fetchAPI(`/posts/${safePostId}`);
+            if (data.success && data.post) {
                 setSelectedPostModal(data.post);
                 setTargetCommentId(getSafeId(commentId)); 
             } else {
-                showToast(data.message || "No se pudo cargar la publicación.", 'error');
+                showToast(data.message || "La publicación ya no existe o es privada.", 'error');
             }
         } catch (error) {
             showToast(ERRORS.SERVER_500, 'error');
@@ -111,57 +96,36 @@ const useNotifications = (token, userId) => {
     }, [fetchAll]);
 
     useEffect(() => {
-        if (!token || !userId) return;
-
-        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
-
-        if (echo.connector && echo.connector.pusher) {
-            echo.connector.pusher.config.authEndpoint = `${BACKEND_URL}/api/broadcasting/auth`;
-            echo.connector.pusher.config.auth = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json'
-                }
-            };
-        }
+        if (!userId || !echo) return;
 
         const channelName = `App.Models.User.${userId}`;
         const channel = echo.private(channelName);
 
-        channel.stopListening('.notification.sent');
-
-        channel.listen('.notification.sent', (e) => {
-            const data = typeof e === 'string' ? JSON.parse(e) : e;
-            const newNotif = data.notification;
+        const handleNewNotif = (payload) => {
+            const newNotif = payload.notification || payload;
             if (!newNotif) return;
 
-            if (data.unread_count !== undefined) {
-                setUnreadCount(data.unread_count);
-            }
+            setUnreadCount(payload.unread_count !== undefined ? payload.unread_count : prev => prev + 1);
 
             const newId = getSafeId(newNotif._id) || getSafeId(newNotif.id);
-
             if (newId && processedIds.current.has(newId)) return;
             if (newId) processedIds.current.add(newId);
 
             if (newNotif.type === 'follow_request') {
-                setFollowRequests(prev => {
-                    if (prev.some(n => (getSafeId(n._id) || getSafeId(n.id)) === newId)) return prev;
-                    return [newNotif, ...prev];
-                });
+                setFollowRequests(prev => [newNotif, ...prev]);
             } else {
-                setMainNotifications(prev => {
-                    if (prev.some(n => (getSafeId(n._id) || getSafeId(n.id)) === newId)) return prev;
-                    return [newNotif, ...prev];
-                });
+                setMainNotifications(prev => [newNotif, ...prev]);
             }
-        });
+        };
+
+        channel.notification(handleNewNotif);
+        channel.listen('.notification.sent', (e) => handleNewNotif(typeof e === 'string' ? JSON.parse(e) : e));
 
         return () => {
             channel.stopListening('.notification.sent');
             echo.leave(channelName);
         };
-    }, [token, userId]);
+    }, [userId]);
 
     return {
         mainNotifications, followRequests, unreadCount, handleAccept, handleReject, markAllAsRead,

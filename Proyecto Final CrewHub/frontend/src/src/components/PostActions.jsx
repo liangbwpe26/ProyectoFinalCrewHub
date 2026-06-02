@@ -1,15 +1,16 @@
-import React, { useContext, useRef, useEffect, useState, Fragment } from 'react';
+import React, { useContext, useState, useRef, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext.jsx';
 import { usePostInteractions } from '../hooks/usePostInteractions';
 import { fetchAPI } from '../services/api.js';
 
 const PostActions = ({ post, targetCommentId = null }) => {
-    const { token, activeUser } = useContext(AuthContext);
+    const { activeUser } = useContext(AuthContext);
     const inputRef = useRef(null);
 
     const [hasScrolledToTarget, setHasScrolledToTarget] = useState(false);
     const [hasSaved, setHasSaved] = useState(post.has_saved || false);
+    const [hasReposted, setHasReposted] = useState(post.has_reposted || false);
 
     const {
         hasReacted, reactionsCount, handlePostReact,
@@ -18,7 +19,7 @@ const PostActions = ({ post, targetCommentId = null }) => {
         replyingTo, setReplyingTo,
         mentionResults, showMentions, isSearchingMentions, handleInputChange, selectMention,
         handleCommentReact, commentsCount, hasMore, loadingMore, loadMoreComments
-    } = usePostInteractions(post, token, targetCommentId);
+    } = usePostInteractions(post, targetCommentId);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
@@ -58,10 +59,21 @@ const PostActions = ({ post, targetCommentId = null }) => {
         const previousState = hasSaved;
         setHasSaved(!hasSaved);
         try {
-            const data = await fetchAPI(`/posts/${post._id || post.id}/save`, { method: 'POST' }, token);
+            const data = await fetchAPI(`/posts/${post._id || post.id}/save`, { method: 'POST' });
             if (!data.success) setHasSaved(previousState);
         } catch (error) {
             setHasSaved(previousState);
+        }
+    };
+
+    const handlePostRepost = async () => {
+        const previousState = hasReposted;
+        setHasReposted(!hasReposted);
+        try {
+            const data = await fetchAPI(`/posts/${post._id || post.id}/repost`, { method: 'POST' });
+            if (!data.success) setHasReposted(previousState);
+        } catch (error) {
+            setHasReposted(previousState);
         }
     };
 
@@ -115,6 +127,17 @@ const PostActions = ({ post, targetCommentId = null }) => {
                             </button>
                             {commentsCount > 0 && <span className="text-white text-sm font-bold">{commentsCount}</span>}
                         </div>
+                        
+                        <button onClick={handlePostRepost} className={`flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition group ${hasReposted ? 'text-[#00ba7c]' : 'text-gray-400 hover:text-[#00ba7c]'}`}>
+                            <div className={`p-2 rounded-full transition ${hasReposted ? 'bg-[#00ba7c]/10' : 'group-hover:bg-[#00ba7c]/10'}`}>
+                                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <path d="M17 1l4 4-4 4"></path>
+                                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                    <path d="M7 23l-4-4 4-4"></path>
+                                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                </svg>
+                            </div>
+                        </button>
                     </div>
 
                     <div>
@@ -182,10 +205,10 @@ const PostActions = ({ post, targetCommentId = null }) => {
                                         )}
                                     </div>
                                 ))}
-                                
+
                                 {hasMore && (
                                     <div className="text-center my-2">
-                                        <button 
+                                        <button
                                             onClick={loadMoreComments}
                                             disabled={loadingMore}
                                             className={`bg-transparent text-[#0095f6] border-none text-sm font-bold transition-opacity ${loadingMore ? 'cursor-default opacity-50' : 'cursor-pointer hover:text-blue-500'}`}
@@ -199,7 +222,7 @@ const PostActions = ({ post, targetCommentId = null }) => {
 
                         <div className="relative mt-2">
                             {showMentions && (
-                                <div className="absolute bottom-full left-0 w-[220px] bg-[#1a1a1a] border border-[#333] rounded-lg z-10 overflow-hidden mb-1 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+                                <div className="absolute bottom-[calc(100%+8px)] left-0 w-full max-h-[160px] overflow-y-auto bg-[#1a1a1a] border border-[#333] rounded-lg z-[100] shadow-[0_-4px_12px_rgba(0,0,0,0.5)] custom-scrollbar">
                                     {isSearchingMentions ? (
                                         <div className="p-3 text-gray-500 text-sm text-center">Cargando...</div>
                                     ) : mentionResults.length > 0 ? (
@@ -222,7 +245,7 @@ const PostActions = ({ post, targetCommentId = null }) => {
                                 </div>
                             )}
 
-                            <form onSubmit={(e) => submitComment(e)} className="flex gap-3 items-center">
+                            <form onSubmit={(e) => submitComment(e)} className="flex gap-3 items-center relative z-10">
                                 <img src={getAvatar(activeUser)} className="w-7 h-7 rounded-full object-cover" alt="" />
                                 <input ref={inputRef} type="text" value={newComment} onChange={handleInputChange} placeholder="Escribe un comentario o @ para mencionar..." className="flex-1 bg-transparent border-none text-white outline-none text-sm placeholder-gray-500" />
                                 <button type="submit" disabled={!newComment.trim()} className={`bg-transparent border-none font-bold text-sm ${newComment.trim() ? 'text-[#0095f6] cursor-pointer hover:text-blue-500' : 'text-[#262626] cursor-default'}`}>Publicar</button>

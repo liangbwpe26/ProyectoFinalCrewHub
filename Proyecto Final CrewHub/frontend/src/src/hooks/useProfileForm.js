@@ -1,59 +1,71 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchAPI } from '../services/api.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
-export const useProfileForm = (token, initialData = {}) => {
-    const [displayName, setDisplayName] = useState(initialData.display_name || "");
-    const [dateOfBirth, setDateOfBirth] = useState(initialData.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
+export const useProfileForm = (initialData) => {
+    const [displayName, setDisplayName] = useState(initialData?.display_name || "");
+    const [dateOfBirth, setDateOfBirth] = useState(initialData?.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
     const [imageFile, setImageFile] = useState(null);
-    const [isPrivate, setIsPrivate] = useState(initialData.is_private || false);
-    
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
-    
-    const defaultAvatar = initialData.profile_picture 
-        ? (initialData.profile_picture.startsWith('http') ? initialData.profile_picture : `${BACKEND_URL}${initialData.profile_picture}`)
-        : `https://ui-avatars.com/api/?name=${initialData.username || 'U'}&background=262626&color=fff&bold=true&size=150`;
+    const [isPrivate, setIsPrivate] = useState(initialData?.is_private || false);
+    const [businessSlogan, setBusinessSlogan] = useState(initialData?.business_slogan || '');
+    const [bannerFile, setBannerFile] = useState(null);
+    const [previewBannerUrl, setPreviewBannerUrl] = useState(initialData?.banner_picture || '');
 
-    const [previewUrl, setPreviewUrl] = useState(defaultAvatar);
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
+    const getAvatar = (user) => {
+        if (!user) return `https://ui-avatars.com/api/?name=U&background=262626&color=fff&bold=true&size=150`;
+        return user.profile_picture
+            ? (user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`)
+            : `https://ui-avatars.com/api/?name=${user.username || 'U'}&background=262626&color=fff&bold=true&size=150`;
+    };
+
+    const [previewUrl, setPreviewUrl] = useState(getAvatar(initialData));
     const [loading, setLoading] = useState(false);
-    
     const { showToast } = useToast();
+
+    useEffect(() => {
+        if (initialData && initialData.id) {
+            setDisplayName(initialData.display_name || "");
+            setDateOfBirth(initialData.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
+            setIsPrivate(initialData.is_private || false);
+            setPreviewUrl(getAvatar(initialData));
+        }
+    }, [initialData?.id]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            showToast("Solo se permiten imágenes (JPG, PNG, GIF).", "error");
-            return;
-        }
-        if (file.size > 2 * 1024 * 1024) {
-            showToast("La imagen es demasiado pesada. Máximo 2MB.", "error");
-            return;
-        }
-
         setImageFile(file);
         setPreviewUrl(URL.createObjectURL(file));
     };
 
+    const handleBannerChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setBannerFile(file);
+            setPreviewBannerUrl(URL.createObjectURL(file));
+        }
+    };
+
     const submitProfile = async (onSuccessCallback) => {
         setLoading(true);
-
         const formData = new FormData();
         if (displayName) formData.append('display_name', displayName);
         if (dateOfBirth) formData.append('date_of_birth', dateOfBirth);
         if (imageFile) formData.append('profile_picture', imageFile);
         formData.append('is_private', isPrivate ? 'true' : 'false');
+        formData.append('business_slogan', businessSlogan);
+        if (bannerFile) {
+            formData.append('banner_picture', bannerFile);
+        }
 
         try {
-            const data = await fetchAPI('/profile/update', { method: 'POST', body: formData }, token);
-
+            const data = await fetchAPI('/users/update', { method: 'POST', body: formData });
             if (data.success) {
-                showToast('Perfil actualizado correctamente.', 'success');
+                showToast('Perfil actualizado.', 'success');
                 if (onSuccessCallback) onSuccessCallback(data.user);
-            } else {
-                showToast(data.message || 'Error al actualizar el perfil.', 'error');
             }
         } catch (err) {
             showToast(ERRORS.SERVER_500, 'error');
@@ -63,10 +75,9 @@ export const useProfileForm = (token, initialData = {}) => {
     };
 
     return {
-        displayName, setDisplayName,
-        dateOfBirth, setDateOfBirth,
-        previewUrl, handleImageChange,
-        isPrivate, setIsPrivate,
-        loading, submitProfile
+        displayName, setDisplayName, dateOfBirth, setDateOfBirth,
+        previewUrl, handleImageChange, isPrivate, setIsPrivate,
+        loading, submitProfile, businessSlogan, setBusinessSlogan,
+        previewBannerUrl, handleBannerChange,
     };
 };

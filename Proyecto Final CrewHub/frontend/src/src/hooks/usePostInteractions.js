@@ -3,11 +3,10 @@ import { fetchAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
-export const usePostInteractions = (post, token, targetCommentId = null) => {
+export const usePostInteractions = (post, targetCommentId = null) => {
     const postId = post._id || post.id;
     const { showToast } = useToast();
 
-    // Estados
     const [hasReacted, setHasReacted] = useState(post.has_reacted || false);
     const [reactionsCount, setReactionsCount] = useState(post.reactions_count || 0);
     const [showComments, setShowComments] = useState(!!targetCommentId);
@@ -32,7 +31,8 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
         setReactionsCount(prev => wasReacted ? prev - 1 : prev + 1);
 
         try {
-            const data = await fetchAPI(`/posts/${postId}/react`, { method: 'POST' }, token);
+            // Llamada limpia
+            const data = await fetchAPI(`/posts/${postId}/react`, { method: 'POST' });
             if (!data.success) {
                 setHasReacted(wasReacted);
                 setReactionsCount(prev => wasReacted ? prev + 1 : prev - 1);
@@ -50,12 +50,12 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
         else setLoadingMore(true);
 
         try {
-            const data = await fetchAPI(`/posts/${postId}/comments?offset=${currentOffset}`, {}, token);
-            
+            const data = await fetchAPI(`/posts/${postId}/comments?offset=${currentOffset}`);
+
             if (data.success) {
                 if (currentOffset === 0) setComments(data.comments);
                 else setComments(prev => [...prev, ...data.comments]);
-                
+
                 setHasMore(data.hasMore);
                 setOffset(currentOffset);
             } else {
@@ -67,7 +67,7 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             setLoadingComments(false);
             setLoadingMore(false);
         }
-    }, [postId, token]); 
+    }, [postId]);
 
     useEffect(() => {
         if (targetCommentId) {
@@ -75,24 +75,20 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             fetchComments(0);
         }
     }, [targetCommentId, fetchComments]);
-    
-    // NUEVA MAGIA: EL SCROLL Y RESALTADO AUTOMÁTICO
+
     useEffect(() => {
         if (targetCommentId && comments.length > 0) {
-            // Le damos 100ms a React para que termine de pintar el HTML de los comentarios
             setTimeout(() => {
                 const commentElement = document.getElementById(`comment-${targetCommentId}`);
                 if (commentElement) {
-                    // 1. Bajamos la pantalla hasta el comentario (centrado)
                     commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // 2. Destello visual azul para que el usuario sepa cuál es
+
                     commentElement.style.transition = 'background-color 0.5s ease';
-                    commentElement.style.backgroundColor = 'rgba(0, 149, 246, 0.3)'; // Azul suave
-                    
+                    commentElement.style.backgroundColor = 'rgba(0, 149, 246, 0.3)';
+
                     setTimeout(() => {
                         commentElement.style.backgroundColor = 'transparent';
-                    }, 2000); // El destello dura 2 segundos
+                    }, 2000);
                 }
             }, 100);
         }
@@ -106,7 +102,7 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
 
     const loadAllReplies = async (commentId) => {
         try {
-            const data = await fetchAPI(`/comments/${commentId}/replies`, {}, token);
+            const data = await fetchAPI(`/comments/${commentId}/replies`);
             if (data.success) {
                 setComments(prev => prev.map(c => {
                     if ((c._id || c.id) === commentId) return { ...c, replies_preview: data.replies };
@@ -129,7 +125,7 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             const body = { content: newComment };
             if (replyingTo) body.parent_id = replyingTo;
 
-            const data = await fetchAPI(`/posts/${postId}/comments`, { method: 'POST', body }, token);
+            const data = await fetchAPI(`/posts/${postId}/comments`, { method: 'POST', body });
 
             if (data.success) {
                 if (replyingTo) fetchComments();
@@ -161,11 +157,10 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
             setIsSearchingMentions(true);
 
             try {
-                const data = await fetchAPI(`/mentions/search?q=${query}`, {}, token);
+                const data = await fetchAPI(`/mentions/search?q=${query}`);
                 if (data.success) setMentionResults(data.users);
-            } catch (err) { 
-                // Evitamos el toast aquí para que no sea molesto mientras se escribe rápido
-            } finally { setIsSearchingMentions(false); }
+            } catch (err) { } 
+            finally { setIsSearchingMentions(false); }
         } else {
             setShowMentions(false);
         }
@@ -181,7 +176,7 @@ export const usePostInteractions = (post, token, targetCommentId = null) => {
 
     const handleCommentReact = async (commentId) => {
         try {
-            const data = await fetchAPI(`/comments/${commentId}/react`, { method: 'POST' }, token);
+            const data = await fetchAPI(`/comments/${commentId}/react`, { method: 'POST' });
             if (data.success) {
                 setComments(prev => prev.map(c => {
                     if ((c._id || c.id) === commentId) {

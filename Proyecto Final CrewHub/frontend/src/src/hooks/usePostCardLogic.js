@@ -11,7 +11,7 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
     const [showMenu, setShowMenu] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     
-    const { token, activeUser } = useContext(AuthContext);
+    const { activeUser } = useContext(AuthContext);
     const { showToast } = useToast();
 
     const isMyPost = activeUser && (activeUser.id === postData.user_id || activeUser.username === postData.user?.username);
@@ -21,7 +21,7 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
     const confirmDelete = async () => {
         setIsDeleteModalOpen(false); 
         try {
-            const res = await fetchAPI(`/posts/${postData._id || postData.id}`, { method: 'DELETE' }, token);
+            const res = await fetchAPI(`/posts/${postData._id || postData.id}`, { method: 'DELETE' });
             if (res.success) {
                 setIsDeleted(true);
                 showToast("Publicación eliminada", "success");
@@ -43,7 +43,7 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
             const res = await fetchAPI(`/posts/${postData._id || postData.id}`, {
                 method: 'PUT',
                 body: { description: editDescription }
-            }, token);
+            });
             
             if (res.success) {
                 setPostData(prev => ({
@@ -63,7 +63,6 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
         }
     };
 
-    // CORRECCIÓN AQUÍ: Usar la variable de entorno para las rutas de imágenes
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
     const getPostImage = (path) => path?.startsWith("http") ? path : `${BACKEND_URL}${path}`;
 

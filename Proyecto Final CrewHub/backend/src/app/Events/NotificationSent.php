@@ -28,7 +28,6 @@ class NotificationSent implements ShouldBroadcastNow
         ];
     }
 
-    // 👉 EL AJUSTE MAESTRO: Calculamos y enviamos el contador exacto
     public function broadcastWith(): array
     {
         $this->notification->load(['sender', 'post']);

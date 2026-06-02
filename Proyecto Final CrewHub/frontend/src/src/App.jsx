@@ -3,22 +3,19 @@ import { BrowserRouter } from "react-router-dom";
 import AuthProvider from "./contexts/AuthContext.jsx";
 import RoutesApp from "./components/structure/Routes.jsx";
 import { ToastProvider } from "./contexts/ToastContext.jsx";
+import GlobalNotificationListener from "./components/GlobalNotificationListener.jsx";
 import ReactDOM from 'react-dom/client';
 import './index.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-
 const App = () => {
     return (
         <Fragment>
-            {/* El ToastProvider permite mostrar notificaciones emergentes */}
             <ToastProvider>
-                {/* El AuthProvider envuelve todo para gestionar el estado de la sesión */}
                 <AuthProvider>
-                    {/* BrowserRouter habilita la navegación sin recargar la página */}
-                    <BrowserRouter>
-                        {/* Aquí inyectamos nuestro módulo de rutas */}
+                    <BrowserRouter>             
+                        <GlobalNotificationListener />
                         <RoutesApp />
                     </BrowserRouter>
                 </AuthProvider>

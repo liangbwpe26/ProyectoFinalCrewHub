@@ -1,113 +1,82 @@
-import React, { Fragment, useRef, useState, useContext, useEffect } from 'react';
-import { AuthContext } from '../contexts/AuthContext.jsx';
-import { useStories } from '../hooks/useStories.js';
-import { useToast } from '../contexts/ToastContext.jsx';
-import StoryViewer from './StoryViewer.jsx';
-import ImageCropperModal from './ImageCropperModal.jsx';
-import './StoriesBar.css'; 
+import React, { useState, useEffect, Fragment } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchAPI } from '../services/api.js';
 
-const StoriesBar = () => {
-    const { token, activeUser } = useContext(AuthContext);
-    const { storiesFeed, loadingStories, loadStories, uploadStory, markStoryAsViewed, deleteStory, toggleStoryLike, getStoryStats, replyToStory } = useStories(token);
-    const { showToast } = useToast();
-    
-    const fileInputRef = useRef(null);
-    const [viewerState, setViewerState] = useState({ isOpen: false, initialIndex: 0 });
-    const [isUploading, setIsUploading] = useState(false);
-    const [cropImageSrc, setCropImageSrc] = useState(null);
-
+// Recibimos la prop refreshKey (con valor por defecto 0 por si se usa en otros lados)
+const StoriesBar = ({ refreshKey = 0 }) => {
+    const [stories, setStories] = useState([]);
+    const [loading, setLoading] = useState(true);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
-    useEffect(() => { loadStories(); }, [loadStories]);
+    // Se ejecuta al cargar, y CADA VEZ que el refreshKey cambie
+    useEffect(() => {
+        const loadStories = async () => {
+            try {
+                const data = await fetchAPI('/stories/feed');
+                if (data.success) {
+                    setStories(data.stories || []);
+                }
+            } catch (error) {
+                console.error("Error al cargar historias", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadStories();
+    }, [refreshKey]); 
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => setCropImageSrc(reader.result);
+    const getAvatar = (entity, isCommunity) => {
+        if (isCommunity) {
+            if (entity.avatar_path) return `${BACKEND_URL}${entity.avatar_path}`;
+            const initial = entity.name ? entity.name.charAt(0).toUpperCase() : 'C';
+            return `https://ui-avatars.com/api/?name=${initial}&background=1a1a1a&color=fff&bold=true`;
         } else {
-            executeUpload(file);
+            if (entity.profile_picture) return entity.profile_picture.startsWith('http') ? entity.profile_picture : `${BACKEND_URL}${entity.profile_picture}`;
+            const initial = entity.username ? entity.username.charAt(0).toUpperCase() : 'U';
+            return `https://ui-avatars.com/api/?name=${initial}&background=262626&color=fff&bold=true`;
         }
-        e.target.value = ''; 
     };
 
-    const handleCropComplete = async (croppedFile) => {
-        setCropImageSrc(null); 
-        executeUpload(croppedFile);
-    };
+    if (loading) {
+        return (
+            <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-2">
+                <div className="w-16 h-16 rounded-full bg-[#1a1a1a] animate-pulse shrink-0"></div>
+                <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] animate-pulse shrink-0"></div>
+            </div>
+        );
+    }
 
-    const executeUpload = async (fileToUpload) => {
-        setIsUploading(true);
-        const data = await uploadStory(fileToUpload);
-        setIsUploading(false);
-        if (data.success) showToast("Historia subida correctamente", "success");
-        else showToast("Error al subir la historia", "error");
-    };
-
-    const getAvatar = (user) => {
-        if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
-        return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
-    };
-
-    if (loadingStories) return <div className="p-5 text-gray-500 text-center text-sm">Cargando historias...</div>;
-
-    const myStoryGroupIndex = storiesFeed.findIndex(group => (group.user._id || group.user.id) === (activeUser?._id || activeUser?.id));
-    const hasMyStory = myStoryGroupIndex !== -1;
+    if (stories.length === 0) {
+        return <div className="text-gray-500 text-xs py-2 text-center">No hay historias recientes.</div>;
+    }
 
     return (
         <Fragment>
-            <div className="flex gap-4 overflow-x-auto whitespace-nowrap hide-scrollbar pb-2 pt-1 px-1">
-                <div className="flex flex-col items-center cursor-pointer shrink-0 relative">
-                    <div 
-                        onClick={() => hasMyStory ? setViewerState({ isOpen: true, initialIndex: myStoryGroupIndex }) : fileInputRef.current.click()}
-                        className={`w-16 h-16 rounded-full p-[3px] ${hasMyStory ? (storiesFeed[myStoryGroupIndex].all_viewed ? 'bg-[#333]' : 'bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600') : 'border border-[#333] bg-transparent'}`}
-                    >
-                        <img src={getAvatar(activeUser)} alt="Mi Historia" className="w-full h-full rounded-full object-cover border-[3px] border-[#121212]" />
-                    </div>
-                    
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}
-                        className="absolute bottom-6 right-0 w-6 h-6 rounded-full bg-[#0095f6] text-white border-2 border-[#121212] flex justify-center items-center cursor-pointer font-bold text-sm leading-none"
-                    >
-                        +
-                    </button>
-
-                    <span className="text-[11px] font-medium text-white mt-2">Tu historia</span>
-                    {isUploading && <span className="text-[10px] text-[#0095f6]">Subiendo...</span>}
-                    
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/mp4,video/quicktime" className="hidden" />
-                </div>
-
-                {storiesFeed.map((group, index) => {
-                    if ((group.user._id || group.user.id) === (activeUser?._id || activeUser?.id)) return null;
+            <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-2 pt-1 px-1">
+                {stories.map(story => {
+                    const isCommunity = !!story.community_id;
+                    const entity = isCommunity ? story.community : story.user;
+                    const entityName = isCommunity ? entity?.name : entity?.username;
+                    const linkTo = isCommunity ? `/communities/${entity?.slug}` : `/${entity?.username}`;
 
                     return (
-                        <div key={group.user.username} onClick={() => setViewerState({ isOpen: true, initialIndex: index })} className="flex flex-col items-center cursor-pointer shrink-0">
-                            <div className={`w-16 h-16 rounded-full p-[3px] ${group.all_viewed ? 'bg-[#333]' : 'bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600'}`}>
-                                <img src={getAvatar(group.user)} alt={group.user.username} className="w-full h-full rounded-full object-cover border-[3px] border-[#121212]" />
+                        <Link
+                            key={story.id || story._id}
+                            to={linkTo}
+                            className="flex flex-col items-center gap-2 w-16 shrink-0 no-underline group cursor-pointer"
+                        >
+                            <div className={`w-14 h-14 p-[2px] bg-gradient-to-tr from-[#0095f6] to-[#005bb5] transition-transform group-hover:scale-105 shadow-md ${isCommunity ? 'rounded-xl' : 'rounded-full'}`}>
+                                <div className={`w-full h-full border-2 border-[#121212] overflow-hidden bg-[#1a1a1a] ${isCommunity ? 'rounded-xl' : 'rounded-full'}`}>
+                                    <img src={getAvatar(entity, isCommunity)} alt={entityName} className="w-full h-full object-cover" />
+                                </div>
                             </div>
-                            <span className="text-[11px] font-medium text-gray-300 mt-2 max-w-[65px] overflow-hidden text-ellipsis">
-                                {group.user.username}
+                            <span className="text-gray-400 text-[10px] truncate w-full text-center group-hover:text-white transition-colors font-bold tracking-wide">
+                                {entityName}
                             </span>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>
-
-            {viewerState.isOpen && (
-                <StoryViewer 
-                    feed={storiesFeed} initialUserIndex={viewerState.initialIndex} 
-                    onClose={() => { setViewerState({ isOpen: false, initialIndex: 0 }); loadStories(); }}
-                    onStoryViewed={markStoryAsViewed} onDeleteStory={deleteStory}
-                    onToggleLike={toggleStoryLike} onGetStats={getStoryStats} onReply={replyToStory} 
-                />
-            )}
-
-            {cropImageSrc && (
-                <ImageCropperModal imageSrc={cropImageSrc} aspectRatio={9 / 16} onCropComplete={handleCropComplete} onCancel={() => setCropImageSrc(null)} />
-            )}
         </Fragment>
     );
 };

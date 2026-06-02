@@ -1,19 +1,10 @@
-# backend/Caddyfile
 :80 {
-    # Apuntamos a la carpeta public de Laravel dentro de /src
+    # Apunta a la carpeta pública de Laravel
     root * /var/www/html/public
     
-    # Compresión de archivos
-    encode zstd gzip
+    # Pasa las peticiones al procesador de PHP
+    php_fastcgi 127.0.0.1:9000
     
-    # Manejo de PHP-FPM (el proceso corre en el puerto 9000 por defecto)
-    php_fastcgi localhost:9000
-    
-    # Servir archivos estáticos
+    # Permite servir archivos estáticos (como las imágenes de storage)
     file_server
-    
-    # Logs para depuración (opcional)
-    log {
-        output stdout
-    }
 }

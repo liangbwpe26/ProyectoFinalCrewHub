@@ -4,7 +4,7 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
 export const useOnboarding = () => {
-    const { token, activeUser, setActiveUser } = useContext(AuthContext);
+    const { activeUser, setActiveUser } = useContext(AuthContext);
     const navigate = useNavigate();
     
     const [availableInterests, setAvailableInterests] = useState([]);
@@ -15,7 +15,7 @@ export const useOnboarding = () => {
     useEffect(() => {
         const fetchInterests = async () => {
             try {
-                const data = await fetchAPI('/interests', {}, token);
+                const data = await fetchAPI('/interests');
                 if (data.success) {
                     setAvailableInterests(data.interests);
                 }
@@ -26,8 +26,8 @@ export const useOnboarding = () => {
             }
         };
 
-        if (token) fetchInterests();
-    }, [token]);
+        fetchInterests();
+    }, []);
 
     const toggleInterest = (slug) => {
         if (selectedInterests.includes(slug)) {
@@ -44,13 +44,12 @@ export const useOnboarding = () => {
         try {
             const data = await fetchAPI('/user/interests', {
                 method: 'PUT',
-                // AGREGAR ESTOS HEADERS:
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({ interests: selectedInterests })
-            }, token);
+            });
 
             if (data.success) {
                 setActiveUser(data.user);

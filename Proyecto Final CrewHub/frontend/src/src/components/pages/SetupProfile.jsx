@@ -4,13 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useProfileForm } from "../../hooks/useProfileForm.js";
 
 const SetupProfile = () => {
-    const { token, activeUser, setActiveUser } = useContext(AuthContext); 
+    const { activeUser, setActiveUser } = useContext(AuthContext); 
     const navigate = useNavigate();
 
     const { 
         displayName, setDisplayName, dateOfBirth, setDateOfBirth, 
         previewUrl, handleImageChange, loading, submitProfile 
-    } = useProfileForm(token, activeUser || {});
+    } = useProfileForm(activeUser || {});
 
     const handleSetup = (e) => {
         e.preventDefault();

@@ -1,11 +1,10 @@
-import React, { useState, useContext, Fragment, useRef, useEffect } from 'react';
+import React, { useContext, useState, useRef, useEffect, Fragment } from 'react';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import useNotifications, { getSafeId } from '../hooks/useNotifications.js';
 import PostActions from './PostActions.jsx';
 
 const NotificationBell = () => {
-    const { token, activeUser } = useContext(AuthContext);
-
+    const { activeUser } = useContext(AuthContext);
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('main');
     const bellRef = useRef(null);
@@ -21,9 +20,8 @@ const NotificationBell = () => {
         setSelectedPostModal,
         openNotificationPost,
         targetCommentId,
-    } = useNotifications(token, activeUser?._id || activeUser?.id);
+    } = useNotifications(activeUser?._id || activeUser?.id);
 
-    // Constante para cargar la URL dinámicamente
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     const getAvatar = (user) => {
@@ -76,22 +74,30 @@ const NotificationBell = () => {
                                     <p className="text-center text-gray-500 p-5 text-sm">No hay actividad reciente.</p>
                                 ) : (
                                     mainNotifications.map(notif => {
-                                        const postId = getSafeId(notif.post_id) || getSafeId(notif.post?._id);
+                                        const postId = notif.post_id || notif.post?._id || notif.post?.id;
+
                                         return (
                                             <div
-                                                key={getSafeId(notif._id) || getSafeId(notif.id)}
+                                                key={notif._id || notif.id}
                                                 onClick={() => {
-                                                    if (notif.type === 'story_reaction') setIsOpen(false);
-                                                    else openNotificationPost(postId, notif.comment_id, () => setIsOpen(false));
+                                                    if (postId) {
+                                                        openNotificationPost(postId, notif.comment_id);
+                                                    }
                                                 }}
-                                                className="flex items-center gap-3 p-3 border-b border-[#1a1a1a] cursor-pointer hover:bg-[#1a1a1a] transition"
+                                                className="flex items-center gap-3 p-3 hover:bg-[#1a1a1a] cursor-pointer"
                                             >
-                                                <img src={getAvatar(notif.sender)} className="w-9 h-9 rounded-full object-cover" alt="" />
-                                                <div className="flex-1 text-[13px] text-gray-300">
-                                                    <strong className="text-white mr-1">{notif.sender?.username}</strong>
-                                                    {notif.type === 'tag' ? 'te etiquetó.' : notif.type === 'comment_reaction' ? 'reaccionó a tu comentario.' : 'le dio me gusta a tu post.'}
+                                                <img src={getAvatar(notif.sender)} className="w-9 h-9 rounded-full" />
+                                                <div className="flex-1 text-sm text-gray-300">
+                                                    <span className="font-bold text-white">{notif.sender?.username}</span>
+                                                    {notif.type === 'tag' ? ' te etiquetó.' : ' reaccionó a tu post.'}
                                                 </div>
-                                                {notif.post && <img src={notif.post.image_path.startsWith('http') ? notif.post.image_path : `${BACKEND_URL}${notif.post.image_path}`} className="w-10 h-10 rounded object-cover" alt="" />}
+
+                                                {notif.post && (
+                                                    <img
+                                                        src={notif.post.image_path.startsWith('http') ? notif.post.image_path : `${BACKEND_URL}${notif.post.image_path}`}
+                                                        className="w-10 h-10 rounded object-cover ml-2"
+                                                    />
+                                                )}
                                             </div>
                                         );
                                     })
@@ -122,21 +128,33 @@ const NotificationBell = () => {
                     </div>
                 )}
 
-                {/* Modal de Publicación */}
+                {/* Modal de Publicación Corregido */}
                 {selectedPostModal && (
                     <div className="fixed inset-0 bg-black/90 z-[9999] flex justify-center items-center p-5 cursor-default" onClick={() => setSelectedPostModal(null)}>
                         <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
-                            <div className="p-4 flex justify-between items-center border-b border-[#262626]">
+                            {/* Header estático */}
+                            <div className="p-4 flex justify-between items-center border-b border-[#262626] shrink-0">
                                 <div className="flex items-center gap-3">
                                     <img src={getAvatar(selectedPostModal.user)} alt="avatar" className="w-9 h-9 rounded-full object-cover" />
                                     <strong className="text-white">{selectedPostModal.user?.username}</strong>
                                 </div>
                                 <button onClick={() => setSelectedPostModal(null)} className="bg-transparent text-gray-500 hover:text-white border-none text-xl cursor-pointer font-bold">✕</button>
                             </div>
+
+                            {/* Cuerpo con scroll */}
                             <div className="overflow-y-auto flex-1 flex flex-col custom-scrollbar">
-                                <div className="bg-black flex justify-center items-center"><img src={selectedPostModal.image_path.startsWith('http') ? selectedPostModal.image_path : `${BACKEND_URL}${selectedPostModal.image_path}`} alt="Post" className="w-full max-h-[60vh] object-contain" /></div>
-                                <div className="p-5 pb-0"><p className="m-0 text-[15px] text-gray-300"><strong className="text-white mr-2">@{selectedPostModal.user?.username}</strong>{selectedPostModal.description}</p></div>
-                                <PostActions post={selectedPostModal} targetCommentId={targetCommentId} />
+                                {/* Contenedor de Imagen ajustado y protegido con shrink-0 */}
+                                <div className="bg-black flex justify-center items-center shrink-0">
+                                    <img src={selectedPostModal.image_path.startsWith('http') ? selectedPostModal.image_path : `${BACKEND_URL}${selectedPostModal.image_path}`} alt="Post" className="w-full max-h-[40vh] object-contain" />
+                                </div>
+                                {/* Descripción protegida */}
+                                <div className="p-4 pb-0 shrink-0">
+                                    <p className="m-0 text-[15px] text-gray-300"><strong className="text-white mr-2">@{selectedPostModal.user?.username}</strong>{selectedPostModal.description}</p>
+                                </div>
+                                {/* Interacciones protegidas */}
+                                <div className="p-4 shrink-0">
+                                    <PostActions post={selectedPostModal} targetCommentId={targetCommentId} />
+                                </div>
                             </div>
                         </div>
                     </div>

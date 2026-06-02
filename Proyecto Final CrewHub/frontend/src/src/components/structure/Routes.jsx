@@ -15,65 +15,74 @@ import VerifyEmail from "../pages/VerifyEmail.jsx";
 import ForgotPassword from "../pages/ForgotPassword.jsx";
 import ResetPassword from "../pages/ResetPassword.jsx";
 import Onboarding from "../pages/Onboarding.jsx";
+import Communities from "../pages/Communities.jsx";
+import Community from '../pages/Community.jsx';
+import DropsFeed from "../pages/DropsFeed.jsx";
+import AdminPanel from "../pages/AdminPanel.jsx";
+import Premium from "../pages/Premium.jsx";
+import Checkout from "../pages/Checkout.jsx";
+import Explore from "../pages/Explore.jsx";
 
 const RoutesApp = () => {
-    const { token, activeUser } = useContext(AuthContext);
+    const { activeUser } = useContext(AuthContext);
 
-    // Guardián para rutas principales: Exige token Y tener intereses
     const ProtectedRoute = ({ children }) => {
-        if (!token) {
+        if (!activeUser) {
             return <Navigate to="/login" replace />;
         }
-        
-        // Si tiene sesión pero el arreglo de intereses está vacío o no existe, lo forzamos al onboarding
-        if (activeUser && (!activeUser.interests || activeUser.interests.length === 0)) {
+
+        if (!activeUser.interests || activeUser.interests.length === 0) {
             return <Navigate to="/onboarding" replace />;
         }
-        
+
         return children;
     };
 
-    // Guardián para el Onboarding: Exige token, pero te saca si ya tienes intereses
     const OnboardingRoute = ({ children }) => {
-        if (!token) {
+        if (!activeUser) {
             return <Navigate to="/login" replace />;
         }
-        
-        // Si ya tiene intereses, no tiene sentido que vea el onboarding, va al feed
-        if (activeUser && activeUser.interests && activeUser.interests.length > 0) {
+
+        if (activeUser.interests && activeUser.interests.length > 0) {
             return <Navigate to="/" replace />;
         }
-        
+
         return children;
     };
 
     return (
         <Fragment>
             <Routes>
-                {/* RUTAS PÚBLICAS */}
-                <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
-                <Route path="/register" element={!token ? <Register /> : <Navigate to="/setup-profile" />} />
-                <Route path="/verify-email" element={!token ? <VerifyEmail /> : <Navigate to="/" />} />
-                <Route path="/forgot-password" element={!token ? <ForgotPassword /> : <Navigate to="/" />} />
-                <Route path="/reset-password" element={!token ? <ResetPassword /> : <Navigate to="/" />} />
-
-                {/* RUTAS DE CONFIGURACIÓN INICIAL (Requieren login pero no intereses) */}
-                <Route path="/setup-profile" element={token ? <SetupProfile /> : <Navigate to="/login" />} />
-                
-                {/* RUTA DE ONBOARDING CON SU GUARDIÁN */}
+                {/* RUTAS PÚBLICAS Y DE AUTENTICACIÓN */}
+                <Route path="/login" element={!activeUser ? <Login /> : <Navigate to="/" />} />
+                <Route path="/register" element={!activeUser ? <Register /> : <Navigate to="/setup-profile" />} />
+                <Route path="/verify-email" element={!activeUser ? <VerifyEmail /> : <Navigate to="/" />} />
+                <Route path="/forgot-password" element={!activeUser ? <ForgotPassword /> : <Navigate to="/" />} />
+                <Route path="/reset-password" element={!activeUser ? <ResetPassword /> : <Navigate to="/" />} />
+                <Route path="/setup-profile" element={activeUser ? <SetupProfile /> : <Navigate to="/login" />} />
+                <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
+                <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                 <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
+                <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
 
-                {/* RUTAS PROTEGIDAS (Requieren login y haber completado intereses) */}
+                {/* RUTAS ESTÁTICAS PROTEGIDAS */}
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-
+                <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/drops" element={<ProtectedRoute><DropsFeed /></ProtectedRoute>} />
+                <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
+                
+                {/* PANEL ADMIN PROTEGIDO */}
+                <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                
                 {/* RUTAS DE CHATS */}
-                <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-                <Route path="/chats/:username" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-
-                {/* NUEVA RUTA DE CONFIGURACIÓN (Acepta parámetros dinámicos) */}
+                <Route path="/conversations" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
+                <Route path="/conversations/:username" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
+                
+                {/* CONFIGURACIÓN */}
                 <Route path="/settings/:tab?" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-                {/* RUTAS CON PARÁMETROS */}
+                {/* RUTAS DINÁMICAS */}
+                <Route path="/communities/:slug" element={<ProtectedRoute><Community /></ProtectedRoute>} />
                 <Route path="/post/:id" element={<ProtectedRoute><SinglePost /></ProtectedRoute>} />
                 <Route path="/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 

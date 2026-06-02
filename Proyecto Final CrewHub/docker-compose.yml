@@ -4,8 +4,8 @@ services:
     container_name: social_backend
     restart: always
     ports:
-      - "8000:80"
-      - "8080:8080"
+      - "${HTTP_PORT:-8000}:80"
+      - "443:443"
     volumes:
       - ./backend/src:/var/www/html
       - ./backend/Caddyfile:/etc/caddy/Caddyfile
@@ -13,6 +13,25 @@ services:
       - app_network
     depends_on:
       - mongodb
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - DB_CONNECTION=mongodb
+      - DB_HOST=mongodb
+      - DB_PORT=27017
+
+  reverb:
+    build: ./backend
+    container_name: social_reverb
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/src:/var/www/html
+    networks:
+      - app_network
+    depends_on:
+      - mongodb
+    command: php artisan reverb:start --host="0.0.0.0" --port="8080"
 
   frontend:
     build: ./frontend

@@ -4,16 +4,16 @@ import { useChatRoomLogic } from '../hooks/useChatRoomLogic.js';
 import MessageBubble from './MessageBubble.jsx';
 
 const ChatRoom = ({ targetUsername }) => {
-    const { token, activeUser } = useContext(AuthContext);
+    const { activeUser } = useContext(AuthContext);
     
-    // ESTADOS PARA LA IMAGEN QUE FALTABAN
     const [selectedImage, setSelectedImage] = useState(null);
     const fileInputRef = useRef(null);
 
     const {
         messages, newMessage, setNewMessage, messagesEndRef,
-        handleSendMessage, handleEditMessage, handleDeleteMessage
-    } = useChatRoomLogic(targetUsername, token);
+        handleSendMessage, handleEditMessage, handleDeleteMessage,
+        isLoadingChat 
+    } = useChatRoomLogic(targetUsername);
 
     return (
         <Fragment>
@@ -22,8 +22,13 @@ const ChatRoom = ({ targetUsername }) => {
                     <div className="font-bold text-lg text-white">@{targetUsername}</div>
                 </div>
 
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">
-                    {messages.length === 0 ? (
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
+                    {isLoadingChat ? (
+                        <div className="absolute inset-0 flex flex-col justify-center items-center bg-[#0a0a0a] z-10">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0095f6] mb-3"></div>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Cargando chat...</span>
+                        </div>
+                    ) : messages.length === 0 ? (
                         <p className="text-center text-gray-500 mt-5 text-sm">Inicia una conversación con {targetUsername}</p>
                     ) : (
                         messages.map((msg) => (
@@ -58,7 +63,6 @@ const ChatRoom = ({ targetUsername }) => {
                         }} 
                         className="flex gap-3 items-center"
                     >
-                        {/* BOTÓN DEL CLIP PARA ADJUNTAR */}
                         <button 
                             type="button" 
                             onClick={() => fileInputRef.current.click()} 
@@ -73,12 +77,13 @@ const ChatRoom = ({ targetUsername }) => {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Escribe un mensaje..."
-                            className="flex-1 px-4 py-3 rounded-full border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition text-sm"
+                            disabled={isLoadingChat}
+                            className="flex-1 px-4 py-3 rounded-full border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition text-sm disabled:opacity-50"
                         />
                         <button 
                             type="submit" 
-                            disabled={!newMessage.trim() && !selectedImage}
-                            className={`px-5 h-11 rounded-full border-none font-bold text-sm transition ${ (newMessage.trim() || selectedImage) ? 'bg-[#0095f6] text-white cursor-pointer hover:bg-blue-600' : 'bg-[#262626] text-gray-500 cursor-default' }`}
+                            disabled={(!newMessage.trim() && !selectedImage) || isLoadingChat}
+                            className={`px-5 h-11 rounded-full border-none font-bold text-sm transition ${ (newMessage.trim() || selectedImage) && !isLoadingChat ? 'bg-[#0095f6] text-white cursor-pointer hover:bg-blue-600' : 'bg-[#262626] text-gray-500 cursor-default' }`}
                         >
                             Enviar
                         </button>

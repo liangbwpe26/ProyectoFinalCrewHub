@@ -3,25 +3,21 @@ import { fetchAPI } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import echo from '../services/echo.js'; 
 
-export const useChatsLogic = (token, activeUsernameTarget = null) => {
+export const useChatsLogic = (activeUsernameTarget = null) => {
     const [chatList, setChatList] = useState([]);
     const [loading, setLoading] = useState(true);
     const { activeUser } = useContext(AuthContext);
 
     const loadChatData = useCallback(async () => {
-        if (!token) return;
         try {
             const t = new Date().getTime(); 
             const [convRes, mutualsRes] = await Promise.all([
-                fetchAPI(`/conversations?t=${t}`, {}, token),
-                fetchAPI(`/mutuals?t=${t}`, {}, token)
+                fetchAPI(`/conversations?t=${t}`),
+                fetchAPI(`/mutuals?t=${t}`)
             ]);
 
-            let activeConversations = [];
-            let mutualFriends = [];
-
-            if (convRes.success) activeConversations = convRes.conversations;
-            if (mutualsRes.success) mutualFriends = mutualsRes.mutuals;
+            let activeConversations = convRes.success ? convRes.conversations : [];
+            let mutualFriends = mutualsRes.success ? mutualsRes.mutuals : [];
 
             const activeUserIds = new Set(activeConversations.map(c => c.user._id || c.user.id));
 
@@ -34,21 +30,22 @@ export const useChatsLogic = (token, activeUsernameTarget = null) => {
                     unread: false 
                 }));
 
-            const formattedActive = activeConversations.map(c => ({
-                ...c, 
-                unread: c.unread 
-            }));
-
-            setChatList([...formattedActive, ...newChatOptions]);
+            setChatList(prev => {
+                const newList = [...activeConversations, ...newChatOptions];
+                if (JSON.stringify(prev) === JSON.stringify(newList)) return prev;
+                return newList;
+            });
 
         } catch (error) {
             console.error("Error cargando bandeja:", error);
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
-    useEffect(() => { loadChatData(); }, [loadChatData]);
+    useEffect(() => {
+        loadChatData();
+    }, [loadChatData]);
 
     useEffect(() => {
         const handleForceReload = () => loadChatData();
@@ -61,7 +58,7 @@ export const useChatsLogic = (token, activeUsernameTarget = null) => {
     }, [loadChatData]);
 
     useEffect(() => {
-        if (!token || !activeUser) return;
+        if (!activeUser) return;
         const userId = activeUser._id || activeUser.id;
         const channelName = `App.Models.User.${userId}`;
         const channel = echo.private(channelName);
@@ -75,15 +72,14 @@ export const useChatsLogic = (token, activeUsernameTarget = null) => {
             channel.stopListening('.MessageEdited');
             channel.stopListening('.MessageDeleted');
         };
-    }, [token, activeUser, loadChatData]);
+    }, [activeUser, loadChatData]);
 
-    const markAsRead = (username) => {
+    const markAsRead = useCallback((username) => {
         setChatList(prev => prev.map(chat => 
             chat.user.username === username ? { ...chat, unread: false } : chat
         ));
-    };
+    }, []);
 
-    // CORRECCIÓN AQUÍ: Evitamos hardcodear el 127.0.0.1
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
     
     const getAvatar = (user) => {

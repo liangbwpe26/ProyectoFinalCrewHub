@@ -58,7 +58,6 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
 
     useEffect(() => {
         if (progress >= 100) handleNext();
-    // eslint-disable-next-line
     }, [progress]);
 
     const handleNext = () => {
@@ -74,10 +73,14 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
     };
 
     const confirmDelete = async () => {
-        setIsDeleteModalOpen(false);
         const res = await onDeleteStory(currentStory._id || currentStory.id);
-        if (res.success) onClose();
-        else setIsPaused(false);
+        if (res.success) {
+            setIsDeleteModalOpen(false);
+            onClose();
+        } else {
+            setIsDeleteModalOpen(false);
+            setIsPaused(false);
+        }
     };
 
     const openStatsPanel = async (e) => {
@@ -122,6 +125,24 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     onMouseDown={() => setIsPaused(true)} onMouseUp={() => setIsPaused(false)}
                     onTouchStart={() => setIsPaused(true)} onTouchEnd={() => setIsPaused(false)}
                 >
+                    {/* MODAL DE CONFIRMACIÓN INTEGRADO */}
+                    {isDeleteModalOpen && (
+                        <div className="absolute inset-0 bg-black/80 z-[100] flex justify-center items-center p-5 backdrop-blur-sm">
+                            <div 
+                                className="bg-[#1a1a1a] border border-[#333] p-6 rounded-2xl w-full max-w-[300px] text-center shadow-2xl"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                            >
+                                <h3 className="text-white text-lg font-bold mt-0 mb-2">¿Eliminar historia?</h3>
+                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Esta foto o video desaparecerá inmediatamente y no podrá recuperarse.</p>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={confirmDelete} className="w-full bg-[#ff4d4d] text-white border-none py-3 rounded-xl font-bold cursor-pointer hover:bg-red-600 transition">Eliminar</button>
+                                    <button onClick={() => { setIsDeleteModalOpen(false); setIsPaused(false); }} className="w-full bg-transparent text-white border border-[#333] py-3 rounded-xl font-bold cursor-pointer hover:bg-[#333] transition">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent z-10 pointer-events-none"></div>
                     <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
 
@@ -141,6 +162,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                         
                         <div className="flex items-center gap-4">
                             <button 
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 onClick={(e) => { e.stopPropagation(); setIsManuallyPaused(!isManuallyPaused); }} 
                                 className="bg-transparent border-none text-white cursor-pointer flex items-center drop-shadow-md hover:scale-110 transition-transform"
                             >
@@ -152,11 +175,21 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                             </button>
 
                             {isMyStory && (
-                                <button onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); setIsPaused(true); }} className="bg-transparent border-none text-[#ff4d4d] cursor-pointer flex items-center drop-shadow-md hover:scale-110 transition-transform">
+                                <button 
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onTouchStart={(e) => e.stopPropagation()}
+                                    onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); setIsPaused(true); }} 
+                                    className="bg-transparent border-none text-[#ff4d4d] cursor-pointer flex items-center drop-shadow-md hover:scale-110 transition-transform"
+                                >
                                     <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                 </button>
                             )}
-                            <button onClick={onClose} className="bg-transparent border-none text-white text-2xl cursor-pointer drop-shadow-md hover:text-gray-300 transition-colors">✕</button>
+                            <button 
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onClick={onClose} 
+                                className="bg-transparent border-none text-white text-2xl cursor-pointer drop-shadow-md hover:text-gray-300 transition-colors"
+                            >✕</button>
                         </div>
                     </div>
 
@@ -166,6 +199,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     {isMyStory && (
                         <div className="absolute bottom-6 left-4 z-30">
                             <button 
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 onClick={openStatsPanel} 
                                 className="bg-black/60 border border-white/20 px-4 py-2 rounded-full cursor-pointer flex items-center gap-2 text-white backdrop-blur-md hover:bg-black/80 transition-colors"
                             >
@@ -210,6 +245,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     {!isMyStory && onToggleLike && (
                         <div className="absolute bottom-6 right-4 flex flex-col items-center z-30">
                             <button 
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 onClick={(e) => { e.stopPropagation(); onToggleLike(currentStory._id || currentStory.id); }} 
                                 className="bg-transparent border-none cursor-pointer flex flex-col items-center drop-shadow-2xl active:scale-90 transition-transform"
                             >
@@ -225,7 +262,11 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     )}
 
                     {showStatsPanel && (
-                        <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-[#1a1a1a] rounded-t-3xl z-40 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.7)] transition-transform duration-300">
+                        <div 
+                            className="absolute bottom-0 left-0 right-0 h-[60%] bg-[#1a1a1a] rounded-t-3xl z-40 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.7)] transition-transform duration-300"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                        >
                             <div className="p-5 border-b border-[#333] flex justify-between items-center">
                                 <strong className="text-white text-base">Vistas: {statsData.views_count}</strong>
                                 <button onClick={closeStatsPanel} className="bg-transparent border-none text-gray-500 text-xl cursor-pointer hover:text-white transition-colors">✕</button>
@@ -259,20 +300,12 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     )}
 
                     {currentStory.media_type === 'video' ? (
-                        <video ref={videoRef} src={mediaUrl} autoPlay playsInline onTimeUpdate={(e) => { if(!showStatsPanel && !isManuallyPaused && !isPaused) setProgress((e.target.currentTime / e.target.duration) * 100); }} onEnded={handleNext} className="w-full h-full object-cover relative z-0" />
+                        <video ref={videoRef} src={mediaUrl} autoPlay playsInline onTimeUpdate={(e) => { if(!showStatsPanel && !isManuallyPaused && !isPaused && !isDeleteModalOpen) setProgress((e.target.currentTime / e.target.duration) * 100); }} onEnded={handleNext} className="w-full h-full object-cover relative z-0" />
                     ) : (
                         <img src={mediaUrl} alt="Story" className="w-full h-full object-cover relative z-0" />
                     )}
                 </div>
             </div>
-
-            <ConfirmModal 
-                isOpen={isDeleteModalOpen}
-                title="¿Eliminar esta historia?"
-                message="Esta foto o video desaparecerá inmediatamente y no podrá recuperarse."
-                onConfirm={confirmDelete}
-                onCancel={() => { setIsDeleteModalOpen(false); setIsPaused(false); }}
-            />
         </Fragment>,
         document.body
     );

@@ -1,93 +1,82 @@
 import React, { createContext, useState, useEffect } from "react";
-import { fetchAPI } from "../services/api"; 
+import { fetchAPI } from "../services/api";
 import { useToast } from "./ToastContext.jsx";
-import { ERRORS } from "../utils/errorMessages.js";
 
 export const AuthContext = createContext();
 
-const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(localStorage.getItem('token') || null);
+export const AuthProvider = ({ children }) => {
     const [activeUser, setActiveUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     const { showToast } = useToast();
 
     useEffect(() => {
         const verifySession = async () => {
-            if (token) {
-                try {
-                    const userData = await fetchAPI('/user', {}, token);
-                    setActiveUser(userData);
-                } catch (error) {
-                    showToast("Tu sesión ha expirado.", "error");
-                    logout(); 
-                }
+            try {
+                const data = await fetchAPI('/user');
+                setActiveUser(data);
+            } catch (error) {
+                setActiveUser(null);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false); 
         };
 
         verifySession();
-    }, [token]);
+    }, []);
 
-    const login = (userData, authToken) => {
-        localStorage.setItem('token', authToken);
-        setToken(authToken);
+    const login = (userData) => {
         setActiveUser(userData);
     };
 
+    const logout = async () => {
+        try {
+            await fetchAPI('/logout', { method: 'POST' });
+        } catch (error) {
+            console.error("Error al cerrar sesión en el servidor", error);
+        } finally {
+            setActiveUser(null);
+            window.location.href = '/login';
+        }
+    };
+
     const loginAPI = async (credentials) => {
-        try {
-            const data = await fetchAPI('/login', {
-                method: 'POST',
-                body: credentials
-            });
+        await fetchAPI('/sanctum/csrf-cookie');
 
-            if (data.token) {
-                login(data.user, data.token);
-                showToast("¡Bienvenido de vuelta!", "success");
-                return { success: true, data };
-            } else if (data.needs_verification) {
-                showToast(data.message, "error");
-                return { success: false, needs_verification: true, email: data.email };
-            } else {
-                throw new Error(data.message || "Error al iniciar sesión");
+        const data = await fetchAPI('/login', {
+            method: 'POST',
+            body: credentials
+        });
+
+        if (data.success || data.user) {
+            try {
+                const sessionUser = await fetchAPI('/user');
+                if (sessionUser && !sessionUser.message) {
+                    setActiveUser(sessionUser);
+                    return { success: true, data: { user: sessionUser } };
+                }
+            } catch (error) {
+                throw new Error("No se pudo establecer la sesión segura.");
             }
-        } catch (error) {
-            showToast(error.message || ERRORS.DEFAULT, "error");
-            throw error; 
+        } else if (data.needs_verification) {
+            return { success: false, needs_verification: true, email: data.email };
         }
+
+        throw new Error(data.message || "Credenciales incorrectas");
     };
 
-    const registerAPI = async (userData) => {
-        try {
-            const data = await fetchAPI('/register', {
-                method: 'POST',
-                body: userData
-            });
-
-            if (data.success) {
-                showToast(data.message, "success");
-                return { success: true, email: data.email }; 
-            } else {
-                throw new Error(data.message || "Error al registrarse");
-            }
-        } catch (error) {
-            showToast(error.message || ERRORS.DEFAULT, "error");
-            throw error; 
-        }
+    const contextValue = {
+        activeUser,
+        setActiveUser,
+        loginAPI,
+        logout,
+        login,
+        loading
     };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setActiveUser(null);
-    };
-
-    const contextValue = { token, activeUser, setActiveUser, loginAPI, registerAPI, logout, login, loading };
 
     return (
         <AuthContext.Provider value={contextValue}>
-            {!loading && children} 
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
