@@ -15,19 +15,19 @@ const Communities = () => {
         setCommunities(prevCommunities => [newCommunity, ...prevCommunities]);
     };
 
-    const filteredCommunities = communities.filter(community => 
-        community.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredCommunities = communities.filter(community =>
+        community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (community.description && community.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
         <Layout>
             <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative">
-                
+
                 <div className="flex justify-between items-center mb-6 mt-4">
                     <h1 className="text-2xl md:text-3xl font-black text-white m-0 tracking-wide">Comunidades</h1>
-                    
-                    <button 
+
+                    <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="bg-[#0095f6] hover:bg-blue-600 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-colors shadow-lg shadow-blue-500/20 cursor-pointer"
                     >
@@ -37,9 +37,9 @@ const Communities = () => {
 
                 {/* BARRA DE BÚSQUEDA */}
                 <div className="mb-6">
-                    <input 
-                        type="text" 
-                        placeholder="Buscar comunidades por nombre o descripción..." 
+                    <input
+                        type="text"
+                        placeholder="Buscar comunidades por nombre o descripción..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full px-5 py-3.5 rounded-full border border-[#333] bg-[#121212] text-white outline-none focus:border-[#0095f6] transition text-sm shadow-lg"
@@ -63,20 +63,20 @@ const Communities = () => {
                 ) : (
                     <div className="flex flex-col gap-4">
                         {filteredCommunities.map(community => (
-                            <Link 
-                                key={community._id || community.id} 
-                                to={`/communities/${community.slug}`} 
+                            <Link
+                                key={community._id || community.id}
+                                to={`/communities/${community.slug}`}
                                 className="bg-[#121212] border border-[#262626] rounded-2xl p-5 hover:border-[#444] transition flex gap-4 no-underline items-center group shadow-lg"
                             >
                                 {/* SOPORTE PARA AVATAR */}
                                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center shrink-0 text-xl md:text-2xl font-black text-gray-500 group-hover:text-white transition-colors overflow-hidden">
                                     {community.avatar_path ? (
-                                        <img src={`${BACKEND_URL}${community.avatar_path}`} alt={community.name} className="w-full h-full object-cover" />
+                                        <img src={community.avatar_path.startsWith('http') ? community.avatar_path : `${BACKEND_URL}${community.avatar_path}`} alt={community.name} className="w-full h-full object-cover" />
                                     ) : (
                                         community.name.charAt(0).toUpperCase()
                                     )}
                                 </div>
-                                
+
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-white font-bold text-base md:text-lg m-0 truncate">{community.name}</h3>
                                     <p className="text-gray-400 text-xs md:text-sm m-0 mt-1 truncate">{community.description}</p>
@@ -90,9 +90,9 @@ const Communities = () => {
                 )}
 
                 {isCreateModalOpen && (
-                    <CreateCommunityModal 
-                        onClose={() => setIsCreateModalOpen(false)} 
-                        onCreated={handleCommunityCreated} 
+                    <CreateCommunityModal
+                        onClose={() => setIsCreateModalOpen(false)}
+                        onCreated={handleCommunityCreated}
                     />
                 )}
 

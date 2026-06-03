@@ -15,9 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
-        $middleware->api(append: [
-            SetUserLocation::class,
-        ]);
+        
+        $middleware->api(
+            prepend: [
+                \Illuminate\Session\Middleware\StartSession::class,
+            ],
+            append: [
+                SetUserLocation::class,
+            ]
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

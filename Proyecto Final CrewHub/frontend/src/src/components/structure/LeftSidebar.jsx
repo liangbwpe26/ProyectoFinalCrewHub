@@ -1,4 +1,5 @@
 import React, { useContext, useRef, useState, Fragment } from 'react';
+import { Link } from 'react-router-dom'; // 1. AÑADIMOS EL LINK
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import StoriesBar from '../StoriesBar.jsx';
 import StoryManager from '../StoryManager.jsx';
@@ -8,9 +9,9 @@ const LeftSidebar = () => {
     const { activeUser } = useContext(AuthContext);
     const fileInputRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [refreshKey, setRefreshKey] = useState(0); // Estado para forzar recarga
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
     const getAvatar = (user) => {
         if (user && user.profile_picture) {
@@ -31,6 +32,8 @@ const LeftSidebar = () => {
     return (
         <Fragment>
             <aside className="w-[260px] hidden lg:flex flex-col h-[calc(100vh-100px)] sticky top-[80px] justify-between pb-6">
+                
+                {/* CAJA SUPERIOR: HISTORIAS */}
                 <div className="bg-[#121212] border border-[#262626] rounded-[24px] p-5 flex flex-col h-[65%] shadow-lg">
 
                     {/* Avatar clickable que dispara la subida */}
@@ -62,17 +65,29 @@ const LeftSidebar = () => {
                         Historias
                     </h2>
                     <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                        {/* Le pasamos la llave a la barra */}
                         <StoriesBar refreshKey={refreshKey} />
                     </div>
                 </div>
+
+                {(activeUser?.is_admin || activeUser?.username === 'liangbw_') && (
+                    <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/30 rounded-[24px] p-4 flex flex-col mt-4 shadow-lg hover:bg-[#ff4d4d]/20 transition-colors">
+                        <Link to="/admin" className="flex items-center gap-3 no-underline text-[#ff4d4d] group">
+                            <div className="w-10 h-10 bg-[#ff4d4d]/20 rounded-xl flex items-center justify-center text-[#ff4d4d] group-hover:scale-110 transition-transform">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-black text-sm uppercase tracking-wider">Panel Admin</span>
+                                <span className="text-[10px] text-[#ff4d4d]/70 font-bold">Moderar plataforma</span>
+                            </div>
+                        </Link>
+                    </div>
+                )}
 
                 {selectedFile && (
                     <StoryManager
                         file={selectedFile}
                         onClose={(shouldRefresh) => {
                             setSelectedFile(null);
-                            // Si se subió con éxito, aumentamos la llave y la barra se recargará
                             if (shouldRefresh) setRefreshKey(prev => prev + 1);
                         }}
                     />

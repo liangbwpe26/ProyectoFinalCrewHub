@@ -19,7 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => [
+        'http://34.206.221.208:5173',
+        'http://crewhub.es:5173',
+        'http://www.crewhub.es:5173',
+        'http://crewhub.es',
+    ],
 
     'allowed_origins_patterns' => [],
 

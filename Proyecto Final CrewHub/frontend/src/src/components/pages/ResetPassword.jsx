@@ -21,7 +21,7 @@ const ResetPassword = () => {
                     Escribe el código de 6 dígitos que enviamos a tu correo y tu nueva contraseña.
                 </p>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4" autocomplete="off">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4" autoComplete="off">
                     {!initialEmail && (
                         <input 
                             type="email" placeholder="Tu correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)}

@@ -18,7 +18,7 @@ const Register = () => {
                 <div className="w-full max-w-[400px] bg-[#121212] border border-[#262626] rounded-2xl p-10 shadow-2xl">
                     <h2 className="text-white text-xl font-bold mb-6 text-center">Regístrate</h2>
 
-                    <form onSubmit={handleRegister} className="flex flex-col gap-4" autocomplete="off">
+                    <form onSubmit={handleRegister} className="flex flex-col gap-4" autoComplete="off">
                         <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="username" type="text" placeholder="Nombre de usuario" value={userData.username} onChange={updateData} required />
                         <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="email" type="email" placeholder="Correo electrónico" value={userData.email} onChange={updateData} required />
                         <input className="w-full p-4 rounded-xl border border-[#333] bg-black text-white outline-none focus:border-[#0095f6] text-sm" name="password" type="password" placeholder="Contraseña" value={userData.password} onChange={updateData} required />

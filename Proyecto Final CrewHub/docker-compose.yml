@@ -4,20 +4,15 @@ services:
     container_name: social_backend
     restart: always
     ports:
-      - "${HTTP_PORT:-8000}:80"
+      - "80:80"    # <--- MAGIA: Caddy ahora escucha en el puerto web universal
       - "443:443"
     volumes:
       - ./backend/src:/var/www/html
       - ./backend/Caddyfile:/etc/caddy/Caddyfile
     networks:
       - app_network
-    depends_on:
-      - mongodb
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-      - DB_CONNECTION=mongodb
-      - DB_HOST=mongodb
-      - DB_PORT=27017
 
   reverb:
     build: ./backend
@@ -29,8 +24,6 @@ services:
       - ./backend/src:/var/www/html
     networks:
       - app_network
-    depends_on:
-      - mongodb
     command: php artisan reverb:start --host="0.0.0.0" --port="8080"
 
   frontend:

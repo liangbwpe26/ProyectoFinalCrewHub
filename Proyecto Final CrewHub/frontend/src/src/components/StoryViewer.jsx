@@ -1,12 +1,18 @@
 import React, { useState, useEffect, Fragment, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';
-import ConfirmModal from './ConfirmModal.jsx';
 
-const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteStory, onToggleLike, onGetStats, onReply }) => {
+const StoryViewer = ({ feed, initialUserId, onClose, onStoryViewed, onDeleteStory, onToggleLike, onGetStats, onReply }) => {
     const { activeUser } = useContext(AuthContext);
+    const myId = activeUser ? (activeUser.id || activeUser._id) : null;
 
-    const [userIndex, setUserIndex] = useState(initialUserIndex);
+    const startIndex = feed.findIndex(group => {
+        const id = group.user?._id || group.user?.id;
+        return id === initialUserId;
+    });
+    const actualStartIndex = startIndex !== -1 ? startIndex : 0;
+
+    const [userIndex, setUserIndex] = useState(actualStartIndex);
     const [storyIndex, setStoryIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     
@@ -23,20 +29,31 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
     const videoRef = useRef(null);
     const STORY_DURATION = 5000;
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
     const currentUserGroup = feed[userIndex];
-    const currentStory = currentUserGroup?.stories[storyIndex];
-    const isMyStory = activeUser && (currentUserGroup?.user?.username === activeUser.username);
+    const currentStory = currentUserGroup?.stories?.[storyIndex];
+    
+    // AQUÍ ESTÁ LA MAGIA: Verificamos si tú subiste esta foto específica y si el grupo es comunidad
+    const canManageStory = myId && currentStory && (currentStory.user_id === myId);
+    const isCommunityStory = currentUserGroup?.is_community;
 
     useEffect(() => {
-        if (currentStory && !currentStory.has_viewed && !isMyStory) {
+        if (currentUserGroup && currentUserGroup.stories) {
+            const firstUnviewed = currentUserGroup.stories.findIndex(s => !s.has_viewed);
+            setStoryIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
+        }
+    }, [userIndex, currentUserGroup]);
+
+    useEffect(() => {
+        if (currentStory && !currentStory.has_viewed && !canManageStory) {
             onStoryViewed(currentStory._id || currentStory.id);
+            currentStory.has_viewed = true; 
         }
         setProgress(0);
         setShowStatsPanel(false); 
         setIsManuallyPaused(false); 
-    }, [userIndex, storyIndex, currentStory, onStoryViewed, isMyStory]);
+    }, [userIndex, storyIndex, currentStory, onStoryViewed, canManageStory]);
 
     useEffect(() => {
         if (isPaused || isManuallyPaused || isDeleteModalOpen || showStatsPanel || currentStory?.media_type === 'video') return;
@@ -56,21 +73,40 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
         }
     }, [isPaused, isManuallyPaused, isDeleteModalOpen, showStatsPanel, currentStory]);
 
-    useEffect(() => {
-        if (progress >= 100) handleNext();
-    }, [progress]);
-
     const handleNext = () => {
-        if (storyIndex < currentUserGroup.stories.length - 1) setStoryIndex(storyIndex + 1);
-        else if (userIndex < feed.length - 1) { setUserIndex(userIndex + 1); setStoryIndex(0); }
-        else onClose(); 
+        if (!currentUserGroup || !currentUserGroup.stories) {
+            onClose();
+            return;
+        }
+        
+        setProgress(0); 
+        
+        if (storyIndex < currentUserGroup.stories.length - 1) {
+            setStoryIndex(prev => prev + 1);
+        } else if (userIndex < feed.length - 1) { 
+            setUserIndex(prev => prev + 1); 
+            setStoryIndex(0); 
+        } else {
+            onClose(); 
+        }
     };
 
     const handlePrev = () => {
-        if (storyIndex > 0) setStoryIndex(storyIndex - 1);
-        else if (userIndex > 0) { setUserIndex(userIndex - 1); setStoryIndex(feed[userIndex - 1].stories.length - 1); }
-        else setProgress(0);
+        if (!currentUserGroup || !currentUserGroup.stories) return;
+        
+        setProgress(0); 
+        
+        if (storyIndex > 0) {
+            setStoryIndex(prev => prev - 1);
+        } else if (userIndex > 0) { 
+            setUserIndex(prev => prev - 1); 
+            setStoryIndex(feed[userIndex - 1].stories.length - 1); 
+        }
     };
+
+    useEffect(() => {
+        if (progress >= 100) handleNext();
+    }, [progress]);
 
     const confirmDelete = async () => {
         const res = await onDeleteStory(currentStory._id || currentStory.id);
@@ -125,7 +161,6 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     onMouseDown={() => setIsPaused(true)} onMouseUp={() => setIsPaused(false)}
                     onTouchStart={() => setIsPaused(true)} onTouchEnd={() => setIsPaused(false)}
                 >
-                    {/* MODAL DE CONFIRMACIÓN INTEGRADO */}
                     {isDeleteModalOpen && (
                         <div className="absolute inset-0 bg-black/80 z-[100] flex justify-center items-center p-5 backdrop-blur-sm">
                             <div 
@@ -134,7 +169,7 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                                 onTouchStart={(e) => e.stopPropagation()}
                             >
                                 <h3 className="text-white text-lg font-bold mt-0 mb-2">¿Eliminar historia?</h3>
-                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Esta foto o video desaparecerá inmediatamente y no podrá recuperarse.</p>
+                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Esta foto o video desaparecerá inmediatamente.</p>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={confirmDelete} className="w-full bg-[#ff4d4d] text-white border-none py-3 rounded-xl font-bold cursor-pointer hover:bg-red-600 transition">Eliminar</button>
                                     <button onClick={() => { setIsDeleteModalOpen(false); setIsPaused(false); }} className="w-full bg-transparent text-white border border-[#333] py-3 rounded-xl font-bold cursor-pointer hover:bg-[#333] transition">Cancelar</button>
@@ -174,7 +209,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                                 )}
                             </button>
 
-                            {isMyStory && (
+                            {/* EL BOTÓN DE ELIMINAR AHORA DEPENDE DE canManageStory */}
+                            {canManageStory && (
                                 <button 
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onTouchStart={(e) => e.stopPropagation()}
@@ -196,7 +232,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                     <div onClick={handlePrev} className="absolute top-0 left-0 w-[30%] h-full z-10 cursor-pointer" />
                     <div onClick={handleNext} className="absolute top-0 right-0 w-[70%] h-full z-10 cursor-pointer" />
 
-                    {isMyStory && (
+                    {/* LAS ESTADÍSTICAS TAMBIÉN DEPENDEN DE canManageStory */}
+                    {canManageStory && (
                         <div className="absolute bottom-6 left-4 z-30">
                             <button 
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -210,7 +247,8 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                         </div>
                     )}
 
-                    {!isMyStory && onReply && (
+                    {/* LA CAJA DE RESPUESTA AHORA SE OCULTA EN COMUNIDADES */}
+                    {!canManageStory && !isCommunityStory && onReply && (
                         <div 
                             className="absolute bottom-6 left-4 right-[70px] z-30 flex items-center gap-3" 
                             onClick={(e) => e.stopPropagation()}
@@ -242,12 +280,17 @@ const StoryViewer = ({ feed, initialUserIndex, onClose, onStoryViewed, onDeleteS
                         </div>
                     )}
 
-                    {!isMyStory && onToggleLike && (
+                    {!canManageStory && onToggleLike && (
                         <div className="absolute bottom-6 right-4 flex flex-col items-center z-30">
                             <button 
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onTouchStart={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); onToggleLike(currentStory._id || currentStory.id); }} 
+                                onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    onToggleLike(currentStory._id || currentStory.id); 
+                                    currentStory.has_liked = !currentStory.has_liked;
+                                    currentStory.likes_count = currentStory.has_liked ? (currentStory.likes_count + 1) : (currentStory.likes_count - 1);
+                                }} 
                                 className="bg-transparent border-none cursor-pointer flex flex-col items-center drop-shadow-2xl active:scale-90 transition-transform"
                             >
                                 <svg width="34" height="34" viewBox="0 0 24 24" fill={currentStory.has_liked ? "#ffcc00" : "none"} stroke={currentStory.has_liked ? "#000" : "white"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

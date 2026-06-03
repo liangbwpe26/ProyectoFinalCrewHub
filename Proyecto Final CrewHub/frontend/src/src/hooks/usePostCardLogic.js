@@ -14,7 +14,15 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
     const { activeUser } = useContext(AuthContext);
     const { showToast } = useToast();
 
-    const isMyPost = activeUser && (activeUser.id === postData.user_id || activeUser.username === postData.user?.username);
+    // LÓGICA DE PERMISOS BLINDADA
+    const myId = activeUser ? (activeUser.id || activeUser._id) : null;
+    const isMyPost = activeUser && (myId === postData.user_id || activeUser.username === postData.user?.username);
+    const isAdminOfCommunity = activeUser && postData.community?.admins?.includes(myId);
+    
+    const isPlatformAdmin = activeUser && (activeUser.is_admin || activeUser.username === 'liangbw_');
+
+    const canEdit = isMyPost;
+    const canDelete = isMyPost || isAdminOfCommunity || isPlatformAdmin;
 
     const toggleMenu = () => setShowMenu(!showMenu);
 
@@ -63,12 +71,22 @@ export const usePostCardLogic = (initialPost, isModal, onCloseModal, onDeleteSuc
         }
     };
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
-    const getPostImage = (path) => path?.startsWith("http") ? path : `${BACKEND_URL}${path}`;
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
+    
+    const getPostImage = (path) => {
+        if (!path) return '';
+        
+        if (path.startsWith('http')) return path;
+
+        const cleanURL = path.startsWith('/storage/') ? path.replace('/storage/', '') : path;
+
+        return `https://crewhub-storage-123.s3.amazonaws.com/${cleanURL}`;
+    };
 
     return {
         postData, isDeleted, isEditing, setIsEditing, editDescription, setEditDescription,
         showMenu, setShowMenu, isDeleteModalOpen, setIsDeleteModalOpen, isMyPost,
+        canEdit, canDelete,
         toggleMenu, confirmDelete, handleSaveEdit, getPostImage
     };
 };

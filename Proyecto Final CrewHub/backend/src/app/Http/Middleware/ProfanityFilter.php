@@ -10,8 +10,7 @@ class ProfanityFilter
     protected $badWords = [
         'idiota', 'estupido', 'imbecil', 'basura', 'mierda', 'puta', 'cabron'
     ];
-
-    // Rutas que queremos excluir del filtro (el asterisco funciona como comodín)
+    
     protected $except = [
         'api/messages/*',
         'api/chats/*'
@@ -19,7 +18,6 @@ class ProfanityFilter
 
     public function handle(Request $request, Closure $next)
     {
-        // Si la ruta actual está en la lista de excepciones, dejamos pasar la petición intacta
         if ($this->inExceptArray($request)) {
             return $next($request);
         }

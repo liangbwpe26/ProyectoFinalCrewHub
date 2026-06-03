@@ -4,21 +4,20 @@ import Layout from '../structure/Layout.jsx';
 import { useCommunity } from '../../hooks/useCommunity.js';
 import PostCard from '../PostCard.jsx';
 import CreatePost from '../CreatePost.jsx';
+import StoryManager from '../StoryManager.jsx'; // AQUÍ ESTÁ TU RECORTADOR
 
 const Community = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { 
+    const {
         community, loading, error, toggleMembership, activeUser,
         posts, setPosts, pendingPosts, loadingPosts, loadPendingPosts, loadPosts, moderatePost,
         membersList, loadingMembers, loadMembers, kickMember, promoteMember,
-        uploadCommunityStory, uploadingStory,
         updateSettings, uploadBanner, uploadingBanner, uploadAvatar, deleteCommunity
     } = useCommunity(slug);
 
     const [activeTab, setActiveTab] = useState('feed');
     const [searchQuery, setSearchQuery] = useState('');
-    const [openMenuId, setOpenMenuId] = useState(null);
     const [alertMessage, setAlertMessage] = useState(null);
     const [activeTagFilter, setActiveTagFilter] = useState('');
 
@@ -28,11 +27,14 @@ const Community = () => {
     const [editTags, setEditTags] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // ESTADO DEL RECORTADOR
+    const [selectedStoryFile, setSelectedStoryFile] = useState(null);
+
     const fileInputRef = useRef(null);
     const bannerInputRef = useRef(null);
     const avatarInputRef = useRef(null);
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
     const getAvatar = (user) => {
         if (user && user.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
@@ -57,11 +59,11 @@ const Community = () => {
         }
     }, [searchQuery]);
 
-    const handleFileChange = async (e) => {
+    // ATRAPA LA IMAGEN Y ABRE EL RECORTADOR
+    const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const response = await uploadCommunityStory(file);
-            if (response && response.success) setAlertMessage({ title: 'Historia en línea', text: 'Se ha publicado en la comunidad.', type: 'success' });
+            setSelectedStoryFile(file);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -130,36 +132,49 @@ const Community = () => {
         }
     };
 
-    const bannerStyle = community.banner_path 
-        ? { backgroundImage: `url(${BACKEND_URL}${community.banner_path})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    const bannerStyle = community.banner_path
+        ? { backgroundImage: `url(${community.banner_path.startsWith('http') ? community.banner_path : BACKEND_URL + community.banner_path})`, backgroundSize: 'cover', backgroundPosition: 'center' }
         : {};
 
     return (
         <Layout>
-            <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0">
+            <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative">
+                
+                {/* RENDERIZADO DEL RECORTADOR */}
+                {selectedStoryFile && (
+                    <StoryManager
+                        file={selectedStoryFile}
+                        communityId={community._id || community.id}
+                        onClose={(success) => {
+                            setSelectedStoryFile(null);
+                            if (success) {
+                                setAlertMessage({ title: 'Historia en línea', text: 'Se ha publicado en la comunidad. Vuelve al inicio para verla.', type: 'success' });
+                            }
+                        }}
+                    />
+                )}
+
                 <div className="mb-4 mt-2">
                     <Link to="/communities" className="text-gray-500 hover:text-white no-underline text-sm font-bold transition-colors">Volver</Link>
                 </div>
 
                 <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-hidden shadow-2xl flex flex-col mb-6">
-                    {/* PORTADA (BANNER) */}
                     <div className="h-32 md:h-40 w-full relative bg-gradient-to-r from-[#0095f6] to-[#005bb5]" style={bannerStyle}>
                         {uploadingBanner && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-sm">Subiendo...</div>}
                     </div>
-                    
+
                     <div className="px-5 md:px-8 pb-6 md:pb-8 relative">
-                        {/* FOTO DE PERFIL */}
                         <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-[#1a1a1a] border-4 border-[#121212] flex items-center justify-center text-3xl md:text-4xl font-black text-gray-400 absolute -top-10 md:-top-12 shadow-lg relative group overflow-hidden">
                             {community.avatar_path ? (
-                                <img src={`${BACKEND_URL}${community.avatar_path}`} alt="avatar" className="w-full h-full object-cover" />
+                                <img src={community.avatar_path.startsWith('http') ? community.avatar_path : `${BACKEND_URL}${community.avatar_path}`} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
                                 <span>{community.name.charAt(0).toUpperCase()}</span>
                             )}
-                            
-                            {/* Botón para subir historias (Solo Admins) */}
+
                             {isAdmin && (
                                 <label className="absolute bottom-1 right-1 w-7 h-7 bg-[#0095f6] rounded-full border-2 border-[#121212] flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg z-10" title="Subir historia a la comunidad">
                                     <span className="text-white font-bold text-sm leading-none mb-0.5">+</span>
+                                    {/* AL DARLE CLIC, SE DISPARA EL handleFileChange Y ABRE EL MODAL */}
                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" />
                                 </label>
                             )}
@@ -174,10 +189,10 @@ const Community = () => {
                         <div className="mt-2 md:mt-4">
                             <h1 className="text-2xl md:text-3xl font-black text-white m-0 tracking-wide">{community.name}</h1>
                             <p className="text-gray-400 text-sm md:text-base mt-2 mb-4 leading-relaxed">{community.description}</p>
-                            {uploadingStory && <p className="text-[#0095f6] text-xs font-bold mb-4 uppercase tracking-widest">Subiendo historia...</p>}
+                            
                             <div className="flex gap-4 items-center">
                                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                                    <span className="text-white text-sm mr-1">{community.members?.length || 0}</span> Tripulantes
+                                    <span className="text-white text-sm mr-1">{community.members?.length || 0}</span> Miembros
                                 </div>
                                 {isAdmin && <div className="bg-[#ff4d4d]/10 text-[#ff4d4d] px-3 py-1 rounded-md text-[10px] font-black tracking-widest uppercase border border-[#ff4d4d]/20">Administrador</div>}
                             </div>
@@ -201,7 +216,7 @@ const Community = () => {
                     <div className="bg-[#121212] border border-[#262626] rounded-2xl p-8 text-center shadow-lg">
                         <div className="flex flex-col items-center gap-3">
                             <div className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-500">
-                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
                             </div>
                             <h3 className="text-white font-bold m-0">Grupo privado</h3>
                             <p className="text-gray-500 text-sm m-0">Únete a la comunidad para ver y compartir publicaciones.</p>
@@ -245,9 +260,8 @@ const Community = () => {
                 ) : activeTab === 'settings' && isAdmin ? (
                     <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-lg">
                         <h3 className="text-white text-lg font-bold mb-6 mt-0 border-b border-[#333] pb-4">Ajustes del Grupo</h3>
-                        
+
                         <div className="flex flex-col gap-6">
-                            {/* Imágenes */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-[#333] pb-6">
                                 <div>
                                     <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Foto de Perfil</label>
@@ -265,12 +279,11 @@ const Community = () => {
                                 </div>
                             </div>
 
-                            {/* Información General */}
                             <div>
                                 <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Nombre de la Comunidad</label>
                                 <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm" />
                             </div>
-                            
+
                             <div>
                                 <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Descripción</label>
                                 <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows="3" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm resize-none"></textarea>
@@ -280,15 +293,14 @@ const Community = () => {
                                 <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Reglas</label>
                                 <textarea value={editRules} onChange={e => setEditRules(e.target.value)} rows="4" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm resize-none" placeholder="Escribe las normas del grupo..."></textarea>
                             </div>
-                            
+
                             <div>
                                 <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Etiquetas (Separadas por comas)</label>
                                 <input type="text" value={editTags} onChange={e => setEditTags(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm" placeholder="Noticias, Gameplay, Reseñas..." />
                             </div>
-                            
+
                             <button onClick={handleSaveSettings} className="bg-[#0095f6] text-white font-bold py-3.5 rounded-full hover:bg-blue-600 transition shadow-lg shadow-blue-500/20 mt-2">Guardar Cambios</button>
 
-                            {/* Zona de Peligro */}
                             <div className="mt-8 pt-6 border-t border-[#333]">
                                 <button onClick={handleDeleteCommunity} className="w-full bg-transparent border border-[#ff4d4d] text-[#ff4d4d] font-bold py-3.5 rounded-full hover:bg-[#ff4d4d] hover:text-white transition">
                                     Eliminar Comunidad
@@ -298,11 +310,9 @@ const Community = () => {
                         </div>
                     </div>
                 ) : (
-                    /* Contenido original de las pestañas Pending y Members (Se mantiene igual, oculto aquí por longitud visual) */
                     <div className="text-gray-500 text-center py-10 bg-[#121212] rounded-xl border border-[#262626]">Navega a otra pestaña.</div>
                 )}
 
-                {/* MODAL DE ALERTAS */}
                 {alertMessage && (
                     <div className="fixed inset-0 bg-black/80 z-[10000] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setAlertMessage(null)}>
                         <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] bg-[#121212] rounded-3xl border border-[#333] shadow-2xl p-8 text-center flex flex-col items-center">

@@ -11,7 +11,7 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
     const {
         postData, isDeleted, isEditing, setIsEditing, editDescription, setEditDescription,
         showMenu, setShowMenu, isDeleteModalOpen, setIsDeleteModalOpen,
-        isMyPost, toggleMenu, confirmDelete, handleSaveEdit, getPostImage
+        isMyPost, canEdit, canDelete, toggleMenu, confirmDelete, handleSaveEdit, getPostImage
     } = usePostCardLogic(initialPost, isModal, onCloseModal, onDeleteSuccess);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -21,6 +21,9 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
 
     const isUserVerified = postData.user?.is_verified || initialPost?.user?.is_verified || (activeUser?.username === postData.user?.username && activeUser?.is_verified);
     const isAd = postData.is_ad || initialPost?.is_ad;
+    
+    // Agregamos la ruta base para que la foto de la comunidad cargue bien
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
     return (
         <Fragment>
@@ -30,8 +33,16 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                     {postData.community ? (
                         <div className="flex items-center gap-3 w-full">
                             <Link to={`/communities/${postData.community.slug}`} className="shrink-0 no-underline">
-                                <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-lg font-black text-gray-400 hover:text-white transition-colors">
-                                    {postData.community.name?.charAt(0).toUpperCase()}
+                                <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-lg font-black text-gray-400 hover:text-white transition-colors overflow-hidden">
+                                    {postData.community.avatar_path ? (
+                                        <img
+                                            src={postData.community.avatar_path.startsWith('http') ? postData.community.avatar_path : `${BACKEND_URL}${postData.community.avatar_path}`}
+                                            alt={postData.community.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        postData.community.name?.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                             </Link>
                             <div className="flex flex-col min-w-0">
@@ -70,10 +81,10 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                         </button>
                         {showMenu && (
                             <div className="absolute top-8 right-0 bg-[#1a1a1a] border border-[#333] rounded-md shadow-2xl min-w-[140px]">
-                                {isMyPost && (
+                                {canEdit && (
                                     <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="w-full p-3 text-white bg-transparent border-none border-b border-[#333] text-left text-sm hover:bg-[#262626] cursor-pointer">Editar</button>
                                 )}
-                                {isMyPost && (
+                                {canDelete && (
                                     <button onClick={() => { setIsDeleteModalOpen(true); setShowMenu(false); }} className="w-full p-3 text-[#ff4d4d] font-bold bg-transparent border-none text-left text-sm hover:bg-[#262626] cursor-pointer">Eliminar</button>
                                 )}
                                 {!isMyPost && (
@@ -99,7 +110,7 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                         <p className="text-xs text-gray-500 uppercase tracking-widest m-0">
                             {new Date(postData.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
-                        
+
                         {/* ETIQUETA PROMOCIONADO BLINDADA */}
                         {isAd && (
                             <span className="text-[10px] font-bold uppercase tracking-widest text-[#00ba7c] border border-[#00ba7c] px-2 py-0.5 rounded-sm bg-[#00ba7c]/10">

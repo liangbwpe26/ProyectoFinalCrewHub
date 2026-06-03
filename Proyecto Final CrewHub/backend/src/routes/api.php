@@ -23,6 +23,8 @@ Route::middleware(['api'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
@@ -34,6 +36,9 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::get('/user', [AuthController::class, 'show']);
     Route::put('/user/interests', [UserController::class, 'updateInterests']);
     Route::get('/interests', [UserController::class, 'getAvailableInterests']);
+    Route::put('/settings/account', [App\Http\Controllers\SettingsController::class, 'updateAccount']);
+    Route::put('/settings/notifications', [App\Http\Controllers\SettingsController::class, 'updateNotifications']);
+    Route::post('/support/tickets', [App\Http\Controllers\SettingsController::class, 'storeTicket']);
 
     // --- SISTEMA DE USUARIOS Y PERFILES ---
     Route::get('/users/search', [UserController::class, 'search']);

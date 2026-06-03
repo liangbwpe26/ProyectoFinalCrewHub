@@ -55,7 +55,11 @@ const RightSidebar = () => {
     };
 
     const getCommunityAvatar = (community) => {
-        if (community && community.avatar_path) return `${BACKEND_URL}${community.avatar_path}`;
+        if (community && community.avatar_path) {
+            return community.avatar_path.startsWith('http') 
+                ? community.avatar_path 
+                : `${BACKEND_URL}${community.avatar_path}`;
+        }
         const initial = community && community.name ? community.name.charAt(0).toUpperCase() : 'C';
         return `https://ui-avatars.com/api/?name=${initial}&background=1a1a1a&color=fff&bold=true`;
     };

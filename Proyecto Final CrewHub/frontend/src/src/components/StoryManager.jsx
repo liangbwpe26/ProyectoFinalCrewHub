@@ -33,7 +33,7 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     });
 };
 
-const StoryManager = ({ file, onClose }) => {
+const StoryManager = ({ file, onClose, communityId }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -45,10 +45,13 @@ const StoryManager = ({ file, onClose }) => {
         const formData = new FormData();
         formData.append('media', fileToUpload);
 
+        if (communityId) {
+            formData.append('community_id', communityId);
+        }
+
         try {
             const data = await fetchAPI('/stories', { method: 'POST', body: formData });
-            // Le enviamos 'true' al padre para decirle "¡Oye, recarga la barra!"
-            onClose(data.success); 
+            onClose(data.success);
         } catch (e) {
             console.error("Error al subir", e);
             onClose(false);
@@ -59,7 +62,6 @@ const StoryManager = ({ file, onClose }) => {
         setIsUploading(true);
         if (file.type.startsWith('image/')) {
             try {
-                // Cortamos la imagen antes de subir
                 const croppedFile = await getCroppedImg(URL.createObjectURL(file), croppedAreaPixels);
                 await uploadFile(croppedFile);
             } catch (e) {

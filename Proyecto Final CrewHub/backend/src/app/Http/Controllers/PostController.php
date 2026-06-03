@@ -258,8 +258,25 @@ class PostController extends Controller
         if (!$post)
             return response()->json(['success' => false], 404);
 
-        if ((string) $post->user_id !== (string) $request->user()->id) {
-            return response()->json(['success' => false], 403);
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+        
+        $isOwner = ((string) $post->user_id === $myId);
+        $isAdminOfCommunity = false;
+        $isPlatformAdmin = ($me->is_admin || $me->username === 'liangbw_');
+
+        if ($post->community_id) {
+            $community = \App\Models\Community::find($post->community_id);
+            if ($community) {
+                $admins = is_object($community->admins) ? (array) $community->admins : ($community->admins ?? []);
+                if (in_array($myId, $admins)) {
+                    $isAdminOfCommunity = true;
+                }
+            }
+        }
+
+        if (!$isOwner && !$isAdminOfCommunity && !$isPlatformAdmin) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
         $post->delete();

@@ -1,10 +1,19 @@
 :80 {
-    # Apunta a la carpeta pública de Laravel
-    root * /var/www/html/public
-    
-    # Pasa las peticiones al procesador de PHP
-    php_fastcgi 127.0.0.1:9000
-    
-    # Permite servir archivos estáticos (como las imágenes de storage)
-    file_server
+    @api path /api/* /sanctum/* /storage/*
+    handle @api {
+        root * /var/www/html/public
+        php_fastcgi 127.0.0.1:9000
+        file_server
+    }
+
+    # 2. Tráfico de WebSockets (Reverb)
+    @reverb path /app/* /apps/*
+    handle @reverb {
+        reverse_proxy social_reverb:8080
+    }
+
+    # 3. Todo lo demás va al Frontend (React / Vite)
+    handle {
+        reverse_proxy social_frontend:5173
+    }
 }

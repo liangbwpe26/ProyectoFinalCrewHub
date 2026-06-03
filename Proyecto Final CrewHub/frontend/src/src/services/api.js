@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_BACKEND_URL ? `${import.meta.env.VITE_BACKEND_URL}/api` : 'http://34.206.221.208:8000/api';
+const BACKEND_URL = 'http://crewhub.es';
 
 const getCookie = (name) => {
     const value = `; ${document.cookie}`;
