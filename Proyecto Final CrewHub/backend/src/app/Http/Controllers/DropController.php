@@ -33,6 +33,7 @@ class DropController extends Controller
         $offset = (int) $request->query('offset', 0);
 
         $drops = Drop::with('user')
+            ->where('is_hidden', '!=', true)
             ->orderBy('created_at', 'desc')
             ->skip($offset)
             ->take($limit)
@@ -47,7 +48,6 @@ class DropController extends Controller
             $drop->saves_count = count($drop->saved_by);
             $drop->reposts_count = count($drop->reposted_by);
 
-            // Contamos los comentarios reales en la base de datos
             $drop->comments_count = Comment::where('drop_id', (string) $drop->_id)->count();
 
             $drop->has_liked = in_array($myIdStr, $drop->liked_by);
@@ -137,7 +137,7 @@ class DropController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
 
         $drop->delete();
-        Comment::where('drop_id', $id)->delete(); // Limpiar comentarios
+        Comment::where('drop_id', $id)->delete();
 
         return response()->json(['success' => true]);
     }
@@ -158,7 +158,6 @@ class DropController extends Controller
         } else {
             $array[] = $myId;
 
-            // Notificar al creador del Drop
             if ($drop->user_id !== $myId) {
                 $notif = Notification::create([
                     'recipient_id' => $drop->user_id,
@@ -219,7 +218,6 @@ class DropController extends Controller
         return response()->json(['success' => true, 'reposted' => !$isActive]);
     }
 
-    // --- COMENTARIOS DE DROPS ---
     public function getComments($id)
     {
         $comments = Comment::with('user')->where('drop_id', $id)->orderBy('created_at', 'desc')->get();
@@ -230,14 +228,16 @@ class DropController extends Controller
     {
         $request->validate(['content' => 'required|string|max:500']);
         $me = $request->user();
+        $content = $request->input('content');
         
         $comment = Comment::create([
             'drop_id' => $id,
             'user_id' => (string) ($me->_id ?? $me->id),
-            'content' => $request->input('content')
+            'content' => $content
         ]);
 
         $drop = Drop::find($id);
+
         if ($drop && $drop->user_id !== (string) ($me->_id ?? $me->id)) {
             $notif = Notification::create([
                 'recipient_id' => $drop->user_id,
@@ -248,6 +248,30 @@ class DropController extends Controller
             ]);
             $notif->load('sender');
             try { broadcast(new NotificationSent($notif)); } catch (\Exception $e) {}
+        }
+
+        preg_match_all('/@([a-zA-Z0-9_]+)/', $content, $matches);
+        $mentionedUsernames = array_unique($matches[1]);
+
+        if (!empty($mentionedUsernames)) {
+            $mentionedUsers = User::whereIn('username', $mentionedUsernames)->get();
+
+            foreach ($mentionedUsers as $mentionedUser) {
+                $mentionedUserId = (string) ($mentionedUser->_id ?? $mentionedUser->id);
+                $myId = (string) ($me->_id ?? $me->id);
+
+                if ($mentionedUserId !== $myId) {
+                    $mentionNotif = Notification::create([
+                        'recipient_id' => $mentionedUserId,
+                        'sender_id' => $myId,
+                        'type' => 'mention',
+                        'drop_id' => $drop->_id,
+                        'is_read' => false
+                    ]);
+                    $mentionNotif->load('sender');
+                    try { broadcast(new NotificationSent($mentionNotif)); } catch (\Exception $e) {}
+                }
+            }
         }
 
         return response()->json(['success' => true, 'comment' => $comment->load('user')]);
@@ -270,7 +294,6 @@ class DropController extends Controller
         ]);
     }
 
-    // Obtener los drops reposteados por un usuario específico para su perfil
     public function getUserRepostedDrops(Request $request, $username)
     {
         $targetUser = User::where('username', $username)->first();
@@ -290,5 +313,30 @@ class DropController extends Controller
             'success' => true,
             'drops' => $drops
         ]);
+    }
+
+    public function deleteComment(Request $request, $id)
+    {
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+        
+        $comment = Comment::find($id);
+        
+        if (!$comment) {
+            return response()->json(['success' => false, 'message' => 'Comentario no encontrado'], 404);
+        }
+
+        $drop = Drop::find($comment->drop_id);
+        
+        $isCommentOwner = (string) $comment->user_id === $myId;
+        $isDropOwner = $drop && (string) $drop->user_id === $myId;
+
+        if (!$isCommentOwner && !$isDropOwner) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para borrar esto'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['success' => true]);
     }
 }

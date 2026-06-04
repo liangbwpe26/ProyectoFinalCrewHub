@@ -1,9 +1,12 @@
-import React, { useState, useContext, useRef, useEffect, Fragment } from 'react';
+import React, { useState, useContext, useRef, Fragment } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchAPI } from '../../services/api.js';
 import { useDropsLogic } from '../../hooks/useDropsLogic.js';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import Navbar from '../structure/Navbar.jsx';
 import UploadDropModal from '../UploadDropModal.jsx';
 import ReportModal from '../ReportModal.jsx';
+import ConfirmModal from '../ConfirmModal.jsx';
 
 const DropsFeed = () => {
     const { activeUser } = useContext(AuthContext);
@@ -21,6 +24,10 @@ const DropsFeed = () => {
     const [commentsList, setCommentsList] = useState([]);
     const [newCommentText, setNewCommentText] = useState("");
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [activeCommentMenuId, setActiveCommentMenuId] = useState(null);
+
+    const [commentToDelete, setCommentToDelete] = useState(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
     const [reportDropData, setReportDropData] = useState(null);
 
@@ -64,6 +71,33 @@ const DropsFeed = () => {
         
         await deleteDrop(dropId);
         setDeletingId(null);
+    };
+
+    const executeDeleteComment = async () => {
+        if (!commentToDelete) return;
+        try {
+            const res = await fetchAPI(`/drops/comments/${commentToDelete}`, { method: 'DELETE' });
+            if (res.success) {
+                setCommentsList(prev => prev.filter(item => (item._id || item.id) !== commentToDelete));
+            }
+        } catch (err) {}
+        setIsConfirmModalOpen(false);
+        setCommentToDelete(null);
+    };
+
+    const renderCommentContent = (content) => {
+        if (!content) return null;
+        return content.split(/(@[a-zA-Z0-9_]+)/g).map((part, index) => {
+            if (part.startsWith('@')) {
+                const username = part.substring(1);
+                return (
+                    <Link key={index} to={`/${username}`} className="text-[#0095f6] font-bold no-underline hover:underline cursor-pointer">
+                        {part}
+                    </Link>
+                );
+            }
+            return <span key={index} className="text-white">{part}</span>;
+        });
     };
 
     if (loading) {
@@ -117,7 +151,7 @@ const DropsFeed = () => {
                                     <div className="relative h-full max-w-[450px] w-full flex bg-[#111]">
                                         
                                         {deletingId === dropId ? (
-                                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                                            <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
                                                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff4d4d] mb-4"></div>
                                                 <p className="text-white font-bold tracking-widest text-sm">Eliminando Drop...</p>
                                             </div>
@@ -132,16 +166,18 @@ const DropsFeed = () => {
                                             onClick={() => togglePlay(dropId)}
                                         />
 
-                                        <div className="absolute bottom-0 left-0 w-full p-5 pb-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent flex justify-between items-end pointer-events-none">
+                                        <div className="absolute bottom-0 left-0 w-full p-5 pb-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent flex justify-between items-end pointer-events-none z-10">
                                             <div className="flex flex-col gap-2 max-w-[75%] pointer-events-auto">
                                                 <div className="flex items-center gap-2">
-                                                    <img src={avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full border border-[#333] object-cover" />
-                                                    <strong className="text-white text-base tracking-wide">@{drop.user?.username}</strong>
+                                                    <Link to={`/${drop.user?.username}`} className="no-underline flex items-center gap-2 group cursor-pointer z-50">
+                                                        <img src={avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full border border-[#333] object-cover" />
+                                                        <strong className="text-white text-base tracking-wide group-hover:underline">@{drop.user?.username}</strong>
+                                                    </Link>
                                                 </div>
-                                                <p className="text-gray-200 text-sm m-0 leading-tight drop-shadow-md font-medium">{drop.description}</p>
+                                                <p className="text-gray-200 text-sm m-0 leading-tight drop-shadow-md font-medium">{renderCommentContent(drop.description)}</p>
                                             </div>
 
-                                            <div className="flex flex-col items-center gap-4 relative z-10 pointer-events-auto">
+                                            <div className="flex flex-col items-center gap-4 relative z-20 pointer-events-auto">
                                                 <div className="flex flex-col items-center group">
                                                     <button onClick={() => toggleAction(dropId, 'like')} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md active:scale-90">
                                                         <svg width="24" height="24" viewBox="0 0 24 24" fill={drop.has_liked ? "#ff4d4d" : "none"} stroke={drop.has_liked ? "#ff4d4d" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
@@ -214,15 +250,54 @@ const DropsFeed = () => {
                                                     {commentsList.length === 0 ? (
                                                         <p className="text-center text-gray-500 text-sm mt-4">Sé el primero en comentar.</p>
                                                     ) : (
-                                                        commentsList.map(c => (
-                                                            <div key={c._id || c.id} className="flex gap-3 mb-4">
-                                                                <img src={c.user?.profile_picture ? (c.user.profile_picture.startsWith('http') ? c.user.profile_picture : `${BACKEND_URL}${c.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${c.user?.username}&background=262626&color=fff`} className="w-8 h-8 rounded-full object-cover shrink-0" alt="avatar" />
-                                                                <div>
-                                                                    <span className="text-gray-400 text-xs font-bold block mb-1">@{c.user?.username}</span>
-                                                                    <p className="text-white text-sm m-0 leading-tight">{c.content}</p>
+                                                        commentsList.map(c => {
+                                                            const commentId = c._id || c.id;
+                                                            const isCommentOwner = (c.user?._id || c.user?.id) === myIdStr;
+                                                            const canDelete = isCommentOwner || isMyDrop;
+
+                                                            return (
+                                                                <div key={commentId} className="flex gap-3 mb-4 items-start relative">
+                                                                    <Link to={`/${c.user?.username}`}>
+                                                                        <img src={c.user?.profile_picture ? (c.user.profile_picture.startsWith('http') ? c.user.profile_picture : `${BACKEND_URL}${c.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${c.user?.username}&background=262626&color=fff`} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[#333]" alt="avatar" />
+                                                                    </Link>
+                                                                    <div className="flex-1">
+                                                                        <Link to={`/${c.user?.username}`} className="text-gray-400 text-xs font-bold block mb-1 no-underline hover:text-white transition">@{c.user?.username}</Link>
+                                                                        <p className="text-white text-sm m-0 leading-tight">{renderCommentContent(c.content)}</p>
+                                                                    </div>
+
+                                                                    {/* 🔥 EL NUEVO BOTÓN DE TRES PUNTITOS Y SU MENÚ 🔥 */}
+                                                                    {canDelete && (
+                                                                        <div className="relative shrink-0">
+                                                                            <button 
+                                                                                onClick={(e) => { 
+                                                                                    e.stopPropagation(); 
+                                                                                    setActiveCommentMenuId(activeCommentMenuId === commentId ? null : commentId); 
+                                                                                }} 
+                                                                                className="bg-transparent border-none text-gray-500 hover:text-white cursor-pointer p-1"
+                                                                            >
+                                                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+                                                                            </button>
+                                                                            {activeCommentMenuId === commentId && (
+                                                                                <div className="absolute right-0 top-6 w-32 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl overflow-hidden z-50">
+                                                                                    <button 
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setCommentToDelete(commentId);
+                                                                                            setIsConfirmModalOpen(true);
+                                                                                            setActiveCommentMenuId(null);
+                                                                                        }}
+                                                                                        className="w-full text-left px-4 py-3 text-[#ff4d4d] text-xs font-bold bg-transparent border-none hover:bg-[#262626] cursor-pointer flex items-center gap-2"
+                                                                                    >
+                                                                                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                                                        Eliminar
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            </div>
-                                                        ))
+                                                            );
+                                                        })
                                                     )}
                                                 </div>
                                                 <form onSubmit={handleSendComment} className="p-3 border-t border-[#262626] bg-[#0a0a0a] flex gap-2">
@@ -239,15 +314,26 @@ const DropsFeed = () => {
                 </div>
             </div>
 
-            {/* MODAL PARA REPORTAR UN DROP */}
             {reportDropData && (
-                <ReportModal 
-                    targetType="drop" 
-                    targetId={reportDropData.targetId} 
-                    reportedUserId={reportDropData.reportedUserId} 
-                    onClose={() => setReportDropData(null)} 
-                />
+                <div onClick={e => e.stopPropagation()}>
+                    <ReportModal 
+                        targetType="drop" 
+                        targetId={reportDropData.targetId} 
+                        reportedUserId={reportDropData.reportedUserId} 
+                        onClose={() => setReportDropData(null)} 
+                    />
+                </div>
             )}
+            
+            <ConfirmModal 
+                isOpen={isConfirmModalOpen}
+                title="Eliminar comentario"
+                message="¿Seguro que quieres eliminar este comentario? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                onConfirm={executeDeleteComment}
+                onCancel={() => { setIsConfirmModalOpen(false); setCommentToDelete(null); }}
+            />
         </Fragment>
     );
 };

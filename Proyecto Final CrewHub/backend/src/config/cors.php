@@ -24,6 +24,10 @@ return [
         'http://crewhub.es:5173',
         'http://www.crewhub.es:5173',
         'http://crewhub.es',
+        'https://crewhub.es:5173',
+        'https://www.crewhub.es:5173',
+        'https://34.206.221.208:5173',
+        'https://crewhub.es'
     ],
 
     'allowed_origins_patterns' => [],

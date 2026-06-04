@@ -7,6 +7,7 @@ import Layout from "../structure/Layout.jsx";
 import PostCard from "../PostCard.jsx";
 import CreatePost from "../CreatePost.jsx";
 import StoriesBar from "../StoriesBar.jsx";
+import PostSkeleton from '../ui/PostSkeleton.jsx';
 
 const Home = () => {
     const { activeUser } = useContext(AuthContext);
@@ -75,7 +76,7 @@ const Home = () => {
     return (
         <Layout>
             <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0">
-                
+
                 <div className="md:hidden bg-[#121212] p-4 rounded-xl border border-[#262626] mb-4 shadow-lg">
                     <h3 className="text-sm font-bold mb-3 text-white m-0">Historias</h3>
                     <div className="overflow-x-auto pb-2 custom-scrollbar">
@@ -122,14 +123,14 @@ const Home = () => {
 
                 {/* PESTAÑAS DEL HOME */}
                 <div className="flex w-full bg-[#121212] border border-[#262626] rounded-xl overflow-hidden shadow-lg mb-6">
-                    <button 
-                        onClick={() => setFilter('all')} 
+                    <button
+                        onClick={() => setFilter('all')}
                         className={`flex-1 py-3 md:py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider transition-all cursor-pointer ${filter === 'all' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-none' : 'bg-transparent text-gray-500 border-none hover:bg-[#151515] hover:text-gray-300'}`}
                     >
                         Para Ti
                     </button>
-                    <button 
-                        onClick={() => setFilter('following')} 
+                    <button
+                        onClick={() => setFilter('following')}
                         className={`flex-1 py-3 md:py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${filter === 'following' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-t-0 border-b-0 border-r-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0 border-r-0 hover:bg-[#151515] hover:text-gray-300'}`}
                     >
                         Seguidos
@@ -138,7 +139,11 @@ const Home = () => {
 
                 <div className="flex flex-col gap-4 md:gap-6 min-h-[200px]">
                     {loading ? (
-                        <p className="text-center text-gray-400 font-bold tracking-widest uppercase py-10">Cargando...</p>
+                        <>
+                            <PostSkeleton />
+                            <PostSkeleton />
+                            <PostSkeleton />
+                        </>
                     ) : posts.length === 0 ? (
                         <div className="bg-[#121212] p-10 rounded-xl border border-[#262626] text-center shadow-lg">
                             <h2 className="text-lg md:text-xl text-white font-bold mb-2 mt-0">No hay publicaciones</h2>

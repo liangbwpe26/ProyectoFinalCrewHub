@@ -1,19 +1,20 @@
-:80 {
-    @api path /api/* /sanctum/* /storage/*
-    handle @api {
-        root * /var/www/html/public
-        php_fastcgi 127.0.0.1:9000
-        file_server
-    }
-
-    # 2. Tráfico de WebSockets (Reverb)
-    @reverb path /app/* /apps/*
-    handle @reverb {
+crewhub.es {
+    handle /app/* {
         reverse_proxy social_reverb:8080
     }
 
-    # 3. Todo lo demás va al Frontend (React / Vite)
-    handle {
+    # API de Laravel
+    handle /api/* {
+        reverse_proxy social_backend:8000
+    }
+    
+    # Cookies de Autenticación
+    handle /sanctum/* {
+        reverse_proxy social_backend:8000
+    }
+
+    # React (Todo lo demás)
+    handle /* {
         reverse_proxy social_frontend:5173
     }
 }

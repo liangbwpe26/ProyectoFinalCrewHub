@@ -7,9 +7,9 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [activeUser, setActiveUser] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const { showToast } = useToast();
 
+    // 1. VERIFICAR SESIÓN
     useEffect(() => {
         const verifySession = async () => {
             try {
@@ -25,21 +25,7 @@ export const AuthProvider = ({ children }) => {
         verifySession();
     }, []);
 
-    const login = (userData) => {
-        setActiveUser(userData);
-    };
-
-    const logout = async () => {
-        try {
-            await fetchAPI('/logout', { method: 'POST' });
-        } catch (error) {
-            console.error("Error al cerrar sesión en el servidor", error);
-        } finally {
-            setActiveUser(null);
-            window.location.href = '/login';
-        }
-    };
-
+    // 2. INICIAR SESIÓN
     const loginAPI = async (credentials) => {
         await fetchAPI('/sanctum/csrf-cookie');
 
@@ -65,10 +51,39 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || "Credenciales incorrectas");
     };
 
+    // 3. REGISTRO
+    const registerAPI = async (userData) => {
+        await fetchAPI('/sanctum/csrf-cookie');
+
+        const data = await fetchAPI('/register', {
+            method: 'POST',
+            body: userData
+        });
+
+        return data; 
+    };
+
+    // 4. CERRAR SESIÓN
+    const logout = async () => {
+        try {
+            await fetchAPI('/logout', { method: 'POST' });
+        } catch (error) {
+            console.error("Error al cerrar sesión en el servidor", error);
+        } finally {
+            setActiveUser(null);
+            window.location.href = '/login';
+        }
+    };
+
+    const login = (userData) => {
+        setActiveUser(userData);
+    };
+
     const contextValue = {
         activeUser,
         setActiveUser,
         loginAPI,
+        registerAPI,
         logout,
         login,
         loading

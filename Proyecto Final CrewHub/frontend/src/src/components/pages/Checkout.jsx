@@ -12,7 +12,7 @@ const Checkout = () => {
     const { buyAdPlan, buyVerification } = useMonetization(); 
     
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false); // NUEVO ESTADO DE ÉXITO
+    const [isSuccess, setIsSuccess] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', expiry: '', cvc: '' });
 
     if (!state || !state.planId) {
@@ -23,7 +23,6 @@ const Checkout = () => {
         e.preventDefault();
         setIsProcessing(true);
 
-        // Simulamos el tiempo de carga con el banco
         setTimeout(async () => {
             let success = false;
             
@@ -38,10 +37,8 @@ const Checkout = () => {
             setIsProcessing(false);
             
             if (success) {
-                // En vez del alert feo, activamos la pantalla de éxito
                 setIsSuccess(true);
                 
-                // Redirigimos automáticamente después de 3 segundos
                 setTimeout(() => {
                     navigate(`/${activeUser?.username}`);
                 }, 3000);
@@ -93,7 +90,6 @@ const Checkout = () => {
                     <div className="w-full md:w-2/3">
                         <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 md:p-8 shadow-xl">
                             
-                            {/* PANTALLA DE ÉXITO CUSTOMIZADA */}
                             {isSuccess ? (
                                 <div className="flex flex-col items-center justify-center py-12 animate-fade-in text-center">
                                     <div className="w-24 h-24 bg-[#00ba7c]/10 rounded-full flex items-center justify-center mb-6 border border-[#00ba7c]/30 shadow-[0_0_30px_rgba(0,186,124,0.2)]">
@@ -110,7 +106,6 @@ const Checkout = () => {
                                     </div>
                                 </div>
                             ) : (
-                                /* FORMULARIO DE PAGO NORMAL */
                                 <Fragment>
                                     <h2 className="text-2xl font-black mb-6">Detalles de Pago</h2>
                                     <form onSubmit={handlePayment} className="flex flex-col gap-5">
@@ -124,7 +119,8 @@ const Checkout = () => {
                                                     placeholder="0000 0000 0000 0000" 
                                                     value={cardData.number}
                                                     onChange={(e) => setCardData({...cardData, number: e.target.value})}
-                                                    className="w-full p-4 pl-12 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition-colors font-mono" 
+                                                    // CORRECCIÓN AQUÍ: py-4 pr-4 pl-14
+                                                    className="w-full py-4 pr-4 pl-14 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition-colors font-mono" 
                                                 />
                                                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                                             </div>

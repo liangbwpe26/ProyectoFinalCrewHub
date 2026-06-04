@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import { fetchAPI } from '../services/api.js';
 
-// Función mágica para recortar la imagen real antes de subirla
 const getCroppedImg = async (imageSrc, pixelCrop) => {
     const image = new Image();
     image.src = imageSrc;
@@ -33,7 +32,8 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     });
 };
 
-const StoryManager = ({ file, onClose, communityId }) => {
+// 🔥 RECIBIMOS 'community' EN VEZ DE 'communityId'
+const StoryManager = ({ file, onClose, community }) => { 
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -45,8 +45,14 @@ const StoryManager = ({ file, onClose, communityId }) => {
         const formData = new FormData();
         formData.append('media', fileToUpload);
 
-        if (communityId) {
-            formData.append('community_id', communityId);
+        if (community) {
+            // Buscamos el ID por cielo, mar y tierra
+            const safeId = community._id?.$oid || community._id || community.id;
+            const slug = community.slug;
+
+            // Le mandamos AMBOS a Laravel para que él decida cuál usar
+            if (safeId) formData.append('community_id', String(safeId));
+            if (slug) formData.append('community_slug', String(slug));
         }
 
         try {
@@ -62,7 +68,8 @@ const StoryManager = ({ file, onClose, communityId }) => {
         setIsUploading(true);
         if (file.type.startsWith('image/')) {
             try {
-                const croppedFile = await getCroppedImg(URL.createObjectURL(file), croppedAreaPixels);
+                const cropData = croppedAreaPixels || { x: 0, y: 0, width: 1080, height: 1920 };
+                const croppedFile = await getCroppedImg(URL.createObjectURL(file), cropData);
                 await uploadFile(croppedFile);
             } catch (e) {
                 console.error("Fallo al recortar", e);

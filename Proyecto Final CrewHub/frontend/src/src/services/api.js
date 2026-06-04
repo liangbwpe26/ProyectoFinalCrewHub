@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://crewhub.es';
+const BACKEND_URL = 'https://crewhub.es';
 
 const getCookie = (name) => {
     const value = `; ${document.cookie}`;

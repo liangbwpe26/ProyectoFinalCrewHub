@@ -132,6 +132,13 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Credenciales incorrectas.'], 401);
         }
 
+        if (isset($user->is_banned) && $user->is_banned === true) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu cuenta ha sido suspendida permanentemente por violar las normas de la comunidad.'
+            ], 403);
+        }
+
         if (is_null($user->email_verified_at)) {
             return response()->json([
                 'success' => false,

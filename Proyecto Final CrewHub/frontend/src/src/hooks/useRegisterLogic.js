@@ -42,13 +42,20 @@ export const useRegisterLogic = () => {
 
         setLoading(true);
         try {
-            const res = await registerAPI(userData);
+            const payload = {
+                ...userData,
+                password_confirmation: userData.password
+            };
+
+            const res = await registerAPI(payload);
             if (res && res.success) {
-                // 🔥 Redirigimos a validar correo pasándole el email por estado
                 navigate("/verify-email", { state: { email: res.email || userData.email } });
+            } else if (res && !res.success) {
+                showToast(res.message || "Error al registrar el usuario.", "error");
             }
         } catch (error) {
-            // El error ya lo muestra el AuthContext
+            const errorMessage = error.response?.data?.message || "Ocurrió un error inesperado de conexión.";
+            showToast(errorMessage, "error");
         } finally {
             setLoading(false);
         }

@@ -1,14 +1,25 @@
 services:
+  caddy:
+    image: caddy:latest
+    container_name: social_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app_network
+
   backend:
     build: ./backend
     container_name: social_backend
-    restart: always
-    ports:
-      - "80:80"    # <--- MAGIA: Caddy ahora escucha en el puerto web universal
-      - "443:443"
+    restart: unless-stopped
+    command: php artisan serve --host=0.0.0.0 --port=8000
     volumes:
       - ./backend/src:/var/www/html
-      - ./backend/Caddyfile:/etc/caddy/Caddyfile
     networks:
       - app_network
     environment:
@@ -17,7 +28,7 @@ services:
   reverb:
     build: ./backend
     container_name: social_reverb
-    restart: always
+    restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
@@ -38,21 +49,10 @@ services:
     networks:
       - app_network
 
-  mongodb:
-    image: mongo:latest
-    container_name: social_mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - app_network
-    profiles:
-      - local
-
 networks:
   app_network:
     driver: bridge
 
 volumes:
-  mongo_data:
+  caddy_data:
+  caddy_config:

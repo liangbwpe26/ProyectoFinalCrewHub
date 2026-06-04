@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class ProfanityFilter
 {
     protected $badWords = [
-        'idiota', 'estupido', 'imbecil', 'basura', 'mierda', 'puta', 'cabron'
+        'idiota', 'estupido', 'imbecil', 'basura', 'mierda', 'puta', 'cabron', ''
     ];
     
     protected $except = [
@@ -48,7 +48,11 @@ class ProfanityFilter
 
     private function cleanData($data)
     {
-        $pattern = '/\b(' . implode('|', $this->badWords) . ')\b/i';
+        $palabrasValidas = array_filter($this->badWords, function($word) {
+            return !empty(trim($word));
+        });
+
+        $pattern = '/\b(' . implode('|', $palabrasValidas) . ')\b/i';
 
         foreach ($data as $key => $value) {
             if (is_string($value)) {

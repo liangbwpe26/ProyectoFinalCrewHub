@@ -4,7 +4,7 @@ import Layout from '../structure/Layout.jsx';
 import { useCommunity } from '../../hooks/useCommunity.js';
 import PostCard from '../PostCard.jsx';
 import CreatePost from '../CreatePost.jsx';
-import StoryManager from '../StoryManager.jsx'; // AQUÍ ESTÁ TU RECORTADOR
+import StoryManager from '../StoryManager.jsx';
 
 const Community = () => {
     const { slug } = useParams();
@@ -27,7 +27,6 @@ const Community = () => {
     const [editTags, setEditTags] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // ESTADO DEL RECORTADOR
     const [selectedStoryFile, setSelectedStoryFile] = useState(null);
 
     const fileInputRef = useRef(null);
@@ -59,7 +58,6 @@ const Community = () => {
         }
     }, [searchQuery]);
 
-    // ATRAPA LA IMAGEN Y ABRE EL RECORTADOR
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -140,11 +138,10 @@ const Community = () => {
         <Layout>
             <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative">
                 
-                {/* RENDERIZADO DEL RECORTADOR */}
                 {selectedStoryFile && (
                     <StoryManager
                         file={selectedStoryFile}
-                        communityId={community._id || community.id}
+                        community={community} 
                         onClose={(success) => {
                             setSelectedStoryFile(null);
                             if (success) {
@@ -174,7 +171,6 @@ const Community = () => {
                             {isAdmin && (
                                 <label className="absolute bottom-1 right-1 w-7 h-7 bg-[#0095f6] rounded-full border-2 border-[#121212] flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg z-10" title="Subir historia a la comunidad">
                                     <span className="text-white font-bold text-sm leading-none mb-0.5">+</span>
-                                    {/* AL DARLE CLIC, SE DISPARA EL handleFileChange Y ABRE EL MODAL */}
                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" />
                                 </label>
                             )}
@@ -206,7 +202,7 @@ const Community = () => {
                         <button onClick={() => setActiveTab('pending')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'pending' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#ff4d4d] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>
                             Solicitudes {pendingPosts.length > 0 && <span className="bg-[#ff4d4d] text-white px-2 py-0.5 rounded-full ml-1">{pendingPosts.length}</span>}
                         </button>
-                        <button onClick={() => setActiveTab('members')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'members' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>Miembros</button>
+                        <button onClick={() => setActiveTab('members')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'members' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#00ba7c] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>Miembros</button>
                         <button onClick={() => setActiveTab('settings')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'settings' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#f5a623] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>Ajustes</button>
                     </div>
                 )}
@@ -255,6 +251,56 @@ const Community = () => {
                             <div className="text-center text-gray-500 py-10 bg-[#121212] border border-[#262626] rounded-xl font-bold">No hay publicaciones con esta etiqueta.</div>
                         ) : (
                             posts.map(post => <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />)
+                        )}
+                    </div>
+                ) : activeTab === 'members' ? (
+                    <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-lg">
+                        <div className="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
+                            <h3 className="text-white text-lg font-bold m-0">Miembros ({membersList.length})</h3>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar miembro..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="p-2 px-4 rounded-full border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm w-[200px]"
+                            />
+                        </div>
+
+                        {loadingMembers ? (
+                            <div className="text-center py-8 text-gray-500 font-bold">Cargando miembros...</div>
+                        ) : membersList.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">No se encontraron miembros.</div>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {membersList.map(member => (
+                                    <div key={member._id || member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors border border-transparent hover:border-[#333]">
+                                        <Link to={`/${member.username}`} className="flex items-center gap-3 no-underline text-white flex-1 min-w-0 group">
+                                            <img src={getAvatar(member)} alt={member.username} className="w-12 h-12 rounded-full object-cover shrink-0 border border-[#333]" />
+                                            <div className="flex flex-col min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <strong className="text-sm truncate group-hover:underline">{member.display_name || member.username}</strong>
+                                                    {member.is_admin && <span className="bg-[#00ba7c]/10 text-[#00ba7c] text-[10px] px-2 py-0.5 rounded uppercase font-black tracking-wider border border-[#00ba7c]/20">Admin</span>}
+                                                </div>
+                                                <span className="text-xs text-gray-500 truncate">@{member.username}</span>
+                                            </div>
+                                        </Link>
+
+                                        {/* Acciones para el Administrador (Expulsar/Promover) */}
+                                        {isAdmin && (member._id || member.id) !== currentUserId && (
+                                            <div className="flex gap-2 shrink-0 ml-4">
+                                                {!member.is_admin && (
+                                                    <button onClick={() => promoteMember(member._id || member.id)} className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#1a1a1a] text-[#00ba7c] border border-[#333] hover:border-[#00ba7c] cursor-pointer transition">
+                                                        Promover
+                                                    </button>
+                                                )}
+                                                <button onClick={() => kickMember(member._id || member.id)} className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#1a1a1a] text-[#ff4d4d] border border-[#333] hover:border-[#ff4d4d] cursor-pointer transition">
+                                                    Expulsar
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 ) : activeTab === 'settings' && isAdmin ? (

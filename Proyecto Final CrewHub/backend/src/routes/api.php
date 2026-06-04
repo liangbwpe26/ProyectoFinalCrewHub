@@ -116,6 +116,7 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::delete('/drops/{id}', [DropController::class, 'destroy']);
     Route::get('/drops/{id}/comments', [DropController::class, 'getComments']);
     Route::post('/drops/{id}/comments', [DropController::class, 'addComment']);
+    Route::delete('/drops/comments/{id}', [DropController::class, 'deleteComment']);
 
     // --- HISTORIAS ---
     Route::get('/stories/feed', [StoryController::class, 'getFeedStories']);
@@ -148,4 +149,9 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/admin/reports', [ReportController::class, 'index']);
     Route::post('/admin/reports/{id}/resolve', [ReportController::class, 'resolve']);
+    Route::get('/admin/tickets', [App\Http\Controllers\ReportController::class, 'getTickets']);
+    Route::post('/admin/tickets/{id}/resolve', [App\Http\Controllers\ReportController::class, 'resolveTicket']);
+    Route::get('/admin/users/sanctioned', [App\Http\Controllers\ReportController::class, 'getSanctionedUsers']);
+    Route::post('/admin/users/{id}/toggle-ban', [App\Http\Controllers\ReportController::class, 'toggleBan']);
+    Route::post('/admin/users/{id}/reset-strikes', [App\Http\Controllers\ReportController::class, 'resetStrikes']);
 });

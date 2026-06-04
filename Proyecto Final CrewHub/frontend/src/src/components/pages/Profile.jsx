@@ -14,8 +14,6 @@ const Profile = () => {
     const { activeUser } = useContext(AuthContext);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
-
-    // Check de seguridad visual
     const isMyProfile = activeUser?.username === username;
 
     const {
@@ -33,7 +31,6 @@ const Profile = () => {
     if (error) return <div className="min-h-screen bg-[#0a0a0a]"><Navbar /><div className="pt-[120px] text-[#ff4d4d] text-center">{error}</div></div>;
     if (!profile) return null;
 
-    // Funciones Helper
     const profileImageUrl = profile.profile_picture
         ? (profile.profile_picture.startsWith('http') ? profile.profile_picture : `${BACKEND_URL}${profile.profile_picture}`)
         : `https://ui-avatars.com/api/?name=${profile.username}&background=262626&color=fff&bold=true&size=150`;
@@ -45,7 +42,6 @@ const Profile = () => {
 
     const getPostImage = (path) => path?.startsWith('http') ? path : `${BACKEND_URL}${path}`;
 
-    // Lógica visual
     const isLocked = profile.is_private && profile.follow_status !== 'accepted' && !isMyProfile;
     const isBlockedState = profile.blocked_by_me || profile.blocked_by_them;
 
@@ -98,7 +94,6 @@ const Profile = () => {
                             className={`w-36 h-36 rounded-full object-cover border-[6px] border-[#121212] bg-[#121212] shadow-xl mb-5 ${profile.is_business ? '-mt-16 z-10 relative' : 'mt-10'}`}
                         />
 
-                        {/* BOTONES DE ACCIÓN (Editar/Crear o Seguir/Desbloquear/Contactar) */}
                         <div className="flex gap-3 mb-5 z-10 relative">
                             {isMyProfile ? (
                                 <Fragment>
@@ -137,7 +132,6 @@ const Profile = () => {
                         <div className="text-center mb-8 px-4 w-full">
                             <h2 className="m-0 text-3xl font-black text-white tracking-wide flex items-center justify-center gap-2">
                                 {profile.display_name || profile.username}
-                                {/* Lo forzamos a salir sí o sí para probar */}
                                 <VerifiedBadge className="w-7 h-7" />
                             </h2>
                             <span className="text-[#0095f6] font-medium text-base">@{profile.username}</span>
@@ -158,16 +152,18 @@ const Profile = () => {
                             {isLocked && !isBlockedState && <div className="text-sm text-gray-500 mt-4 flex items-center justify-center gap-1 font-bold">🔒 Cuenta Privada</div>}
                         </div>
 
+                        {/* 🔥 ZONA DE CONTADORES CORREGIDA 🔥 */}
                         <div className="flex justify-center gap-10 md:gap-20 mb-8 w-full px-8">
                             <div className="flex flex-col items-center">
-                                <span className="font-black text-2xl text-white">{isBlockedState ? 0 : posts.length}</span>
+                                {/* Usa profile.posts_count en lugar de posts.length para saltar el candado */}
+                                <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.posts_count ?? posts.length)}</span>
                                 <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Publicaciones</span>
                             </div>
-                            <div onClick={() => !isBlockedState && openFollowModal('followers')} className={`flex flex-col items-center transition-opacity ${isBlockedState ? 'opacity-50' : 'cursor-pointer hover:opacity-80'}`}>
+                            <div onClick={() => !isBlockedState && !isLocked && openFollowModal('followers')} className={`flex flex-col items-center transition-opacity ${isBlockedState || isLocked ? 'opacity-70 cursor-default' : 'cursor-pointer hover:opacity-80'}`}>
                                 <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.followers_count || 0)}</span>
                                 <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Seguidores</span>
                             </div>
-                            <div onClick={() => !isBlockedState && openFollowModal('following')} className={`flex flex-col items-center transition-opacity ${isBlockedState ? 'opacity-50' : 'cursor-pointer hover:opacity-80'}`}>
+                            <div onClick={() => !isBlockedState && !isLocked && openFollowModal('following')} className={`flex flex-col items-center transition-opacity ${isBlockedState || isLocked ? 'opacity-70 cursor-default' : 'cursor-pointer hover:opacity-80'}`}>
                                 <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.following_count || 0)}</span>
                                 <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Seguidos</span>
                             </div>
@@ -312,7 +308,7 @@ const Profile = () => {
                             onClose={() => setIsReportModalOpen(false)}
                         />
                     )}
-                    {/* MODAL DE MÉTRICAS (SOLO PARA DUEÑO BUSINESS) */}
+
                     {isMetricsModalOpen && (
                         <div className="fixed inset-0 bg-black/80 z-[10000] flex justify-center items-center backdrop-blur-sm" onClick={() => setIsMetricsModalOpen(false)}>
                             <div onClick={(e) => e.stopPropagation()} className="w-[90%] md:w-[400px] bg-[#121212] rounded-2xl border border-[#333] overflow-hidden flex flex-col shadow-2xl">

@@ -343,38 +343,66 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        $request->validate([
+        if (in_array($request->input('date_of_birth'), ['null', 'undefined', ''])) {
+            $request->merge(['date_of_birth' => null]);
+        }
+
+        $rules = [
             'display_name' => 'nullable|string|max:50',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'nullable',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'banner_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'privacy_messages' => 'nullable|in:everyone,following,none',
             'privacy_comments' => 'nullable|in:everyone,following,none',
             'business_slogan' => 'nullable|string|max:60',
-        ]);
+        ];
+
+        if ($request->hasFile('profile_picture')) {
+            $rules['profile_picture'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+        }
+        
+        if ($request->hasFile('banner_picture')) {
+            $rules['banner_picture'] = 'image|mimes:jpeg,png,jpg,gif|max:5120';
+        }
+
+        $request->validate($rules);
 
         $privacyMessages = $request->input('privacy_messages');
         $privacyComments = $request->input('privacy_comments');
 
-        if ($privacyMessages) {
+        if ($privacyMessages && $privacyMessages !== 'undefined' && $privacyMessages !== 'null') {
             $user->forceFill(['privacy_messages' => $privacyMessages]);
         }
-        if ($privacyComments) {
+        
+        if ($privacyComments && $privacyComments !== 'undefined' && $privacyComments !== 'null') {
             $user->forceFill(['privacy_comments' => $privacyComments]);
         }
 
-        if ($request->has('display_name')) {
+        if ($request->has('display_name') && $request->display_name !== 'undefined' && $request->display_name !== 'null') {
             $user->display_name = $request->display_name;
         }
-        if ($request->has('date_of_birth')) {
-            $user->date_of_birth = $request->date_of_birth;
+
+        if ($request->exists('date_of_birth')) {
+            $dob = $request->input('date_of_birth');
+            
+            $cleanDob = preg_replace('/[^0-9\-]/', '', (string) $dob);
+
+            if (!empty($cleanDob) && strlen($cleanDob) >= 8) {
+                try {
+                    $user->date_of_birth = \Carbon\Carbon::parse($cleanDob)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $user->date_of_birth = null;
+                }
+            } else {
+                $user->date_of_birth = null;
+            }
         }
-        if ($request->has('is_private')) {
+
+        if ($request->has('is_private') && $request->input('is_private') !== 'null' && $request->input('is_private') !== 'undefined') {
             $user->is_private = filter_var($request->input('is_private'), FILTER_VALIDATE_BOOLEAN);
         }
 
-        // AQUÍ GUARDAMOS EL SLOGAN
-        if ($request->has('business_slogan')) {
+        if ($request->has('business_slogan') && $request->business_slogan !== 'undefined' && $request->business_slogan !== 'null') {
             $user->business_slogan = $request->business_slogan;
         }
 
@@ -383,7 +411,6 @@ class UserController extends Controller
             $user->profile_picture = Storage::disk('s3')->url($path);
         }
 
-        // AQUÍ GUARDAMOS EL BANNER DIRECTO A S3
         if ($request->hasFile('banner_picture')) {
             $path = $request->file('banner_picture')->store('banners', 's3');
             $user->banner_picture = Storage::disk('s3')->url($path);

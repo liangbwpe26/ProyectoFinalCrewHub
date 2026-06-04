@@ -14,7 +14,6 @@ const Explore = () => {
 
     const categories = ['Tecnología', 'Moda y Ropa', 'Comida y Restaurantes', 'Entretenimiento'];
 
-    // Efecto para buscar automáticamente cuando escribes o cambias de categoría
     useEffect(() => {
         const fetchResults = async () => {
             if (!searchQuery.trim() && !selectedCategory) {
@@ -24,7 +23,6 @@ const Explore = () => {
 
             setIsLoading(true);
             try {
-                // Armamos la URL dependiendo de qué estamos buscando
                 let url = `/users/search?`;
                 if (searchQuery.trim()) url += `q=${encodeURIComponent(searchQuery)}&`;
                 if (selectedCategory) url += `category=${encodeURIComponent(selectedCategory)}`;
@@ -40,7 +38,6 @@ const Explore = () => {
             }
         };
 
-        // Le metemos un pequeño retraso (debounce) para no saturar tu backend si escriben muy rápido
         const delayDebounceFn = setTimeout(() => {
             fetchResults();
         }, 500);
@@ -49,12 +46,11 @@ const Explore = () => {
     }, [searchQuery, selectedCategory]);
 
     const handleCategoryClick = (category) => {
-        // Si le dan clic a la misma categoría, la desmarcan
         if (selectedCategory === category) {
             setSelectedCategory('');
         } else {
             setSelectedCategory(category);
-            setSearchQuery(''); // Limpiamos el texto si buscan por rubro
+            setSearchQuery('');
         }
     };
 
@@ -79,9 +75,10 @@ const Explore = () => {
                                 value={searchQuery}
                                 onChange={(e) => {
                                     setSearchQuery(e.target.value);
-                                    if (e.target.value) setSelectedCategory(''); // Limpia la categoría si escriben
+                                    if (e.target.value) setSelectedCategory('');
                                 }}
-                                className="w-full p-4 pl-12 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition-colors"
+                                // CORRECCIÓN AQUÍ: py-4 pr-4 pl-12 en lugar de p-4 pl-12
+                                className="w-full py-4 pr-4 pl-12 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition-colors"
                             />
                             <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </div>
@@ -123,7 +120,6 @@ const Explore = () => {
                                             </div>
                                             <span className="text-sm text-gray-500 truncate">@{user.username}</span>
                                             
-                                            {/* Si es business, mostramos su etiqueta */}
                                             {user.is_business && (
                                                 <span className="mt-1 w-max text-[10px] font-bold uppercase tracking-widest text-[#00ba7c] border border-[#00ba7c] px-2 py-0.5 rounded-sm bg-[#00ba7c]/10">
                                                     {user.business_category || 'Empresa'}
@@ -132,7 +128,6 @@ const Explore = () => {
                                         </div>
                                     </Link>
                                     
-                                    {/* Botón de seguir falso visual para la maqueta */}
                                     <Link to={`/${user.username}`} className="shrink-0 px-5 py-2 rounded-full bg-[#262626] text-white text-xs font-bold border border-[#363636] hover:bg-[#333] transition-colors no-underline">
                                         Ver perfil
                                     </Link>

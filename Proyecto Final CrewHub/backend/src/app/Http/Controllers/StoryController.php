@@ -25,23 +25,49 @@ class StoryController extends Controller
     {
         $request->validate([
             'media' => 'required|file|mimes:jpeg,png,jpg,mp4,mov|max:10240',
-            'community_id' => 'nullable|string'
         ]);
 
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
-        $communityId = $request->input('community_id');
+        
+        // 🔥 LA LICUADORA: Destruimos cualquier salto de línea, espacio o caracter fantasma
+        $rawSlug = (string) $request->input('community_slug');
+        $rawId = (string) $request->input('community_id');
+        
+        $communitySlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawSlug);
+        $communityId = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawId);
 
-        if ($communityId) {
-            $community = Community::find($communityId);
-            if (!$community)
-                return response()->json(['success' => false, 'message' => 'Comunidad no encontrada'], 404);
+        if (!empty($communityId) || !empty($communitySlug)) {
+            $community = null;
+
+            // Traemos TODAS las comunidades y las filtramos pasándolas por la licuadora
+            $allCommunities = Community::all();
+            
+            foreach ($allCommunities as $c) {
+                // Limpiamos también lo que viene de la Base de Datos por si acaso
+                $dbSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$c->slug);
+                $dbId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($c->_id ?? $c->id));
+                
+                // Si la versión limpia de React encaja con la versión limpia de la BD, la atrapamos.
+                if ((!empty($communitySlug) && $dbSlug === $communitySlug) || 
+                    (!empty($communityId) && $dbId === $communityId)) {
+                    $community = $c;
+                    break; // La encontramos, salimos del bucle
+                }
+            }
+
+            // Si aún así no la encuentra, ya es brujería
+            if (!$community) {
+                return response()->json(['success' => false, 'message' => 'Comunidad no encontrada a pesar de la limpieza.'], 404);
+            }
             
             $admins = $this->safeArray($community->admins);
             
             if (!in_array($myId, $admins)) {
                 return response()->json(['success' => false, 'message' => 'Solo los administradores pueden subir historias.'], 403);
             }
+            
+            $communityId = (string) ($community->_id ?? $community->id);
         }
 
         $file = $request->file('media');
@@ -63,74 +89,6 @@ class StoryController extends Controller
         return response()->json(['success' => true, 'story' => $story]);
     }
 
-    // 2. OBTENER LA BARRA DE HISTORIAS SUPERIOR (BYPASS MONGODB)
-    public function feed(Request $request)
-    {
-        $me = $request->user();
-        $myIdStr = (string) ($me->_id ?? $me->id);
-
-        // 1. Filtramos amigos
-        $allFollows = Follow::where('follower_id', $myIdStr)->where('status', 'accepted')->get();
-        $allowedUserIds = [$myIdStr];
-        foreach ($allFollows as $f) {
-            $allowedUserIds[] = (string)$f->followed_id;
-        }
-
-        // 2. Filtramos Comunidades manualmente en PHP
-        $allCommunities = Community::all();
-        $allowedCommunityIds = [];
-        foreach ($allCommunities as $c) {
-            $members = $this->safeArray($c->members);
-            $admins = $this->safeArray($c->admins);
-            
-            if (in_array($myIdStr, $members) || in_array($myIdStr, $admins)) {
-                $allowedCommunityIds[] = (string)($c->_id ?? $c->id);
-            }
-        }
-
-        // 3. Traer recientes y purgar en PHP
-        $recentStories = Story::with(['user', 'community'])
-            ->where('created_at', '>=', Carbon::now()->subHours(24))
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $filteredStories = collect();
-        $seen = [];
-
-        foreach ($recentStories as $story) {
-            if (Carbon::parse($story->expires_at)->isPast()) continue;
-
-            $isCommunity = !empty($story->community_id);
-            
-            if ($isCommunity) {
-                if (!in_array((string)$story->community_id, $allowedCommunityIds)) continue;
-                $key = 'c_' . $story->community_id;
-            } else {
-                if (!in_array((string)$story->user_id, $allowedUserIds)) continue;
-                $key = 'u_' . $story->user_id;
-            }
-
-            if (!in_array($key, $seen)) {
-                $seen[] = $key;
-                
-                // SALVAVIDAS: Si MongoDB no juntó la comunidad, la buscamos a la fuerza
-                if ($isCommunity && !$story->community) {
-                    $story->community = Community::find($story->community_id);
-                }
-
-                $story->viewed_by = $this->safeArray($story->viewed_by);
-                $story->liked_by = $this->safeArray($story->liked_by);
-                $filteredStories->push($story);
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'feed' => $filteredStories->values()
-        ]);
-    }
-
-    // 3. OBTENER LAS HISTORIAS AGRUPADAS AL HACER CLIC
     public function getFeedStories(Request $request)
     {
         $me = $request->user();

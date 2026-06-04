@@ -11,11 +11,11 @@ use App\Models\Comment;
 use App\Models\SavedPost;
 use App\Models\Community;
 use App\Models\Repost;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
-    // 1. CREAR UNA PUBLICACIÓN
     public function store(Request $request)
     {
         $request->validate([
@@ -73,7 +73,6 @@ class PostController extends Controller
         ]);
     }
 
-    // 2. OBTENER EL MURO (FEED)
     public function index(Request $request)
     {
         $me = $request->user();
@@ -85,21 +84,19 @@ class PostController extends Controller
         $offset = (int) $request->query('offset', 0);
         $limit = 10;
 
-        // Base de la consulta (Solo aprobados)
         $postsQuery = Post::with(['user', 'community', 'originalPost', 'originalPost.user'])
             ->where(function ($query) {
                 $query->where('status', 'approved')->orWhereNull('status');
             })
+            ->where('is_hidden', '!=', true)
             ->orderBy('created_at', 'desc');
 
-        // LÓGICA DE COMUNIDADES (Dentro del perfil de una comunidad específica)
         if ($communityId) {
             $postsQuery->where('community_id', $communityId);
             if ($communityTag) {
                 $postsQuery->where('community_tag', $communityTag);
             }
         }
-        // LÓGICA DEL FEED GLOBAL (HOME)
         else {
             $followingIds = Follow::where('follower_id', $myIdStr)
                 ->where('status', 'accepted')
@@ -136,7 +133,6 @@ class PostController extends Controller
         $totalPosts = $postsQuery->count();
         $posts = $postsQuery->skip($offset)->take($limit)->get();
 
-        // 1. Limpiamos los posts normales
         $posts->transform(function ($post) use ($myIdStr) {
             $postId = (string) ($post->_id ?? $post->id);
             $post->reactions_count = Reaction::where('post_id', $postId)->count();
@@ -159,17 +155,14 @@ class PostController extends Controller
         $feed = collect();
         $adPosts = collect();
 
-        // Solo inyectamos publicidad si estamos en el feed principal (no dentro de un grupo)
         if (!$communityId && $posts->count() > 0) {
 
-            // Cazamos a las cuentas Business que tienen un plan de pago
             $businessUsersIds = User::where('is_business', true)
                 ->whereNotNull('ad_plan')
                 ->pluck('_id')
                 ->toArray();
 
             if (!empty($businessUsersIds)) {
-                // Queremos 1 anuncio por cada 4 posts normales
                 $neededAds = ceil($posts->count() / 4);
 
                 $adPosts = Post::with(['user', 'community'])
@@ -177,11 +170,10 @@ class PostController extends Controller
                     ->where(function ($query) {
                         $query->where('status', 'approved')->orWhereNull('status');
                     })
-                    ->inRandomOrder() // Para que no siempre salga el mismo anuncio aburrido
+                    ->inRandomOrder()
                     ->take($neededAds)
                     ->get();
 
-                // Formateamos los anuncios como si fueran posts normales
                 $adPosts->transform(function ($ad) use ($myIdStr) {
                     $adId = (string) ($ad->_id ?? $ad->id);
                     $ad->reactions_count = Reaction::where('post_id', $adId)->count();
@@ -191,13 +183,12 @@ class PostController extends Controller
                         $ad->has_saved = SavedPost::where('post_id', $adId)->where('user_id', $myIdStr)->exists();
                         $ad->has_reposted = Repost::where('post_id', $adId)->where('user_id', $myIdStr)->exists();
                     }
-                    $ad->is_ad = true; // ESTA ES LA ETIQUETA QUE DETECTA REACT PARA PINTARLO VERDE
+                    $ad->is_ad = true;
                     return $ad;
                 });
             }
         }
 
-        // LA LICUADORA: Metemos 1 anuncio cada 4 posts
         $adIndex = 0;
         foreach ($posts as $index => $post) {
             $feed->push($post);
@@ -266,7 +257,7 @@ class PostController extends Controller
         $isPlatformAdmin = ($me->is_admin || $me->username === 'liangbw_');
 
         if ($post->community_id) {
-            $community = \App\Models\Community::find($post->community_id);
+            $community = Community::find($post->community_id);
             if ($community) {
                 $admins = is_object($community->admins) ? (array) $community->admins : ($community->admins ?? []);
                 if (in_array($myId, $admins)) {
@@ -279,11 +270,29 @@ class PostController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
+        if ($isPlatformAdmin && !$isOwner) {
+            $infractor = User::find($post->user_id);
+            if ($infractor) {
+                $infractor->strikes = ($infractor->strikes ?? 0) + 1;
+                
+                if ($infractor->strikes >= 3) {
+                    $infractor->is_banned = true;
+                }
+                $infractor->save();
+
+                Notification::create([
+                    'recipient_id' => $infractor->_id,
+                    'sender_id' => $myId,
+                    'type' => 'strike_warning',
+                    'is_read' => false
+                ]);
+            }
+        }
+
         $post->delete();
         return response()->json(['success' => true]);
     }
 
-    // Obtener los reposts de un usuario para su perfil
     public function userReposts(Request $request, $username)
     {
         $user = User::where('username', $username)->first();
