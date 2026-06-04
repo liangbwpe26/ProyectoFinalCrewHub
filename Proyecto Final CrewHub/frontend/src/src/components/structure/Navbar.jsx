@@ -54,13 +54,12 @@ const Navbar = () => {
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
     };
 
-    const isActive = (path) => location.pathname.startsWith(path) ? 'text-[#0095f6]' : 'text-gray-400 hover:text-white';
+    const isActive = (path) => location.pathname.startsWith(path) ? 'text-[#0095f6] drop-shadow-[0_0_8px_rgba(0,149,246,0.6)]' : 'text-gray-400 hover:text-white transition-all';
     const isMobileActive = (path) => location.pathname.startsWith(path) ? 'bg-[#1a1a1a] text-[#0095f6] border-l-4 border-[#0095f6]' : 'text-gray-400 hover:text-white hover:bg-[#1a1a1a] border-l-4 border-transparent';
 
     return (
         <Fragment>
-            {/* CORRECCIÓN: Se eliminó 'relative' para evitar conflicto con 'fixed' */}
-            <nav className="fixed top-0 left-0 w-full h-16 bg-[#121212] border-b border-[#262626] z-50 shadow-sm">
+            <nav className="fixed top-0 left-0 w-full h-16 bg-[#121212]/80 backdrop-blur-xl border-b border-[#262626] z-50 shadow-sm">
                 
                 <div className="flex items-center justify-between px-4 md:px-8 w-full h-full">
                     
@@ -78,7 +77,7 @@ const Navbar = () => {
                             </svg>
                         </button>
                         
-                        <Link to="/home" className="text-white font-black text-lg md:text-xl tracking-widest no-underline">CREW HUB</Link>
+                        <Link to="/home" className="text-white font-black text-lg md:text-xl tracking-widest no-underline drop-shadow-md">CREW HUB</Link>
                     </div>
 
                     <div className="hidden md:flex flex-1 justify-center items-center gap-8">
@@ -111,18 +110,18 @@ const Navbar = () => {
                                     setIsNotiOpen(!isNotiOpen); setIsProfileOpen(false); setIsMobileMenuOpen(false);
                                     if (!isNotiOpen && unreadCount > 0) markAllAsRead();
                                 }}
-                                className={`flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] border transition-colors cursor-pointer relative ${isNotiOpen ? 'border-[#0095f6] text-[#0095f6]' : 'border-[#333] text-white hover:bg-[#262626]'}`}
+                                className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors cursor-pointer relative ${isNotiOpen ? 'bg-[#1a1a1a] border-[#0095f6] text-[#0095f6] shadow-[0_0_15px_rgba(0,149,246,0.2)]' : 'bg-transparent border-transparent text-white hover:bg-[#262626]'}`}
                             >
                                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" /></svg>
                                 {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-[#ff4d4d] text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold border-2 border-[#121212]">{unreadCount}</span>}
                             </button>
 
                             {isNotiOpen && (
-                                <div className="absolute top-14 -right-12 md:right-0 w-[320px] md:w-[350px] bg-[#121212] border border-[#333] rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col">
+                                <div className="absolute top-14 -right-12 md:right-0 w-[320px] md:w-[350px] bg-[#121212]/95 backdrop-blur-2xl border border-[#333] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] overflow-hidden z-[100] flex flex-col">
                                     <div className="flex w-full border-b border-[#262626]">
                                         <button onClick={() => setNotiTab('all')} className={`flex-1 py-3 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${notiTab === 'all' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-none' : 'bg-transparent text-gray-500 border-none hover:bg-[#151515]'}`}>Todas</button>
                                         <button onClick={() => setNotiTab('requests')} className={`flex-1 py-3 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] flex justify-center items-center gap-2 ${notiTab === 'requests' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-t-0 border-b-0 border-r-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0 border-r-0 hover:bg-[#151515]'}`}>
-                                            Solicitudes {followRequests.length > 0 && <span className="bg-[#ff4d4d] text-white px-1.5 py-0.5 rounded-full text-[10px]">{followRequests.length}</span>}
+                                            Solicitudes {followRequests.length > 0 && <span className="bg-[#ff4d4d] text-white px-1.5 py-0.5 rounded-full text-[10px] shadow-sm">{followRequests.length}</span>}
                                         </button>
                                     </div>
 
@@ -197,7 +196,7 @@ const Navbar = () => {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2 shrink-0 ml-2">
-                                                            <button onClick={() => handleAccept(req)} className="w-8 h-8 rounded-full bg-[#0095f6] hover:bg-blue-600 text-white border-none cursor-pointer flex justify-center items-center transition">✓</button>
+                                                            <button onClick={() => handleAccept(req)} className="w-8 h-8 rounded-full bg-[#0095f6] hover:bg-blue-600 text-white border-none cursor-pointer flex justify-center items-center transition shadow-md">✓</button>
                                                             <button onClick={() => handleReject(req)} className="w-8 h-8 rounded-full bg-transparent border border-[#333] hover:bg-[#1a1a1a] text-gray-400 hover:text-[#ff4d4d] cursor-pointer flex justify-center items-center transition">✕</button>
                                                         </div>
                                                     </div>
@@ -210,11 +209,11 @@ const Navbar = () => {
                         </div>
 
                         <div ref={profileRef} className="relative">
-                            <button onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotiOpen(false); setIsMobileMenuOpen(false); }} className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-colors cursor-pointer block p-0 ${isProfileOpen ? 'border-[#0095f6]' : 'border-[#333] hover:border-[#0095f6]'}`}>
+                            <button onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotiOpen(false); setIsMobileMenuOpen(false); }} className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all cursor-pointer block p-0 ${isProfileOpen ? 'border-[#0095f6] shadow-[0_0_15px_rgba(0,149,246,0.3)]' : 'border-[#333] hover:border-[#0095f6]'}`}>
                                 <img src={getAvatar(activeUser)} alt="Perfil" className="w-full h-full object-cover block" />
                             </button>
                             {isProfileOpen && (
-                                <div className="absolute top-14 right-0 w-48 bg-[#121212] border border-[#333] rounded-xl shadow-2xl overflow-hidden z-50 py-2">
+                                <div className="absolute top-14 right-0 w-48 bg-[#121212]/95 backdrop-blur-2xl border border-[#333] rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] overflow-hidden z-[100] py-2">
                                     <div className="px-4 py-2 mb-2 border-b border-[#262626]">
                                         <strong className="text-white text-sm block truncate">{activeUser?.display_name || activeUser?.username}</strong>
                                         <span className="text-gray-500 text-xs truncate">@{activeUser?.username}</span>
@@ -244,7 +243,7 @@ const Navbar = () => {
                 </div>
 
                 {isMobileMenuOpen && (
-                    <div ref={mobileMenuRef} className="md:hidden absolute top-16 left-0 w-full bg-[#121212] border-b border-[#262626] shadow-2xl z-40 flex flex-col py-2 animate-fade-in">
+                    <div ref={mobileMenuRef} className="md:hidden absolute top-16 left-0 w-full bg-[#121212]/95 backdrop-blur-xl border-b border-[#262626] shadow-2xl z-40 flex flex-col py-2 animate-fade-in">
                         <Link to="/conversations" className={`flex items-center gap-3 px-6 py-4 no-underline font-bold text-sm tracking-widest transition-colors ${isMobileActive('/conversations')}`}>
                             <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg> CHATS
                         </Link>
@@ -258,8 +257,8 @@ const Navbar = () => {
                 )}
 
                 {selectedPostModal && (
-                    <div className="fixed inset-0 bg-black/90 z-[9999] flex justify-center items-center p-2 md:p-5 cursor-default" onClick={() => setSelectedPostModal(null)}>
-                        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl overflow-hidden">
+                    <div className="fixed inset-0 bg-black/95 z-[9999] flex justify-center items-center p-2 md:p-5 cursor-default backdrop-blur-md" onClick={() => setSelectedPostModal(null)}>
+                        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-[0_15px_50px_rgba(0,0,0,0.8)] overflow-hidden">
                             <div className="p-4 flex justify-between items-center border-b border-[#262626] shrink-0 bg-[#121212]">
                                 <Link to={`/${selectedPostModal.user?.username}`} onClick={() => setSelectedPostModal(null)} className="flex items-center gap-3 no-underline group">
                                     <img src={getAvatar(selectedPostModal.user)} alt="avatar" className="w-9 h-9 rounded-full object-cover border border-[#333]" />

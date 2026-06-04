@@ -8,14 +8,10 @@ import { Link } from 'react-router-dom';
 import './Layout.css';
 
 const Layout = ({ children }) => {
-    // 1. Extraemos logout del AuthContext
     const { activeUser, logout } = useContext(AuthContext);
-    
-    // 2. Añadimos estado y ref para el menú móvil
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const menuRef = useRef(null);
 
-    // 3. Efecto para cerrar el menú si se hace clic fuera
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -37,11 +33,10 @@ const Layout = ({ children }) => {
     };
 
     return (
-        <div className="min-h-screen bg-[#2b2b2b] text-white font-sans flex flex-col md:pt-[70px] pt-[60px] pb-[70px] md:pb-0">
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1f1f] via-[#0a0a0a] to-black text-white font-sans flex flex-col md:pt-[70px] pt-[60px] pb-[70px] md:pb-0">
             
-            {/* --- CABECERA MÓVIL --- */}
-            <div className="md:hidden fixed top-0 w-full z-50 bg-[#121212] border-b border-[#262626] h-[60px] flex items-center justify-between px-4">
-                <Link to="/" className="font-black text-lg tracking-widest uppercase text-white no-underline">
+            <div className="md:hidden fixed top-0 w-full z-50 bg-[#121212]/80 backdrop-blur-xl border-b border-[#262626] h-[60px] flex items-center justify-between px-4">
+                <Link to="/" className="font-black text-lg tracking-widest uppercase text-white no-underline drop-shadow-md">
                     Crew Hub
                 </Link>
                 
@@ -49,18 +44,16 @@ const Layout = ({ children }) => {
                     <div className="flex items-center gap-4">
                         <NotificationBell />
                         
-                        {/* 4. Cambiamos el Link por un div con el menú desplegable */}
                         <div className="relative" ref={menuRef}>
                             <div 
                                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                                className="w-8 h-8 rounded-full border-2 border-[#262626] overflow-hidden cursor-pointer"
+                                className="w-8 h-8 rounded-full border-2 border-[#333] hover:border-[#0095f6] transition-colors overflow-hidden cursor-pointer shadow-lg"
                             >
                                 <img src={getAvatar(activeUser)} alt="Perfil" className="w-full h-full object-cover" />
                             </div>
 
-                            {/* Menú emergente adaptado para móvil (se abre hacia abajo y a la izquierda) */}
                             {showMobileMenu && (
-                                <div className="absolute top-10 right-0 mt-2 bg-[#121212] border border-[#333] rounded-xl min-w-[180px] z-[1000] overflow-hidden shadow-2xl">
+                                <div className="absolute top-10 right-0 mt-2 bg-[#121212]/95 backdrop-blur-2xl border border-[#333] rounded-xl min-w-[180px] z-[1000] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.8)]">
                                     <Link 
                                         to={`/${activeUser.username}`} 
                                         onClick={() => setShowMobileMenu(false)} 
@@ -90,7 +83,7 @@ const Layout = ({ children }) => {
 
             <Navbar />
             
-            <div className="flex-1 flex justify-center md:justify-between px-0 md:px-8 py-0 md:py-6 max-w-[1400px] mx-auto w-full gap-8">
+            <div className="flex-1 flex justify-center md:justify-between px-0 md:px-8 py-0 md:py-6 max-w-[1400px] mx-auto w-full gap-8 relative z-10">
                 <LeftSidebar />
 
                 <main className="flex-1 max-w-[600px] w-full mt-2 md:mt-4">

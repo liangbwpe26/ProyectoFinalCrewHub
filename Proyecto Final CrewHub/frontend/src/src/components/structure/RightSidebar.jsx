@@ -2,6 +2,16 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAPI } from '../../services/api.js';
 
+const LocationBadge = ({ country }) => (
+    <div className="flex items-center gap-1 text-[9px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-2 py-0.5 rounded-full border border-[#333] shadow-inner w-fit mt-1 group-hover:border-[#00ba7c] transition-colors">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#00ba7c]">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <span className="font-bold tracking-wider uppercase">{country}</span>
+    </div>
+);
+
 const RightSidebar = () => {
     const [suggestions, setSuggestions] = useState({ users: [], communities: [] });
     const [loading, setLoading] = useState(true);
@@ -18,7 +28,6 @@ const RightSidebar = () => {
                 setSuggestions({ users: data.users || [], communities: data.communities || [] });
             }
         } catch (error) {
-            console.error("Error al cargar sugerencias:", error);
         } finally {
             setLoading(false);
         }
@@ -40,7 +49,6 @@ const RightSidebar = () => {
         try {
             const res = await fetchAPI(`/communities/${communityId}/membership`, { method: 'POST' });
             if (res.success) {
-                // Removemos la comunidad sugerida al unirnos
                 setSuggestions(prev => ({
                     ...prev,
                     communities: prev.communities.filter(c => (c._id || c.id) !== communityId)
@@ -68,26 +76,33 @@ const RightSidebar = () => {
         <Fragment>
             <aside className="w-[280px] hidden lg:flex flex-col h-[calc(100vh-100px)] sticky top-[100px] gap-6">
 
-                {/* SUGERENCIAS DE USUARIOS */}
-                <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 flex flex-col shadow-lg">
-                    <h3 className="mt-0 text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">A quién seguir</h3>
+                <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-5 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                    <h3 className="mt-0 text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Buscar Personas</h3>
+                    <div className="relative">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" placeholder="Busca por nombre..." className="w-full bg-[#1a1a1a] border border-[#333] text-white text-xs font-bold tracking-wide rounded-full pl-9 pr-4 py-2.5 outline-none focus:border-[#0095f6] transition-colors shadow-inner" />
+                    </div>
+                </div>
+
+                <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-6 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                    <h3 className="mt-0 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">A quién seguir</h3>
 
                     {loading ? (
                         <p className="text-center text-gray-500 text-xs">Buscando...</p>
                     ) : suggestions.users.length === 0 ? (
                         <p className="text-center text-gray-500 text-xs">No hay sugerencias por ahora.</p>
                     ) : (
-                        <ul className="list-none p-0 m-0 flex flex-col gap-4">
+                        <ul className="list-none p-0 m-0 flex flex-col gap-5">
                             {suggestions.users.map(user => (
                                 <li key={user.id || user._id} className="flex justify-between items-center group">
                                     <Link to={`/${user.username}`} className="flex items-center gap-3 no-underline text-inherit min-w-0">
-                                        <img src={getAvatar(user)} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-[#333]" />
+                                        <img src={getAvatar(user)} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-[#333] shadow-md" />
                                         <div className="flex flex-col min-w-0">
-                                            <strong className="text-sm text-white truncate group-hover:underline">{user.username}</strong>
-                                            <span className="text-xs text-gray-500 truncate">Recomendado para ti</span>
+                                            <strong className="text-sm text-white truncate group-hover:underline tracking-wide">{user.username}</strong>
+                                            <LocationBadge country="España" />
                                         </div>
                                     </Link>
-                                    <button onClick={() => handleFollow(user.id || user._id)} className="ml-2 shrink-0 bg-transparent text-[#0095f6] font-bold text-xs cursor-pointer hover:text-white transition-colors border-none p-0">
+                                    <button onClick={() => handleFollow(user.id || user._id)} className="ml-2 shrink-0 bg-[#0095f6]/10 text-[#0095f6] hover:bg-[#0095f6] hover:text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all border border-[#0095f6]/30 shadow-sm cursor-pointer">
                                         Seguir
                                     </button>
                                 </li>
@@ -96,9 +111,8 @@ const RightSidebar = () => {
                     )}
                 </div>
 
-                {/* SUGERENCIAS DE COMUNIDADES */}
-                <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 flex flex-col shadow-lg">
-                    <h3 className="mt-0 text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Descubre Grupos</h3>
+                <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-6 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                    <h3 className="mt-0 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Descubre Grupos</h3>
 
                     {loading ? (
                         <p className="text-center text-gray-500 text-xs">Buscando...</p>
@@ -109,15 +123,15 @@ const RightSidebar = () => {
                             {suggestions.communities.map(community => (
                                 <li key={community.id || community._id} className="flex justify-between items-center group">
                                     <Link to={`/communities/${community.slug}`} className="flex items-center gap-3 no-underline text-inherit min-w-0">
-                                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#333] shrink-0">
-                                            <img src={getCommunityAvatar(community)} alt="avatar" className="w-full h-full object-cover" />
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#333] shrink-0 shadow-md">
+                                            <img src={getCommunityAvatar(community)} alt="avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <strong className="text-sm text-white truncate group-hover:underline">{community.name}</strong>
-                                            <span className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">{community.members?.length || 0} Miembros</span>
+                                            <strong className="text-sm text-white truncate group-hover:underline tracking-wide">{community.name}</strong>
+                                            <span className="text-[9px] text-[#00ba7c] font-bold uppercase tracking-widest mt-1 bg-[#00ba7c]/10 px-2 py-0.5 rounded-md w-fit border border-[#00ba7c]/20">{community.members?.length || 0} Miembros</span>
                                         </div>
                                     </Link>
-                                    <button onClick={() => handleJoinCommunity(community.id || community._id)} className="ml-2 shrink-0 bg-[#262626] text-white px-3 py-1.5 rounded-full font-bold text-xs cursor-pointer hover:bg-[#333] transition-colors border-none">
+                                    <button onClick={() => handleJoinCommunity(community.id || community._id)} className="ml-2 shrink-0 bg-[#262626] text-white px-4 py-1.5 rounded-full font-bold text-xs cursor-pointer hover:bg-white hover:text-black transition-colors border border-[#333] shadow-sm">
                                         Unirse
                                     </button>
                                 </li>
