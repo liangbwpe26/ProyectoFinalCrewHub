@@ -75,15 +75,7 @@ const RightSidebar = () => {
     return (
         <Fragment>
             <aside className="w-[280px] hidden lg:flex flex-col h-[calc(100vh-100px)] sticky top-[100px] gap-6">
-
-                <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-5 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-                    <h3 className="mt-0 text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Buscar Personas</h3>
-                    <div className="relative">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" placeholder="Busca por nombre..." className="w-full bg-[#1a1a1a] border border-[#333] text-white text-xs font-bold tracking-wide rounded-full pl-9 pr-4 py-2.5 outline-none focus:border-[#0095f6] transition-colors shadow-inner" />
-                    </div>
-                </div>
-
+                
                 <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-6 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
                     <h3 className="mt-0 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">A quién seguir</h3>
 
