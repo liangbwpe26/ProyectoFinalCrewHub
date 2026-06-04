@@ -3,7 +3,7 @@ import React from 'react';
 const VerifiedBadge = ({ className = "w-6 h-6" }) => {
     return (
         <svg 
-            className={`text-[#0095f6] inline-block shrink-0 ${className}`} 
+            className={`text-[#0095f6] inline-block shrink-0 drop-shadow-[0_0_5px_rgba(0,149,246,0.6)] ${className}`} 
             viewBox="0 0 24 24" 
             fill="currentColor"
             title="Cuenta Verificada"

@@ -154,7 +154,6 @@ export const useCommunity = (slug) => {
         }
     };
 
-    // Funciones nuevas para Ajustes y Banner
     const updateSettings = async (settingsData) => {
         if (!community) return { success: false };
         try {

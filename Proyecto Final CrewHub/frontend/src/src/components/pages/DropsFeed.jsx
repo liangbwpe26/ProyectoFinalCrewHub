@@ -111,12 +111,14 @@ const DropsFeed = () => {
 
     return (
         <Fragment>
-            <div className="bg-[#0a0a0a] h-screen overflow-hidden flex flex-col select-none relative">
+            {/* FONDO COMPLETAMENTE NEGRO PARA MAXIMIZAR EL CONTRASTE DEL VIDEO */}
+            <div className="bg-[#000] h-screen overflow-hidden flex flex-col select-none relative">
                 <Navbar />
                 
+                {/* BOTÓN MUTE (CRISTAL) */}
                 <button 
                     onClick={() => setIsGlobalMuted(!isGlobalMuted)}
-                    className="absolute top-20 right-6 z-50 bg-black/60 text-white w-10 h-10 rounded-full flex justify-center items-center backdrop-blur-md cursor-pointer border border-[#333] hover:bg-black/80 transition"
+                    className="absolute top-20 right-6 z-50 bg-black/40 backdrop-blur-md border border-white/10 text-white w-10 h-10 rounded-full flex justify-center items-center cursor-pointer hover:bg-black/70 hover:scale-105 transition-all shadow-lg"
                 >
                     {isGlobalMuted ? (
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
@@ -125,9 +127,10 @@ const DropsFeed = () => {
                     )}
                 </button>
 
+                {/* BOTÓN SUBIR (NEÓN) */}
                 <button 
                     onClick={() => setIsUploadOpen(true)}
-                    className="absolute bottom-6 right-6 z-50 bg-[#ff4d4d] text-white w-14 h-14 rounded-full flex justify-center items-center shadow-[0_0_20px_rgba(255,77,77,0.5)] cursor-pointer hover:scale-110 transition-transform border-none"
+                    className="absolute bottom-6 right-6 z-50 bg-gradient-to-r from-[#ff4d4d] to-[#d43838] text-white w-14 h-14 rounded-full flex justify-center items-center shadow-[0_0_20px_rgba(255,77,77,0.5)] cursor-pointer hover:scale-110 transition-transform border-none"
                 >
                     <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
@@ -147,11 +150,11 @@ const DropsFeed = () => {
                             const avatarUrl = drop.user?.profile_picture ? (drop.user.profile_picture.startsWith('http') ? drop.user.profile_picture : `${BACKEND_URL}${drop.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${drop.user?.username}&background=262626&color=fff`;
 
                             return (
-                                <div key={dropId} className="h-[calc(100vh-64px)] w-full flex justify-center snap-center bg-black relative border-b border-[#212121]">
-                                    <div className="relative h-full max-w-[450px] w-full flex bg-[#111]">
+                                <div key={dropId} className="h-[calc(100vh-64px)] w-full flex justify-center snap-center bg-[#0a0a0a] relative border-b border-[#212121]">
+                                    <div className="relative h-full max-w-[450px] w-full flex bg-black shadow-2xl">
                                         
                                         {deletingId === dropId ? (
-                                            <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                                            <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
                                                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff4d4d] mb-4"></div>
                                                 <p className="text-white font-bold tracking-widest text-sm">Eliminando Drop...</p>
                                             </div>
@@ -170,58 +173,59 @@ const DropsFeed = () => {
                                             <div className="flex flex-col gap-2 max-w-[75%] pointer-events-auto">
                                                 <div className="flex items-center gap-2">
                                                     <Link to={`/${drop.user?.username}`} className="no-underline flex items-center gap-2 group cursor-pointer z-50">
-                                                        <img src={avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full border border-[#333] object-cover" />
-                                                        <strong className="text-white text-base tracking-wide group-hover:underline">@{drop.user?.username}</strong>
+                                                        <img src={avatarUrl} alt="Avatar" className="w-11 h-11 rounded-full border-2 border-white/20 object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] group-hover:border-[#0095f6] transition-colors" />
+                                                        <strong className="text-white text-base tracking-wide group-hover:underline drop-shadow-md">@{drop.user?.username}</strong>
                                                     </Link>
                                                 </div>
-                                                <p className="text-gray-200 text-sm m-0 leading-tight drop-shadow-md font-medium">{renderCommentContent(drop.description)}</p>
+                                                <p className="text-gray-100 text-sm m-0 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-medium mt-1">{renderCommentContent(drop.description)}</p>
                                             </div>
 
                                             <div className="flex flex-col items-center gap-4 relative z-20 pointer-events-auto">
+                                                {/* 🔥 BOTONES DE CRISTAL ESMERILADO */}
                                                 <div className="flex flex-col items-center group">
-                                                    <button onClick={() => toggleAction(dropId, 'like')} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md active:scale-90">
+                                                    <button onClick={() => toggleAction(dropId, 'like')} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg">
                                                         <svg width="24" height="24" viewBox="0 0 24 24" fill={drop.has_liked ? "#ff4d4d" : "none"} stroke={drop.has_liked ? "#ff4d4d" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                                                     </button>
                                                     <span className="text-white text-xs font-bold mt-1 drop-shadow-md">{drop.likes_count || 0}</span>
                                                 </div>
 
                                                 <div className="flex flex-col items-center group">
-                                                    <button onClick={() => openComments(dropId)} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md active:scale-90 text-white">
+                                                    <button onClick={() => openComments(dropId)} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg text-white">
                                                         <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10c-1.7 0-3.3-.4-4.75-1.1L3 21l1.5-4.5C3.55 14.85 3 13.45 3 12 3 6.477 7.477 2 12 2zm0 2c-4.418 0-8 3.582-8 8 0 1.35.34 2.65.95 3.8L4.2 18.8l3.15-.95C8.65 18.55 10.25 19 12 19c4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
                                                     </button>
                                                     <span className="text-white text-xs font-bold mt-1 drop-shadow-md">{drop.comments_count || 0}</span>
                                                 </div>
 
                                                 <div className="flex flex-col items-center group">
-                                                    <button onClick={() => toggleAction(dropId, 'repost')} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md active:scale-90">
+                                                    <button onClick={() => toggleAction(dropId, 'repost')} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg">
                                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={drop.has_reposted ? "#00ba7c" : "white"} strokeWidth="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                                                     </button>
                                                     <span className="text-white text-xs font-bold mt-1 drop-shadow-md">{drop.reposts_count || 0}</span>
                                                 </div>
 
                                                 <div className="flex flex-col items-center group">
-                                                    <button onClick={() => toggleAction(dropId, 'save')} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md active:scale-90">
+                                                    <button onClick={() => toggleAction(dropId, 'save')} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg">
                                                         <svg width="24" height="24" viewBox="0 0 24 24" fill={drop.has_saved ? "#0095f6" : "none"} stroke={drop.has_saved ? "#0095f6" : "white"} strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                                                     </button>
                                                     <span className="text-white text-xs font-bold mt-1 drop-shadow-md">{drop.saves_count || 0}</span>
                                                 </div>
 
                                                 <div className="relative">
-                                                    <button onClick={() => setActiveMenuId(activeMenuId === dropId ? null : dropId)} className="bg-black/40 p-3 rounded-full border-none cursor-pointer hover:bg-black/70 transition backdrop-blur-md text-white">
+                                                    <button onClick={() => setActiveMenuId(activeMenuId === dropId ? null : dropId)} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg text-white">
                                                         <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
                                                     </button>
 
                                                     {activeMenuId === dropId && (
-                                                        <div className="absolute right-14 bottom-0 w-48 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl overflow-hidden flex flex-col z-50">
+                                                        <div className="absolute right-14 bottom-0 w-48 bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#333] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col z-50">
                                                             {drop.allow_downloads && (
-                                                                <button onClick={() => { downloadVideo(drop.video_url); setActiveMenuId(null); }} disabled={isDownloading} className="w-full text-left px-4 py-3 text-white text-sm bg-transparent border-none hover:bg-[#262626] cursor-pointer flex items-center gap-3">
-                                                                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                                <button onClick={() => { downloadVideo(drop.video_url); setActiveMenuId(null); }} disabled={isDownloading} className="w-full text-left px-4 py-3.5 text-white text-xs font-bold tracking-wide bg-transparent border-none hover:bg-[#262626] cursor-pointer flex items-center gap-3 transition-colors">
+                                                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                                                     Guardar video
                                                                 </button>
                                                             )}
                                                             {isMyDrop && (
-                                                                <button onClick={() => handleDeleteDrop(dropId)} className="w-full text-left px-4 py-3 text-[#ff4d4d] text-sm font-bold bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer flex items-center gap-3">
-                                                                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                                <button onClick={() => handleDeleteDrop(dropId)} className="w-full text-left px-4 py-3.5 text-[#ff4d4d] text-xs font-bold tracking-wide bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer flex items-center gap-3 transition-colors">
+                                                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                                                     Eliminar Drop
                                                                 </button>
                                                             )}
@@ -229,8 +233,8 @@ const DropsFeed = () => {
                                                                 <button onClick={() => { 
                                                                     setReportDropData({ targetId: dropId, reportedUserId: drop.user?._id || drop.user?.id }); 
                                                                     setActiveMenuId(null); 
-                                                                }} className="w-full text-left px-4 py-3 text-[#ff4d4d] text-sm font-bold bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer flex items-center gap-2">
-                                                                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                                                }} className="w-full text-left px-4 py-3.5 text-[#ff4d4d] text-xs font-bold tracking-wide bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer flex items-center gap-3 transition-colors">
+                                                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                                                     Reportar Drop
                                                                 </button>
                                                             )}
@@ -240,15 +244,19 @@ const DropsFeed = () => {
                                             </div>
                                         </div>
                                         
+                                        {/* PANEL DE COMENTARIOS (CRISTAL OSCURO) */}
                                         {activeCommentsDropId === dropId && (
-                                            <div className="absolute bottom-0 w-full h-[65%] bg-[#121212] rounded-t-2xl z-50 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-[#333]">
+                                            <div className="absolute bottom-0 w-full h-[70%] bg-[#121212]/95 backdrop-blur-3xl rounded-t-3xl z-50 flex flex-col shadow-[0_-15px_50px_rgba(0,0,0,0.8)] border-t border-[#333]">
                                                 <div className="flex justify-between items-center p-4 border-b border-[#262626]">
-                                                    <h3 className="text-white text-sm font-bold m-0 text-center flex-1">Comentarios</h3>
-                                                    <button onClick={() => setActiveCommentsDropId(null)} className="bg-transparent border-none text-gray-500 hover:text-white cursor-pointer absolute right-4 text-xl">✕</button>
+                                                    <h3 className="text-white text-sm font-black m-0 text-center flex-1 tracking-wider uppercase">Comentarios</h3>
+                                                    <button onClick={() => setActiveCommentsDropId(null)} className="bg-transparent border-none text-gray-500 hover:text-[#ff4d4d] transition-colors cursor-pointer absolute right-4 text-xl">✕</button>
                                                 </div>
-                                                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
                                                     {commentsList.length === 0 ? (
-                                                        <p className="text-center text-gray-500 text-sm mt-4">Sé el primero en comentar.</p>
+                                                        <div className="flex flex-col items-center justify-center h-full text-center">
+                                                            <svg width="40" height="40" fill="none" stroke="#333" strokeWidth="1.5" viewBox="0 0 24 24" className="mb-3"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                                            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest m-0">Sé el primero en comentar</p>
+                                                        </div>
                                                     ) : (
                                                         commentsList.map(c => {
                                                             const commentId = c._id || c.id;
@@ -256,18 +264,17 @@ const DropsFeed = () => {
                                                             const canDelete = isCommentOwner || isMyDrop;
 
                                                             return (
-                                                                <div key={commentId} className="flex gap-3 mb-4 items-start relative">
+                                                                <div key={commentId} className="flex gap-3 mb-5 items-start relative group">
                                                                     <Link to={`/${c.user?.username}`}>
-                                                                        <img src={c.user?.profile_picture ? (c.user.profile_picture.startsWith('http') ? c.user.profile_picture : `${BACKEND_URL}${c.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${c.user?.username}&background=262626&color=fff`} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[#333]" alt="avatar" />
+                                                                        <img src={c.user?.profile_picture ? (c.user.profile_picture.startsWith('http') ? c.user.profile_picture : `${BACKEND_URL}${c.user.profile_picture}`) : `https://ui-avatars.com/api/?name=${c.user?.username}&background=262626&color=fff`} className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#333] shadow-sm" alt="avatar" />
                                                                     </Link>
-                                                                    <div className="flex-1">
-                                                                        <Link to={`/${c.user?.username}`} className="text-gray-400 text-xs font-bold block mb-1 no-underline hover:text-white transition">@{c.user?.username}</Link>
-                                                                        <p className="text-white text-sm m-0 leading-tight">{renderCommentContent(c.content)}</p>
+                                                                    <div className="flex-1 bg-[#1a1a1a]/50 p-3 rounded-2xl rounded-tl-none border border-[#262626]">
+                                                                        <Link to={`/${c.user?.username}`} className="text-gray-400 text-xs font-bold block mb-1.5 no-underline hover:text-white transition">@{c.user?.username}</Link>
+                                                                        <p className="text-white text-[13px] m-0 leading-relaxed">{renderCommentContent(c.content)}</p>
                                                                     </div>
 
-                                                                    {/* 🔥 EL NUEVO BOTÓN DE TRES PUNTITOS Y SU MENÚ 🔥 */}
                                                                     {canDelete && (
-                                                                        <div className="relative shrink-0">
+                                                                        <div className="relative shrink-0 pt-2">
                                                                             <button 
                                                                                 onClick={(e) => { 
                                                                                     e.stopPropagation(); 
@@ -300,9 +307,11 @@ const DropsFeed = () => {
                                                         })
                                                     )}
                                                 </div>
-                                                <form onSubmit={handleSendComment} className="p-3 border-t border-[#262626] bg-[#0a0a0a] flex gap-2">
-                                                    <input type="text" placeholder="Añadir comentario..." value={newCommentText} onChange={e => setNewCommentText(e.target.value)} disabled={isSubmittingComment} className="flex-1 bg-[#1a1a1a] border border-[#333] rounded-full px-4 py-2 text-white outline-none text-sm focus:border-[#0095f6]" />
-                                                    <button type="submit" disabled={!newCommentText.trim() || isSubmittingComment} className="bg-[#0095f6] text-white border-none rounded-full px-4 text-sm font-bold cursor-pointer disabled:opacity-50">Enviar</button>
+                                                <form onSubmit={handleSendComment} className="p-4 border-t border-[#262626] bg-[#0a0a0a]/80 backdrop-blur-md flex gap-3">
+                                                    <input type="text" placeholder="Añadir comentario..." value={newCommentText} onChange={e => setNewCommentText(e.target.value)} disabled={isSubmittingComment} className="flex-1 bg-[#1a1a1a] border border-[#333] shadow-inner rounded-full px-5 py-3 text-white outline-none text-sm focus:border-[#0095f6] transition-colors" />
+                                                    <button type="submit" disabled={!newCommentText.trim() || isSubmittingComment} className="bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white border-none rounded-full w-11 h-11 flex items-center justify-center cursor-pointer disabled:opacity-50 shadow-[0_0_15px_rgba(0,149,246,0.3)] hover:scale-105 transition-transform">
+                                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                                                    </button>
                                                 </form>
                                             </div>
                                         )}

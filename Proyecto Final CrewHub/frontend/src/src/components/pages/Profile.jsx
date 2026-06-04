@@ -152,20 +152,18 @@ const Profile = () => {
                             {isLocked && !isBlockedState && <div className="text-sm text-gray-500 mt-4 flex items-center justify-center gap-1 font-bold">🔒 Cuenta Privada</div>}
                         </div>
 
-                        {/* 🔥 ZONA DE CONTADORES CORREGIDA 🔥 */}
-                        <div className="flex justify-center gap-10 md:gap-20 mb-8 w-full px-8">
+                        <div className="flex justify-center gap-10 md:gap-20 mb-8 w-full px-8 bg-[#1a1a1a]/30 backdrop-blur-md p-6 rounded-2xl border border-white/5 mx-auto max-w-[80%]">
                             <div className="flex flex-col items-center">
-                                {/* Usa profile.posts_count en lugar de posts.length para saltar el candado */}
                                 <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.posts_count ?? posts.length)}</span>
-                                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Publicaciones</span>
+                                <span className="text-gray-400 text-[10px] uppercase tracking-widest font-bold mt-1">Posts</span>
                             </div>
                             <div onClick={() => !isBlockedState && !isLocked && openFollowModal('followers')} className={`flex flex-col items-center transition-opacity ${isBlockedState || isLocked ? 'opacity-70 cursor-default' : 'cursor-pointer hover:opacity-80'}`}>
                                 <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.followers_count || 0)}</span>
-                                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Seguidores</span>
+                                <span className="text-gray-400 text-[10px] uppercase tracking-widest font-bold mt-1">Seguidores</span>
                             </div>
                             <div onClick={() => !isBlockedState && !isLocked && openFollowModal('following')} className={`flex flex-col items-center transition-opacity ${isBlockedState || isLocked ? 'opacity-70 cursor-default' : 'cursor-pointer hover:opacity-80'}`}>
                                 <span className="font-black text-2xl text-white">{isBlockedState ? 0 : (profile.following_count || 0)}</span>
-                                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-1">Seguidos</span>
+                                <span className="text-gray-400 text-[10px] uppercase tracking-widest font-bold mt-1">Seguidos</span>
                             </div>
                         </div>
 

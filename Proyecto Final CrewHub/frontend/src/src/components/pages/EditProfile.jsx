@@ -1,5 +1,5 @@
 import React, { Fragment, useContext, useRef, useState } from 'react';
-import { Link } from 'react-router-dom'; // IMPORTAMOS LINK
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import { useProfileForm } from '../../hooks/useProfileForm.js';
 import { useMonetization } from '../../hooks/useMonetization.js';
@@ -47,112 +47,120 @@ const EditProfile = () => {
 
     return (
         <Fragment>
-            <div className="w-full max-w-[550px]">
-                <h2 className="m-0 mb-6 text-xl font-bold text-white">Editar Perfil</h2>
+            <div className="w-full max-w-[550px] relative z-10">
+                <h2 className="m-0 mb-6 text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-wide">Editar Perfil</h2>
 
-                <form onSubmit={handleSubmit} className="p-8 bg-[#121212] rounded-2xl border border-[#262626] flex flex-col gap-6 shadow-xl">
+                {/* PANEL DE CRISTAL ESMERILADO */}
+                <form onSubmit={handleSubmit} className="p-6 md:p-8 bg-[#121212]/80 backdrop-blur-xl rounded-3xl border border-[#262626] flex flex-col gap-7 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
 
-                    <div className="flex flex-col items-center gap-4">
-                        <img src={previewUrl} alt="Previsualización" className="w-28 h-28 rounded-full object-cover border-4 border-[#1a1a1a] shadow-lg" />
-                        <label className="cursor-pointer text-[#0095f6] font-bold text-sm hover:text-blue-400 transition-colors">
+                    {/* FOTO DE PERFIL */}
+                    <div className="flex flex-col items-center gap-4 mb-2">
+                        <div className="relative group">
+                            <img src={previewUrl} alt="Previsualización" className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#121212] shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                            <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" fill="none"/><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>
+                            </div>
+                        </div>
+                        <label className="cursor-pointer bg-[#262626] hover:bg-[#333] text-white px-5 py-2 rounded-full font-bold text-xs transition-colors border border-[#333] shadow-sm">
                             Cambiar foto
                             <input type="file" ref={fileInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} className="hidden" />
                         </label>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Nombre a mostrar</label>
-                        <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ej. Juan Pérez" maxLength={50} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition-colors text-sm" />
+                    <div className="flex flex-col gap-2.5">
+                        <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Nombre a mostrar</label>
+                        <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ej. Juan Pérez" maxLength={50} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm font-medium" />
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Fecha de nacimiento</label>
-                        <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#000] text-white outline-none focus:border-[#0095f6] transition-colors text-sm [color-scheme:dark]" />
+                    <div className="flex flex-col gap-2.5">
+                        <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Fecha de nacimiento</label>
+                        <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm [color-scheme:dark]" />
                     </div>
 
-                    <div className="flex justify-between items-center p-5 bg-[#0a0a0a] rounded-xl border border-[#333]">
+                    <div className="flex justify-between items-center p-5 bg-[#0a0a0a]/50 shadow-inner rounded-2xl border border-[#333]">
                         <div>
-                            <span className="block font-bold text-sm text-white">Cuenta Privada</span>
+                            <span className="block font-black text-sm text-white tracking-wide">Cuenta Privada</span>
                             <span className="text-xs text-gray-500 mt-1 block">Solo quienes apruebes podrán seguirte.</span>
                         </div>
                         <label className="relative inline-block w-12 h-6 cursor-pointer shrink-0">
                             <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="opacity-0 w-0 h-0 peer" />
-                            <span className={`absolute inset-0 rounded-full transition-colors duration-300 ${isPrivate ? 'bg-[#0095f6]' : 'bg-[#363636]'}`}>
-                                <span className={`absolute w-4 h-4 bg-white rounded-full bottom-1 transition-transform duration-300 ${isPrivate ? 'translate-x-7' : 'translate-x-1'}`}></span>
+                            <span className={`absolute inset-0 rounded-full transition-colors duration-300 shadow-inner ${isPrivate ? 'bg-[#0095f6]' : 'bg-[#363636]'}`}>
+                                <span className={`absolute w-4 h-4 bg-white rounded-full bottom-1 transition-transform duration-300 shadow-md ${isPrivate ? 'translate-x-7' : 'translate-x-1'}`}></span>
                             </span>
                         </label>
                     </div>
 
                     <hr className="border-[#262626] my-2" />
 
-                    <div className="flex flex-col p-5 bg-[#0a0a0a] rounded-xl border border-[#333]">
-                        <div className="mb-4 flex justify-between items-start">
+                    <div className="flex flex-col p-6 bg-gradient-to-br from-[#0a0a0a] to-[#111] rounded-2xl border border-[#333] shadow-inner relative overflow-hidden">
+                        {/* Pequeño resplandor verde de fondo para la zona business */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ba7c]/10 blur-[50px] pointer-events-none"></div>
+
+                        <div className="mb-5 flex justify-between items-start relative z-10">
                             <div>
-                                <span className="block font-bold text-sm text-[#00ba7c]">Cuenta Business</span>
-                                <span className="text-xs text-gray-500 mt-1 block">
+                                <span className="block font-black text-sm text-[#00ba7c] tracking-wide drop-shadow-[0_0_5px_rgba(0,186,124,0.4)]">Cuenta Business</span>
+                                <span className="text-xs text-gray-400 mt-1 block leading-relaxed max-w-[200px] md:max-w-none">
                                     {activeUser?.is_business
                                         ? 'Modifica la apariencia de tu empresa para tus clientes.'
                                         : 'Activa herramientas comerciales gratis.'}
                                 </span>
                             </div>
                             {activeUser?.is_business && (
-                                <button type="button" onClick={handleDowngrade} disabled={isUpgrading} className="text-xs text-[#ff4d4d] hover:underline bg-transparent border-none cursor-pointer p-0">
+                                <button type="button" onClick={handleDowngrade} disabled={isUpgrading} className="text-xs text-[#ff4d4d] font-bold bg-[#ff4d4d]/10 px-3 py-1.5 rounded-lg hover:bg-[#ff4d4d] hover:text-white transition-colors cursor-pointer border border-[#ff4d4d]/20">
                                     Desactivar
                                 </button>
                             )}
                         </div>
 
                         {activeUser?.is_business ? (
-                            <div className="flex flex-col gap-5">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Banner Comercial</label>
-                                    <div className="w-full h-32 bg-[#1a1a1a] rounded-xl border-2 border-dashed border-[#333] flex items-center justify-center relative overflow-hidden group">
+                            <div className="flex flex-col gap-6 relative z-10">
+                                <div className="flex flex-col gap-2.5">
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Banner Comercial</label>
+                                    <div className="w-full h-36 bg-[#0a0a0a] shadow-inner rounded-xl border-2 border-dashed border-[#333] flex items-center justify-center relative overflow-hidden group">
                                         {previewBannerUrl ? (
-                                            <img src={previewBannerUrl.startsWith('http') || previewBannerUrl.startsWith('blob') ? previewBannerUrl : `${import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'}${previewBannerUrl}`} alt="Banner" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                                            <img src={previewBannerUrl.startsWith('http') || previewBannerUrl.startsWith('blob') ? previewBannerUrl : `${import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'}${previewBannerUrl}`} alt="Banner" className="w-full h-full object-cover opacity-70 group-hover:opacity-30 transition-opacity" />
                                         ) : (
-                                            <span className="text-gray-500 text-sm">Sin banner actual</span>
+                                            <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Sin banner actual</span>
                                         )}
-                                        <label className="absolute cursor-pointer bg-[#00ba7c] text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <label className="absolute cursor-pointer bg-[#00ba7c] text-white text-xs font-bold px-5 py-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_15px_rgba(0,186,124,0.4)]">
                                             Subir Nuevo Banner
                                             <input type="file" ref={bannerInputRef} accept="image/png, image/jpeg" onChange={handleBannerChange} className="hidden" />
                                         </label>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">Eslogan de la Empresa</label>
+                                <div className="flex flex-col gap-2.5">
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Eslogan de la Empresa</label>
                                     <input
                                         type="text"
                                         value={businessSlogan}
                                         onChange={(e) => setBusinessSlogan(e.target.value)}
                                         placeholder="Ej. 'Innovando tu futuro cada día'"
                                         maxLength={60}
-                                        className="w-full p-3.5 rounded-xl border border-[#333] bg-[#1a1a1a] text-[#00ba7c] font-medium outline-none focus:border-[#00ba7c] transition-colors text-sm"
+                                        className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-[#00ba7c] font-bold outline-none focus:border-[#00ba7c] focus:bg-[#111] transition-all text-sm placeholder:text-gray-600 placeholder:font-normal"
                                     />
                                 </div>
 
-                                <div className="text-sm font-bold bg-[#1a1a1a] p-4 rounded-lg border border-[#333] text-gray-300 flex items-center justify-between">
-                                    <span>Categoría:</span>
-                                    <span className="text-[#00ba7c] bg-[#00ba7c]/10 px-3 py-1 rounded-full uppercase text-xs tracking-wider">
+                                <div className="text-sm font-bold bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-gray-300 flex items-center justify-between shadow-inner">
+                                    <span className="text-xs uppercase tracking-widest text-gray-500">Categoría:</span>
+                                    <span className="text-[#00ba7c] bg-[#00ba7c]/10 border border-[#00ba7c]/20 px-3 py-1 rounded-md uppercase text-[10px] tracking-widest">
                                         {activeUser.business_category || 'General'}
                                     </span>
                                 </div>
 
-                                {/* NUEVO BOTÓN PARA COMPRAR PAUTA */}
-                                <div className="mt-2 pt-4 border-t border-[#333]">
-                                    <Link to="/premium" className="w-full py-4 px-2 rounded-xl font-bold text-sm transition-all border border-[#00ba7c] text-[#00ba7c] hover:bg-[#00ba7c] hover:text-white cursor-pointer shadow-lg shadow-green-500/10 flex justify-center items-center no-underline text-center">
+                                <div className="mt-2 pt-5 border-t border-[#262626]">
+                                    <Link to="/premium" className="w-full py-4 px-2 rounded-xl font-black tracking-wide text-sm transition-all border-none bg-gradient-to-r from-[#00ba7c] to-[#008f5e] text-white hover:scale-[1.02] cursor-pointer shadow-[0_0_20px_rgba(0,186,124,0.3)] flex justify-center items-center no-underline text-center">
                                         Impulsar mi Empresa (Ads)
                                     </Link>
-                                    <p className="text-[10px] text-gray-500 text-center mt-2">Haz que tus publicaciones lleguen a miles de personas.</p>
+                                    <p className="text-[10px] text-gray-500 text-center mt-3 font-bold uppercase tracking-widest">Haz que tus publicaciones lleguen a miles.</p>
                                 </div>
-
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-4 relative z-10">
                                 <select
                                     value={businessCategory}
                                     onChange={(e) => setBusinessCategory(e.target.value)}
-                                    className="w-full p-3.5 rounded-xl border border-[#333] bg-[#1a1a1a] text-white outline-none focus:border-[#00ba7c] transition-colors text-sm cursor-pointer"
+                                    className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white font-bold outline-none focus:border-[#00ba7c] focus:bg-[#111] transition-all text-sm cursor-pointer"
                                 >
                                     <option value="Tecnología">Tecnología</option>
                                     <option value="Moda y Ropa">Moda y Ropa</option>
@@ -164,7 +172,7 @@ const EditProfile = () => {
                                     type="button"
                                     onClick={handleUpgradeToBusiness}
                                     disabled={isUpgrading}
-                                    className={`w-full p-4 rounded-xl font-bold text-sm transition-all border-none ${isUpgrading ? 'bg-[#262626] text-gray-500 cursor-not-allowed' : 'bg-[#00ba7c] text-white hover:bg-[#009e6a] cursor-pointer shadow-lg shadow-green-500/20'}`}
+                                    className={`w-full py-4 rounded-xl font-black text-sm tracking-wide transition-all border-none ${isUpgrading ? 'bg-[#262626] text-gray-500 cursor-wait' : 'bg-gradient-to-r from-[#00ba7c] to-[#008f5e] text-white hover:scale-[1.02] cursor-pointer shadow-[0_0_20px_rgba(0,186,124,0.3)]'}`}
                                 >
                                     {isUpgrading ? "Procesando..." : "Convertir en Cuenta Business"}
                                 </button>
@@ -172,7 +180,7 @@ const EditProfile = () => {
                         )}
                     </div>
 
-                    <button type="submit" disabled={loading} className={`mt-4 p-4 rounded-xl border-none font-bold text-sm transition-all ${loading ? 'bg-[#262626] text-gray-500 cursor-not-allowed' : 'bg-[#0095f6] text-white hover:bg-blue-600 cursor-pointer shadow-lg shadow-blue-500/20'}`}>
+                    <button type="submit" disabled={loading} className={`mt-2 py-4 rounded-full border-none font-black text-sm tracking-wide transition-all ${loading ? 'bg-[#262626] text-gray-500 cursor-wait' : 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white hover:scale-[1.02] cursor-pointer shadow-[0_0_20px_rgba(0,149,246,0.3)]'}`}>
                         {loading ? "Guardando cambios..." : "Guardar todos los cambios"}
                     </button>
 
@@ -180,12 +188,7 @@ const EditProfile = () => {
             </div>
 
             {cropImageSrc && (
-                <ImageCropperModal
-                    imageSrc={cropImageSrc}
-                    aspectRatio={1}
-                    onCropComplete={handleCropComplete}
-                    onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }}
-                />
+                <ImageCropperModal imageSrc={cropImageSrc} aspectRatio={1} onCropComplete={handleCropComplete} onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }} />
             )}
 
             <ConfirmModal

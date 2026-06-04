@@ -14,7 +14,7 @@ const VerifyEmail = () => {
     } = useVerifyEmail(initialEmail);
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1f1f] via-[#0a0a0a] to-black flex items-center justify-center p-4">
             <div className="w-full max-w-[400px] bg-[#121212] border border-[#262626] rounded-2xl p-8 text-center shadow-2xl">
                 <h2 className="text-white text-xl font-bold mb-3">Verifica tu correo</h2>
                 <p className="text-gray-400 text-sm mb-8">

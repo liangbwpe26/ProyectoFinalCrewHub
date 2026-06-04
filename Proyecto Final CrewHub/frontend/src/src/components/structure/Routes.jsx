@@ -55,19 +55,26 @@ const RoutesApp = () => {
             <Routes>
                 {/* RUTAS PÚBLICAS Y DE AUTENTICACIÓN */}
                 <Route path="/login" element={!activeUser ? <Login /> : <Navigate to="/" />} />
+                
+                {/* 🔥 Al registrarse, el AuthContext se actualiza y lo empuja a /setup-profile */}
                 <Route path="/register" element={!activeUser ? <Register /> : <Navigate to="/setup-profile" />} />
+                
                 <Route path="/verify-email" element={!activeUser ? <VerifyEmail /> : <Navigate to="/" />} />
                 <Route path="/forgot-password" element={!activeUser ? <ForgotPassword /> : <Navigate to="/" />} />
                 <Route path="/reset-password" element={!activeUser ? <ResetPassword /> : <Navigate to="/" />} />
+                
+                {/* RUTAS DEL FLUJO INICIAL */}
                 <Route path="/setup-profile" element={activeUser ? <SetupProfile /> : <Navigate to="/login" />} />
+                <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
+
+                {/* RUTAS DE PAGO / PREMIUM */}
                 <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-                <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
-                <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-
+                
                 {/* RUTAS ESTÁTICAS PROTEGIDAS */}
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
                 <Route path="/drops" element={<ProtectedRoute><DropsFeed /></ProtectedRoute>} />
                 <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
                 

@@ -22,18 +22,17 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
     const isUserVerified = postData.user?.is_verified || initialPost?.user?.is_verified || (activeUser?.username === postData.user?.username && activeUser?.is_verified);
     const isAd = postData.is_ad || initialPost?.is_ad;
     
-    // Agregamos la ruta base para que la foto de la comunidad cargue bien
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
     return (
         <Fragment>
-            <div className={`w-full max-w-[600px] mx-auto bg-[#121212] border ${isAd ? 'border-[#00ba7c]/50 shadow-[0_0_15px_rgba(0,186,124,0.1)]' : 'border-[#262626]'} rounded-xl overflow-hidden ${isModal ? 'h-full' : 'mb-10'}`}>
+            <div className={`w-full max-w-[600px] mx-auto bg-[#121212]/80 backdrop-blur-xl border ${isAd ? 'border-[#00ba7c]/50 shadow-[0_8px_30px_rgba(0,186,124,0.15)]' : 'border-[#262626] shadow-[0_8px_30px_rgb(0,0,0,0.5)]'} rounded-3xl overflow-hidden ${isModal ? 'h-full border-none shadow-none rounded-none' : 'mb-8'}`}>
 
-                <div className="flex justify-between items-center p-4 border-b border-[#262626]/50">
+                <div className="flex justify-between items-center p-5 border-b border-[#262626]/50 bg-[#1a1a1a]/30">
                     {postData.community ? (
                         <div className="flex items-center gap-3 w-full">
                             <Link to={`/communities/${postData.community.slug}`} className="shrink-0 no-underline">
-                                <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-lg font-black text-gray-400 hover:text-white transition-colors overflow-hidden">
+                                <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-xl font-black text-gray-400 hover:text-white transition-colors overflow-hidden shadow-sm">
                                     {postData.community.avatar_path ? (
                                         <img
                                             src={postData.community.avatar_path.startsWith('http') ? postData.community.avatar_path : `${BACKEND_URL}${postData.community.avatar_path}`}
@@ -46,14 +45,13 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                                 </div>
                             </Link>
                             <div className="flex flex-col min-w-0">
-                                <Link to={`/communities/${postData.community.slug}`} className="text-white font-bold text-sm hover:underline truncate no-underline leading-tight">
+                                <Link to={`/communities/${postData.community.slug}`} className="text-white font-black text-[15px] hover:text-[#0095f6] transition-colors truncate no-underline tracking-wide">
                                     {postData.community.name}
                                 </Link>
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                                    <span>por</span>
-                                    <Link to={`/${postData.user?.username}`} className="font-bold text-gray-400 hover:text-white hover:underline truncate no-underline flex items-center gap-1">
+                                <div className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-gray-500 mt-1">
+                                    <span>POR</span>
+                                    <Link to={`/${postData.user?.username}`} className="text-gray-300 hover:text-white truncate no-underline flex items-center gap-1 transition-colors">
                                         {postData.user?.display_name || postData.user?.username}
-                                        {/* MEDALLA BLINDADA */}
                                         {isUserVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
                                     </Link>
                                 </div>
@@ -61,35 +59,34 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                         </div>
                     ) : (
                         <Link to={`/${postData.user?.username || ''}`} className="flex items-center gap-3 no-underline text-white group w-full">
-                            <img src={getAvatar(postData.user)} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-[#333]" />
+                            <img src={getAvatar(postData.user)} alt="avatar" className="w-12 h-12 rounded-full object-cover border border-[#333] shadow-sm group-hover:border-[#555] transition-colors" />
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-1">
-                                    <strong className="text-sm font-bold group-hover:underline">
+                                <div className="flex items-center gap-1.5">
+                                    <strong className="text-[15px] font-black group-hover:text-[#0095f6] transition-colors tracking-wide">
                                         {postData.user?.display_name || postData.user?.username || 'Usuario'}
                                     </strong>
-                                    {/* MEDALLA BLINDADA */}
                                     {isUserVerified && <VerifiedBadge className="w-4 h-4" />}
                                 </div>
-                                <span className="text-xs text-gray-500">@{postData.user?.username}</span>
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mt-0.5">@{postData.user?.username}</span>
                             </div>
                         </Link>
                     )}
 
                     <div className="relative z-20 shrink-0 ml-2">
-                        <button onClick={toggleMenu} className="bg-transparent border-none text-white cursor-pointer p-1 hover:text-gray-400">
+                        <button onClick={toggleMenu} className="bg-transparent border-none text-gray-400 cursor-pointer p-1.5 hover:text-white transition-colors">
                             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
                         </button>
                         {showMenu && (
-                            <div className="absolute top-8 right-0 bg-[#1a1a1a] border border-[#333] rounded-md shadow-2xl min-w-[140px]">
+                            <div className="absolute top-10 right-0 bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#333] rounded-2xl shadow-2xl min-w-[160px] overflow-hidden z-[100]">
                                 {canEdit && (
-                                    <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="w-full p-3 text-white bg-transparent border-none border-b border-[#333] text-left text-sm hover:bg-[#262626] cursor-pointer">Editar</button>
+                                    <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="w-full p-4 text-white bg-transparent border-none border-b border-[#333] text-left text-xs font-bold uppercase tracking-widest hover:bg-[#262626] cursor-pointer transition-colors">Editar</button>
                                 )}
                                 {canDelete && (
-                                    <button onClick={() => { setIsDeleteModalOpen(true); setShowMenu(false); }} className="w-full p-3 text-[#ff4d4d] font-bold bg-transparent border-none text-left text-sm hover:bg-[#262626] cursor-pointer">Eliminar</button>
+                                    <button onClick={() => { setIsDeleteModalOpen(true); setShowMenu(false); }} className="w-full p-4 text-[#ff4d4d] bg-transparent border-none text-left text-xs font-bold uppercase tracking-widest hover:bg-[#262626] cursor-pointer transition-colors">Eliminar</button>
                                 )}
                                 {!isMyPost && (
-                                    <button onClick={() => { setIsReportModalOpen(true); setShowMenu(false); }} className="w-full text-left px-4 py-3 text-[#ff4d4d] text-sm font-bold bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer">
-                                        Reportar publicación
+                                    <button onClick={() => { setIsReportModalOpen(true); setShowMenu(false); }} className="w-full text-left p-4 text-[#ff4d4d] text-xs font-bold uppercase tracking-widest bg-transparent border-t border-[#333] hover:bg-[#262626] cursor-pointer transition-colors">
+                                        Reportar
                                     </button>
                                 )}
                             </div>
@@ -97,39 +94,38 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                     </div>
                 </div>
 
-                <div className={isModal ? "bg-black flex justify-center items-center border-y border-[#262626]" : ""}>
+                <div className={isModal ? "bg-[#050505] flex justify-center items-center border-y border-[#262626]" : "bg-[#050505]"}>
                     <img
                         src={getPostImage(postData.image_path)}
                         alt="Publicación"
-                        className={`w-full object-cover ${isModal ? 'max-h-[50vh] object-contain' : ''}`}
+                        className={`w-full object-cover shadow-inner ${isModal ? 'max-h-[60vh] object-contain' : ''}`}
                     />
                 </div>
 
-                <div className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-widest m-0">
+                <div className="p-5 md:p-6 bg-[#121212]/90">
+                    <div className="flex justify-between items-center mb-5">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest m-0">
                             {new Date(postData.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
 
-                        {/* ETIQUETA PROMOCIONADO BLINDADA */}
                         {isAd && (
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#00ba7c] border border-[#00ba7c] px-2 py-0.5 rounded-sm bg-[#00ba7c]/10">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#00ba7c] border border-[#00ba7c]/30 px-2.5 py-1 rounded-md bg-[#00ba7c]/10 shadow-inner">
                                 Promocionado
                             </span>
                         )}
                     </div>
 
                     {isEditing ? (
-                        <div className="flex flex-col gap-2 mb-4">
-                            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full bg-[#000] border border-[#333] text-white p-3 rounded-md text-sm outline-none" />
-                            <div className="flex justify-end gap-2">
-                                <button onClick={() => setIsEditing(false)} className="text-gray-400 border-none bg-transparent cursor-pointer font-bold text-xs">Cancelar</button>
-                                <button onClick={handleSaveEdit} className="text-[#0095f6] border-none bg-transparent cursor-pointer font-bold text-xs">Guardar</button>
+                        <div className="flex flex-col gap-3 mb-5">
+                            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full bg-[#0a0a0a]/50 shadow-inner border border-[#333] text-white p-4 rounded-xl text-sm font-medium outline-none focus:border-[#0095f6] transition-colors resize-none custom-scrollbar" rows="3" />
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setIsEditing(false)} className="text-gray-400 border-none bg-transparent cursor-pointer font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
+                                <button onClick={handleSaveEdit} className="bg-[#0095f6]/10 border border-[#0095f6]/30 text-[#0095f6] px-4 py-2 rounded-lg cursor-pointer font-bold text-xs uppercase tracking-widest hover:bg-[#0095f6] hover:text-white transition-colors">Guardar</button>
                             </div>
                         </div>
                     ) : (
                         postData.description && (
-                            <p className="text-sm text-gray-300 mb-4">{postData.description}</p>
+                            <p className="text-sm md:text-[15px] text-gray-200 mb-5 leading-relaxed font-medium">{postData.description}</p>
                         )
                     )}
 
@@ -137,14 +133,17 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                 </div>
             </div>
 
-            <ConfirmModal isOpen={isDeleteModalOpen} title="¿Eliminar publicación?" message="¿Seguro que quieres borrarla?" onConfirm={confirmDelete} onCancel={() => setIsDeleteModalOpen(false)} />
+            <ConfirmModal isOpen={isDeleteModalOpen} title="¿Eliminar publicación?" message="¿Seguro que quieres borrar este contenido? No se podrá recuperar." onConfirm={confirmDelete} onCancel={() => setIsDeleteModalOpen(false)} />
+            
             {isReportModalOpen && (
-                <ReportModal
-                    targetType="post"
-                    targetId={postData._id || postData.id}
-                    reportedUserId={postData.user?._id || postData.user?.id}
-                    onClose={() => setIsReportModalOpen(false)}
-                />
+                <div onClick={e => e.stopPropagation()}>
+                    <ReportModal
+                        targetType="post"
+                        targetId={postData._id || postData.id}
+                        reportedUserId={postData.user?._id || postData.user?.id}
+                        onClose={() => setIsReportModalOpen(false)}
+                    />
+                </div>
             )}
         </Fragment>
     );

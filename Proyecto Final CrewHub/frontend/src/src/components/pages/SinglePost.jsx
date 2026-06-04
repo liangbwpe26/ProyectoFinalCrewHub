@@ -53,13 +53,13 @@ const SinglePost = () => {
             <div className="w-full max-w-[600px] mx-auto mb-6">
                 <button 
                     onClick={() => navigate(-1)} 
-                    className="bg-transparent border-none text-[#0095f6] text-base font-bold cursor-pointer p-0 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="bg-transparent border-none text-[#0095f6] text-sm font-black uppercase tracking-widest cursor-pointer p-0 hover:text-blue-400 transition-colors flex items-center gap-2"
                 >
                     &larr; Volver
                 </button>
             </div>
 
-            <div className="w-full max-w-[600px] mx-auto">
+            <div className="w-full max-w-[600px] mx-auto bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl p-2 shadow-2xl">
                 <PostCard 
                     initialPost={post} 
                     getAvatar={getAvatar} 

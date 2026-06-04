@@ -115,7 +115,7 @@ const Community = () => {
         loadPosts(community._id || community.id, newTag);
     };
 
-    if (loading || isDeleting) return <Layout><div className="w-full max-w-[600px] mx-auto pt-20 text-center"><p className="text-gray-400 font-bold tracking-widest uppercase">{isDeleting ? 'Eliminando...' : 'Cargando...'}</p></div></Layout>;
+    if (loading || isDeleting) return <Layout><div className="w-full max-w-[600px] mx-auto pt-20 flex flex-col items-center"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-500 mb-4"></div><p className="text-gray-400 font-bold tracking-widest uppercase">{isDeleting ? 'Eliminando...' : 'Cargando...'}</p></div></Layout>;
     if (error || !community) return <Layout><div className="w-full max-w-[600px] mx-auto pt-20 text-center"><h2 className="text-white text-xl font-bold mb-4">Comunidad no encontrada</h2></div></Layout>;
 
     const currentUserId = activeUser?.id || activeUser?._id;
@@ -136,7 +136,7 @@ const Community = () => {
 
     return (
         <Layout>
-            <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative">
+            <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative z-10">
                 
                 {selectedStoryFile && (
                     <StoryManager
@@ -152,16 +152,20 @@ const Community = () => {
                 )}
 
                 <div className="mb-4 mt-2">
-                    <Link to="/communities" className="text-gray-500 hover:text-white no-underline text-sm font-bold transition-colors">Volver</Link>
+                    <Link to="/communities" className="text-gray-500 hover:text-white no-underline text-sm font-bold transition-colors flex items-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        Volver a Comunidades
+                    </Link>
                 </div>
 
-                <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-hidden shadow-2xl flex flex-col mb-6">
-                    <div className="h-32 md:h-40 w-full relative bg-gradient-to-r from-[#0095f6] to-[#005bb5]" style={bannerStyle}>
-                        {uploadingBanner && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-sm">Subiendo...</div>}
+                <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.5)] flex flex-col mb-6">
+                    <div className="h-32 md:h-48 w-full relative bg-gradient-to-r from-[#0095f6] to-[#005bb5]" style={bannerStyle}>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#121212] to-transparent opacity-60"></div>
+                        {uploadingBanner && <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center text-white font-bold text-sm">Subiendo...</div>}
                     </div>
 
                     <div className="px-5 md:px-8 pb-6 md:pb-8 relative">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-[#1a1a1a] border-4 border-[#121212] flex items-center justify-center text-3xl md:text-4xl font-black text-gray-400 absolute -top-10 md:-top-12 shadow-lg relative group overflow-hidden">
+                        <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-[#1a1a1a] border-[4px] border-[#121212] flex items-center justify-center text-3xl md:text-5xl font-black text-gray-400 absolute -top-10 md:-top-14 shadow-xl group overflow-hidden">
                             {community.avatar_path ? (
                                 <img src={community.avatar_path.startsWith('http') ? community.avatar_path : `${BACKEND_URL}${community.avatar_path}`} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
@@ -169,7 +173,7 @@ const Community = () => {
                             )}
 
                             {isAdmin && (
-                                <label className="absolute bottom-1 right-1 w-7 h-7 bg-[#0095f6] rounded-full border-2 border-[#121212] flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg z-10" title="Subir historia a la comunidad">
+                                <label className="absolute bottom-1 right-1 w-8 h-8 bg-gradient-to-r from-[#0095f6] to-[#0077c5] rounded-full border-2 border-[#121212] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-lg z-10" title="Subir historia a la comunidad">
                                     <span className="text-white font-bold text-sm leading-none mb-0.5">+</span>
                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" />
                                 </label>
@@ -177,18 +181,18 @@ const Community = () => {
                         </div>
 
                         <div className="flex justify-end pt-3 md:pt-4">
-                            <button onClick={toggleMembership} className={`px-5 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-colors cursor-pointer border shadow-lg ${isMember ? 'bg-[#1a1a1a] text-white border-[#333] hover:bg-[#262626]' : 'bg-[#0095f6] text-white border-[#0095f6] hover:bg-blue-600'}`}>
+                            <button onClick={toggleMembership} className={`px-6 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md ${isMember ? 'bg-[#1a1a1a]/80 text-white border border-[#333] hover:bg-[#262626]' : 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white border-none hover:scale-105 shadow-[0_0_15px_rgba(0,149,246,0.3)]'}`}>
                                 {isMember ? 'Eres miembro' : 'Unirse al grupo'}
                             </button>
                         </div>
 
-                        <div className="mt-2 md:mt-4">
-                            <h1 className="text-2xl md:text-3xl font-black text-white m-0 tracking-wide">{community.name}</h1>
+                        <div className="mt-4 md:mt-6">
+                            <h1 className="text-2xl md:text-4xl font-black text-white m-0 tracking-wide">{community.name}</h1>
                             <p className="text-gray-400 text-sm md:text-base mt-2 mb-4 leading-relaxed">{community.description}</p>
                             
-                            <div className="flex gap-4 items-center">
-                                <div className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                                    <span className="text-white text-sm mr-1">{community.members?.length || 0}</span> Miembros
+                            <div className="flex gap-3 items-center">
+                                <div className="text-xs font-bold tracking-widest text-[#00ba7c] bg-[#00ba7c]/10 border border-[#00ba7c]/20 px-3 py-1 rounded-md uppercase">
+                                    {community.members?.length || 0} Miembros
                                 </div>
                                 {isAdmin && <div className="bg-[#ff4d4d]/10 text-[#ff4d4d] px-3 py-1 rounded-md text-[10px] font-black tracking-widest uppercase border border-[#ff4d4d]/20">Administrador</div>}
                             </div>
@@ -197,36 +201,38 @@ const Community = () => {
                 </div>
 
                 {isAdmin && (
-                    <div className="flex w-full bg-[#121212] border border-[#262626] rounded-xl overflow-hidden shadow-lg mb-6 flex-wrap">
-                        <button onClick={() => setActiveTab('feed')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'feed' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-none' : 'bg-transparent text-gray-500 border-none'}`}>Muro</button>
-                        <button onClick={() => setActiveTab('pending')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'pending' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#ff4d4d] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>
-                            Solicitudes {pendingPosts.length > 0 && <span className="bg-[#ff4d4d] text-white px-2 py-0.5 rounded-full ml-1">{pendingPosts.length}</span>}
+                    <div className="flex w-full bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.5)] mb-6 flex-wrap">
+                        <button onClick={() => setActiveTab('feed')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'feed' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#0095f6] border-none' : 'bg-transparent text-gray-500 border-none hover:bg-[#151515] hover:text-gray-300'}`}>Muro</button>
+                        <button onClick={() => setActiveTab('pending')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] flex justify-center items-center gap-2 ${activeTab === 'pending' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#ff4d4d] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0 hover:bg-[#151515]'}`}>
+                            Solicitudes {pendingPosts.length > 0 && <span className="bg-[#ff4d4d] text-white px-1.5 py-0.5 rounded-full text-[10px] shadow-sm">{pendingPosts.length}</span>}
                         </button>
-                        <button onClick={() => setActiveTab('members')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'members' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#00ba7c] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>Miembros</button>
-                        <button onClick={() => setActiveTab('settings')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'settings' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#f5a623] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0'}`}>Ajustes</button>
+                        <button onClick={() => setActiveTab('members')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'members' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#00ba7c] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0 hover:bg-[#151515]'}`}>Miembros</button>
+                        <button onClick={() => setActiveTab('settings')} className={`flex-1 py-4 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer border-l border-[#262626] ${activeTab === 'settings' ? 'bg-[#1a1a1a] text-white shadow-[inset_0_2px_0_0_#f5a623] border-t-0 border-b-0' : 'bg-transparent text-gray-500 border-t-0 border-b-0 hover:bg-[#151515]'}`}>Ajustes</button>
                     </div>
                 )}
 
                 {/* ZONA DE CONTENIDO */}
                 {!isMember ? (
-                    <div className="bg-[#121212] border border-[#262626] rounded-2xl p-8 text-center shadow-lg">
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-500">
-                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
+                    <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-10 text-center shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-gray-500 shadow-inner">
+                                <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
                             </div>
-                            <h3 className="text-white font-bold m-0">Grupo privado</h3>
-                            <p className="text-gray-500 text-sm m-0">Únete a la comunidad para ver y compartir publicaciones.</p>
+                            <div>
+                                <h3 className="text-white text-xl font-black m-0 mb-1">Grupo privado</h3>
+                                <p className="text-gray-500 text-sm m-0">Únete a la comunidad para ver y compartir publicaciones.</p>
+                            </div>
                         </div>
                     </div>
                 ) : activeTab === 'feed' ? (
                     <div className="flex flex-col gap-6">
                         {community.rules && (
-                            <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-5 shadow-lg">
-                                <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            <div className="bg-[#1a1a1a]/80 backdrop-blur-md border border-[#333] rounded-2xl p-5 shadow-lg">
+                                <h3 className="text-white font-bold text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="text-[#f5a623]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                     Reglas de la Comunidad
                                 </h3>
-                                <p className="text-gray-400 text-sm whitespace-pre-wrap m-0">{community.rules}</p>
+                                <p className="text-gray-300 text-sm whitespace-pre-wrap m-0 leading-relaxed italic border-l-2 border-[#f5a623] pl-3">{community.rules}</p>
                             </div>
                         )}
 
@@ -236,9 +242,9 @@ const Community = () => {
 
                         {community.tags && community.tags.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
-                                <button onClick={() => handleTagFilter('')} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition border ${activeTagFilter === '' ? 'bg-[#0095f6] text-white border-[#0095f6]' : 'bg-[#121212] text-gray-400 border-[#333] hover:text-white'}`}>Todo</button>
+                                <button onClick={() => handleTagFilter('')} className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${activeTagFilter === '' ? 'bg-[#0095f6] text-white border-[#0095f6] shadow-[0_0_10px_rgba(0,149,246,0.3)]' : 'bg-[#121212]/80 backdrop-blur-md text-gray-400 border-[#333] hover:text-white hover:border-[#555]'}`}>Todo</button>
                                 {community.tags.map(tag => (
-                                    <button key={tag} onClick={() => handleTagFilter(tag)} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition border ${activeTagFilter === tag ? 'bg-[#0095f6] text-white border-[#0095f6]' : 'bg-[#121212] text-gray-400 border-[#333] hover:text-white'}`}>
+                                    <button key={tag} onClick={() => handleTagFilter(tag)} className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${activeTagFilter === tag ? 'bg-[#0095f6] text-white border-[#0095f6] shadow-[0_0_10px_rgba(0,149,246,0.3)]' : 'bg-[#121212]/80 backdrop-blur-md text-gray-400 border-[#333] hover:text-white hover:border-[#555]'}`}>
                                         {tag}
                                     </button>
                                 ))}
@@ -246,24 +252,29 @@ const Community = () => {
                         )}
 
                         {loadingPosts ? (
-                            <p className="text-center text-gray-500 font-bold uppercase tracking-widest text-sm">Cargando muro...</p>
+                            <div className="flex justify-center items-center py-10">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0095f6]"></div>
+                            </div>
                         ) : posts.length === 0 ? (
-                            <div className="text-center text-gray-500 py-10 bg-[#121212] border border-[#262626] rounded-xl font-bold">No hay publicaciones con esta etiqueta.</div>
+                            <div className="text-center text-gray-500 py-10 bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-2xl font-bold shadow-lg">No hay publicaciones con esta etiqueta.</div>
                         ) : (
                             posts.map(post => <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />)
                         )}
                     </div>
                 ) : activeTab === 'members' ? (
-                    <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-lg">
-                        <div className="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
-                            <h3 className="text-white text-lg font-bold m-0">Miembros ({membersList.length})</h3>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar miembro..." 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="p-2 px-4 rounded-full border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm w-[200px]"
-                            />
+                    <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 border-b border-[#333] pb-6">
+                            <h3 className="text-white text-lg font-black m-0 tracking-wide">Miembros ({membersList.length})</h3>
+                            <div className="relative">
+                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar miembro..." 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full md:w-[200px] pl-9 pr-4 py-2.5 rounded-full border border-[#333] bg-[#0a0a0a]/50 text-white outline-none focus:border-[#00ba7c] transition-colors text-sm shadow-inner placeholder:text-gray-600"
+                                />
+                            </div>
                         </div>
 
                         {loadingMembers ? (
@@ -271,29 +282,28 @@ const Community = () => {
                         ) : membersList.length === 0 ? (
                             <div className="text-center py-8 text-gray-500">No se encontraron miembros.</div>
                         ) : (
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-2">
                                 {membersList.map(member => (
-                                    <div key={member._id || member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors border border-transparent hover:border-[#333]">
-                                        <Link to={`/${member.username}`} className="flex items-center gap-3 no-underline text-white flex-1 min-w-0 group">
-                                            <img src={getAvatar(member)} alt={member.username} className="w-12 h-12 rounded-full object-cover shrink-0 border border-[#333]" />
+                                    <div key={member._id || member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#1a1a1a]/80 transition-colors border border-transparent hover:border-[#333] group">
+                                        <Link to={`/${member.username}`} className="flex items-center gap-3 no-underline text-white flex-1 min-w-0">
+                                            <img src={getAvatar(member)} alt={member.username} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shrink-0 border border-[#333] shadow-sm" />
                                             <div className="flex flex-col min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <strong className="text-sm truncate group-hover:underline">{member.display_name || member.username}</strong>
-                                                    {member.is_admin && <span className="bg-[#00ba7c]/10 text-[#00ba7c] text-[10px] px-2 py-0.5 rounded uppercase font-black tracking-wider border border-[#00ba7c]/20">Admin</span>}
+                                                    <strong className="text-sm truncate group-hover:underline tracking-wide">{member.display_name || member.username}</strong>
+                                                    {member.is_admin && <span className="bg-[#00ba7c]/10 text-[#00ba7c] text-[9px] px-2 py-0.5 rounded-md uppercase font-black tracking-widest border border-[#00ba7c]/20">Admin</span>}
                                                 </div>
                                                 <span className="text-xs text-gray-500 truncate">@{member.username}</span>
                                             </div>
                                         </Link>
 
-                                        {/* Acciones para el Administrador (Expulsar/Promover) */}
                                         {isAdmin && (member._id || member.id) !== currentUserId && (
-                                            <div className="flex gap-2 shrink-0 ml-4">
+                                            <div className="flex gap-2 shrink-0 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                 {!member.is_admin && (
-                                                    <button onClick={() => promoteMember(member._id || member.id)} className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#1a1a1a] text-[#00ba7c] border border-[#333] hover:border-[#00ba7c] cursor-pointer transition">
+                                                    <button onClick={() => promoteMember(member._id || member.id)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#00ba7c]/10 text-[#00ba7c] border border-[#00ba7c]/30 hover:bg-[#00ba7c] hover:text-white cursor-pointer transition-all shadow-sm">
                                                         Promover
                                                     </button>
                                                 )}
-                                                <button onClick={() => kickMember(member._id || member.id)} className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#1a1a1a] text-[#ff4d4d] border border-[#333] hover:border-[#ff4d4d] cursor-pointer transition">
+                                                <button onClick={() => kickMember(member._id || member.id)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/30 hover:bg-[#ff4d4d] hover:text-white cursor-pointer transition-all shadow-sm">
                                                     Expulsar
                                                 </button>
                                             </div>
@@ -304,54 +314,56 @@ const Community = () => {
                         )}
                     </div>
                 ) : activeTab === 'settings' && isAdmin ? (
-                    <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-lg">
-                        <h3 className="text-white text-lg font-bold mb-6 mt-0 border-b border-[#333] pb-4">Ajustes del Grupo</h3>
+                    <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <h3 className="text-white text-xl font-black mb-6 mt-0 border-b border-[#333] pb-4">Ajustes del Grupo</h3>
 
                         <div className="flex flex-col gap-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-[#333] pb-6">
                                 <div>
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Foto de Perfil</label>
-                                    <label className="bg-[#1a1a1a] border border-[#333] text-white text-sm font-bold py-3 px-4 rounded-xl cursor-pointer hover:bg-[#262626] transition block text-center">
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 ml-1">Foto de Perfil</label>
+                                    <label className="bg-[#1a1a1a]/50 backdrop-blur-md border border-[#333] text-white text-sm font-bold py-3 px-4 rounded-xl cursor-pointer hover:border-[#0095f6] hover:bg-[#1a1a1a] transition-colors block text-center shadow-inner">
                                         Cambiar icono
                                         <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
                                     </label>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Portada (Banner)</label>
-                                    <label className="bg-[#1a1a1a] border border-[#333] text-white text-sm font-bold py-3 px-4 rounded-xl cursor-pointer hover:bg-[#262626] transition block text-center">
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 ml-1">Portada (Banner)</label>
+                                    <label className="bg-[#1a1a1a]/50 backdrop-blur-md border border-[#333] text-white text-sm font-bold py-3 px-4 rounded-xl cursor-pointer hover:border-[#0095f6] hover:bg-[#1a1a1a] transition-colors block text-center shadow-inner">
                                         Cambiar fondo
                                         <input type="file" ref={bannerInputRef} onChange={handleBannerChange} accept="image/*" className="hidden" />
                                     </label>
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Nombre de la Comunidad</label>
-                                <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm" />
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Nombre de la Comunidad</label>
+                                <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm font-bold tracking-wide" />
                             </div>
 
-                            <div>
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Descripción</label>
-                                <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows="3" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm resize-none"></textarea>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Descripción</label>
+                                <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows="3" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm resize-none leading-relaxed"></textarea>
                             </div>
 
-                            <div>
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Reglas</label>
-                                <textarea value={editRules} onChange={e => setEditRules(e.target.value)} rows="4" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm resize-none" placeholder="Escribe las normas del grupo..."></textarea>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Reglas (Opcional)</label>
+                                <textarea value={editRules} onChange={e => setEditRules(e.target.value)} rows="4" className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm resize-none leading-relaxed" placeholder="Escribe las normas del grupo..."></textarea>
                             </div>
 
-                            <div>
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Etiquetas (Separadas por comas)</label>
-                                <input type="text" value={editTags} onChange={e => setEditTags(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a] text-white outline-none focus:border-[#0095f6] transition text-sm" placeholder="Noticias, Gameplay, Reseñas..." />
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Etiquetas (Separadas por comas)</label>
+                                <input type="text" value={editTags} onChange={e => setEditTags(e.target.value)} className="w-full p-4 rounded-xl border border-[#333] bg-[#0a0a0a]/50 shadow-inner text-white outline-none focus:border-[#0095f6] focus:bg-[#111] transition-all text-sm" placeholder="Noticias, Gameplay, Reseñas..." />
                             </div>
 
-                            <button onClick={handleSaveSettings} className="bg-[#0095f6] text-white font-bold py-3.5 rounded-full hover:bg-blue-600 transition shadow-lg shadow-blue-500/20 mt-2">Guardar Cambios</button>
+                            <button onClick={handleSaveSettings} className="bg-gradient-to-r from-[#f5a623] to-[#d68b1a] text-white font-black uppercase tracking-wider py-4 rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(245,166,35,0.3)] border-none mt-2 cursor-pointer">
+                                Guardar Ajustes
+                            </button>
 
-                            <div className="mt-8 pt-6 border-t border-[#333]">
-                                <button onClick={handleDeleteCommunity} className="w-full bg-transparent border border-[#ff4d4d] text-[#ff4d4d] font-bold py-3.5 rounded-full hover:bg-[#ff4d4d] hover:text-white transition">
-                                    Eliminar Comunidad
+                            <div className="mt-8 pt-8 border-t border-[#333]">
+                                <button onClick={handleDeleteCommunity} className="w-full bg-transparent border border-[#ff4d4d]/50 text-[#ff4d4d] font-bold py-4 rounded-xl hover:bg-[#ff4d4d] hover:text-white transition-colors cursor-pointer">
+                                    Eliminar Comunidad Permanentemente
                                 </button>
-                                <p className="text-gray-500 text-xs text-center mt-3">Al eliminar el grupo, todo su contenido desaparecerá para siempre.</p>
+                                <p className="text-gray-500 text-[11px] text-center mt-3 uppercase tracking-widest font-bold">Acción destructiva e irreversible.</p>
                             </div>
                         </div>
                     </div>
@@ -361,8 +373,8 @@ const Community = () => {
 
                 {alertMessage && (
                     <div className="fixed inset-0 bg-black/80 z-[10000] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setAlertMessage(null)}>
-                        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] bg-[#121212] rounded-3xl border border-[#333] shadow-2xl p-8 text-center flex flex-col items-center">
-                            <div className={`w-20 h-20 rounded-full flex justify-center items-center mb-5 border-4 ${alertMessage.type === 'success' ? 'bg-[#0095f6]/10 text-[#0095f6] border-[#0095f6]/30' : alertMessage.type === 'error' ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] border-[#ff4d4d]/30' : 'bg-[#f5a623]/10 text-[#f5a623] border-[#f5a623]/30'}`}>
+                        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] bg-[#121212]/95 backdrop-blur-2xl rounded-3xl border border-[#333] shadow-[0_15px_50px_rgba(0,0,0,0.8)] p-8 text-center flex flex-col items-center">
+                            <div className={`w-20 h-20 rounded-full flex justify-center items-center mb-5 border-[4px] shadow-inner ${alertMessage.type === 'success' ? 'bg-[#0095f6]/10 text-[#0095f6] border-[#0095f6]/30' : alertMessage.type === 'error' ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] border-[#ff4d4d]/30' : 'bg-[#f5a623]/10 text-[#f5a623] border-[#f5a623]/30'}`}>
                                 {alertMessage.type === 'success' ? (
                                     <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                 ) : alertMessage.type === 'error' ? (
@@ -371,9 +383,9 @@ const Community = () => {
                                     <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 )}
                             </div>
-                            <h3 className="text-white text-2xl font-black m-0 mb-3">{alertMessage.title}</h3>
+                            <h3 className="text-white text-2xl font-black m-0 mb-2 tracking-wide">{alertMessage.title}</h3>
                             <p className="text-gray-400 text-sm m-0 mb-8 leading-relaxed">{alertMessage.text}</p>
-                            <button onClick={() => setAlertMessage(null)} className={`w-full text-white font-bold py-3.5 rounded-full transition-colors cursor-pointer ${alertMessage.type === 'error' ? 'bg-[#ff4d4d] hover:bg-red-600' : 'bg-[#0095f6] hover:bg-blue-600 shadow-lg shadow-blue-500/20'}`}>Entendido</button>
+                            <button onClick={() => setAlertMessage(null)} className={`w-full text-white font-bold py-3.5 rounded-full transition-colors cursor-pointer border-none ${alertMessage.type === 'error' ? 'bg-[#ff4d4d] hover:bg-red-600 shadow-[0_0_15px_rgba(255,77,77,0.3)]' : 'bg-[#0095f6] hover:bg-blue-600 shadow-[0_0_15px_rgba(0,149,246,0.3)]'}`}>Entendido</button>
                         </div>
                     </div>
                 )}

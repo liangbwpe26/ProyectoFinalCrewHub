@@ -5,6 +5,7 @@ import RightSidebar from './RightSidebar.jsx';
 import NotificationBell from '../NotificationBell.jsx'; 
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import { Link } from 'react-router-dom';
+import CountryDecorations from '../CountryDecorations.jsx';
 import './Layout.css';
 
 const Layout = ({ children }) => {
@@ -34,7 +35,7 @@ const Layout = ({ children }) => {
 
     return (
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1f1f] via-[#0a0a0a] to-black text-white font-sans flex flex-col md:pt-[70px] pt-[60px] pb-[70px] md:pb-0">
-            
+            <CountryDecorations />
             <div className="md:hidden fixed top-0 w-full z-50 bg-[#121212]/80 backdrop-blur-xl border-b border-[#262626] h-[60px] flex items-center justify-between px-4">
                 <Link to="/" className="font-black text-lg tracking-widest uppercase text-white no-underline drop-shadow-md">
                     Crew Hub

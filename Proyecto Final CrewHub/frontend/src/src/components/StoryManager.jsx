@@ -32,7 +32,6 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     });
 };
 
-// 🔥 RECIBIMOS 'community' EN VEZ DE 'communityId'
 const StoryManager = ({ file, onClose, community }) => { 
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -46,11 +45,9 @@ const StoryManager = ({ file, onClose, community }) => {
         formData.append('media', fileToUpload);
 
         if (community) {
-            // Buscamos el ID por cielo, mar y tierra
             const safeId = community._id?.$oid || community._id || community.id;
             const slug = community.slug;
 
-            // Le mandamos AMBOS a Laravel para que él decida cuál usar
             if (safeId) formData.append('community_id', String(safeId));
             if (slug) formData.append('community_slug', String(slug));
         }
@@ -88,9 +85,10 @@ const StoryManager = ({ file, onClose, community }) => {
 
     if (file.type.startsWith('video/')) {
         return createPortal(
-            <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center text-white">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0095f6] mb-4"></div>
-                <p>Subiendo video a la nube...</p>
+            <div className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center text-white animate-fade-in">
+                <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-[#0095f6] mb-6 shadow-[0_0_20px_rgba(0,149,246,0.5)]"></div>
+                <h3 className="text-xl font-black tracking-wide m-0 mb-2">Procesando Video</h3>
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest m-0">Subiendo a la nube...</p>
             </div>,
             document.body
         );
@@ -98,8 +96,15 @@ const StoryManager = ({ file, onClose, community }) => {
 
     return createPortal(
         <Fragment>
-            <div className="fixed inset-0 z-[9999] bg-black">
-                <div className="relative w-full h-[85vh]">
+            <div className="fixed inset-0 z-[999999] bg-black/95 backdrop-blur-xl flex flex-col justify-between animate-fade-in">
+                
+                {/* Cabecera Cristal */}
+                <div className="h-[8vh] md:h-[10vh] bg-[#121212]/80 backdrop-blur-md border-b border-[#262626] flex items-center justify-center shadow-lg relative z-10">
+                    <span className="text-white font-black tracking-widest uppercase text-sm drop-shadow-md">Ajustar Historia</span>
+                </div>
+
+                {/* Zona del Cropper */}
+                <div className="relative w-full flex-1 bg-[#050505]">
                     <Cropper
                         image={URL.createObjectURL(file)}
                         crop={crop}
@@ -108,13 +113,23 @@ const StoryManager = ({ file, onClose, community }) => {
                         onCropChange={setCrop}
                         onZoomChange={setZoom}
                         onCropComplete={(_, croppedPixels) => setCroppedAreaPixels(croppedPixels)}
+                        style={{
+                            containerStyle: { width: '100%', height: '100%', backgroundColor: 'transparent' },
+                            cropAreaStyle: { border: '2px solid rgba(255,255,255,0.9)', boxShadow: '0 0 0 9999em rgba(0,0,0,0.85)' }
+                        }}
                     />
                 </div>
 
-                <div className="h-[15vh] flex justify-end items-center px-10 gap-4">
-                    <button className="text-white border-none bg-transparent font-bold cursor-pointer hover:text-gray-400" onClick={() => onClose(false)}>Cancelar</button>
+                {/* Footer de Controles */}
+                <div className="h-[12vh] md:h-[15vh] bg-[#121212]/90 backdrop-blur-2xl border-t border-[#262626] flex justify-between items-center px-6 md:px-12 gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] relative z-10">
+                    <button 
+                        className="text-gray-400 border-none bg-transparent font-bold uppercase tracking-widest text-xs cursor-pointer hover:text-white transition-colors" 
+                        onClick={() => onClose(false)}
+                    >
+                        Cancelar
+                    </button>
                     <button
-                        className="bg-[#0095f6] text-white px-8 py-3 rounded-full border-none font-bold cursor-pointer hover:bg-blue-600 transition disabled:opacity-50"
+                        className={`bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white px-8 md:px-10 py-3.5 rounded-full border-none font-black uppercase tracking-widest text-xs cursor-pointer transition-all shadow-[0_0_20px_rgba(0,149,246,0.4)] ${isUploading ? 'opacity-50 cursor-wait' : 'hover:scale-105'}`}
                         onClick={handlePublish}
                         disabled={isUploading}
                     >
