@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import useNotifications, { getSafeId } from '../../hooks/useNotifications.js';
 import SingleDropModal from '../SingleDropModal.jsx';
-import PostCard from '../PostCard.jsx'; // Importamos tu componente principal
+import PostCard from '../PostCard.jsx'; 
 
 const Navbar = () => {
     const { activeUser, logout } = useContext(AuthContext);
@@ -16,8 +16,6 @@ const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [notiTab, setNotiTab] = useState('all');
 
-    const [selectedDropId, setSelectedDropId] = useState(null);
-
     const notiRef = useRef(null);
     const profileRef = useRef(null);
     const mobileMenuRef = useRef(null);
@@ -25,7 +23,7 @@ const Navbar = () => {
     const {
         mainNotifications, followRequests, unreadCount, handleAccept, handleReject,
         markAllAsRead, selectedPostModal, setSelectedPostModal, openNotificationPost,
-        targetCommentId
+        targetCommentId, selectedDropId, setSelectedDropId
     } = useNotifications(activeUser?.id || activeUser?._id);
 
     useEffect(() => {
@@ -138,12 +136,8 @@ const Navbar = () => {
                                                         <div
                                                             key={getSafeId(notif._id) || getSafeId(notif.id)}
                                                             onClick={() => {
-                                                                if (postId) {
-                                                                    openNotificationPost(postId, notif.comment_id, () => setIsNotiOpen(false));
-                                                                } else if (dropId) {
-                                                                    setSelectedDropId(dropId);
-                                                                    setIsNotiOpen(false);
-                                                                }
+                                                                // 🔥 INYECTAMOS postId y dropId SEPARADOS
+                                                                openNotificationPost(postId, dropId, notif.comment_id, () => setIsNotiOpen(false));
                                                             }}
                                                             className="flex items-center gap-3 p-3 hover:bg-[#1a1a1a] rounded-xl transition cursor-pointer mb-1 border border-transparent hover:border-[#333]"
                                                         >
@@ -254,8 +248,8 @@ const Navbar = () => {
                     </div>
                 )}
             </nav>
-
-
+            
+            {/* VISOR DE POSTS */}
             {selectedPostModal && (
                 <div className="fixed inset-0 bg-black/95 z-[9999] flex justify-center items-center p-2 md:p-5 backdrop-blur-md" onClick={() => setSelectedPostModal(null)}>
                     
@@ -273,6 +267,7 @@ const Navbar = () => {
                 </div>
             )}
 
+            {/* VISOR DE DROPS */}
             {selectedDropId && (
                 <SingleDropModal
                     dropId={selectedDropId}

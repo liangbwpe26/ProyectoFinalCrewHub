@@ -85,14 +85,11 @@ const Home = () => {
 
     if (!activeUser) return null;
 
-    // 🔥 LA SOLUCIÓN: Filtramos los posts antes de renderizarlos
     const displayPosts = posts.filter(post => {
         if (filter === 'following') {
             const postUserId = post.user?._id || post.user?.id;
-            // Si el post es tuyo, lo ocultamos de esta pestaña
             return postUserId !== myId;
         }
-        // Si estamos en "Para Ti" (all), mostramos todo
         return true;
     });
 

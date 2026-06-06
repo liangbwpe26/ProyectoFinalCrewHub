@@ -12,6 +12,7 @@ use App\Models\SavedPost;
 use App\Models\Community;
 use App\Models\Repost;
 use App\Models\Notification;
+use App\Events\NotificationSent;
 use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
@@ -156,7 +157,6 @@ class PostController extends Controller
         $adPosts = collect();
 
         if (!$communityId && $posts->count() > 0) {
-
             $businessUsersIds = User::where('is_business', true)
                 ->whereNotNull('ad_plan')
                 ->pluck('_id')
@@ -164,9 +164,12 @@ class PostController extends Controller
 
             if (!empty($businessUsersIds)) {
                 $neededAds = ceil($posts->count() / 4);
+                
+                $existingPostIds = $posts->pluck('_id')->toArray();
 
                 $adPosts = Post::with(['user', 'community'])
                     ->whereIn('user_id', $businessUsersIds)
+                    ->whereNotIn('_id', $existingPostIds)
                     ->where(function ($query) {
                         $query->where('status', 'approved')->orWhereNull('status');
                     })
@@ -384,6 +387,7 @@ class PostController extends Controller
         } else {
             $array[] = $myId;
             if ($comment->user_id !== $myId) {
+
                 $notif = Notification::create([
                     'recipient_id' => $comment->user_id,
                     'sender_id' => $myId,

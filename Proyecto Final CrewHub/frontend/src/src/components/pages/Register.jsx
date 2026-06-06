@@ -8,12 +8,10 @@ const Register = () => {
     const { userData, updateData, handleRegister, loading } = useRegisterLogic();
 
     return (
-        // 🔥 FONDO PREMIUM ILUMINADO
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1f1f] via-[#0a0a0a] to-black flex items-center justify-center p-4">
             <div className="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 max-w-5xl w-full z-10">
                 
                 <div className="flex flex-col items-center flex-1 relative">
-                    {/* 🔥 RESPLANDOR NEÓN DETRÁS DEL LOGO */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-[#0095f6]/20 blur-[100px] rounded-full pointer-events-none"></div>
                     
                     <div className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 text-5xl md:text-7xl font-black tracking-widest mb-6 md:mb-8 text-center drop-shadow-lg relative z-10">
@@ -22,7 +20,6 @@ const Register = () => {
                     <img src={logoImg} alt="Crew Hub Logo" className="w-56 h-56 md:w-[350px] md:h-[350px] rounded-full object-cover shadow-[0_0_50px_rgba(0,149,246,0.2)] border-2 border-white/5 relative z-10" />
                 </div>
                 
-                {/* 🔥 PANEL DE REGISTRO (CRISTAL ESMERILADO) */}
                 <div className="w-full max-w-[420px] bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-8 md:p-10 shadow-[0_15px_50px_rgba(0,0,0,0.8)] shrink-0 relative z-10">
                     <h2 className="text-2xl font-black mb-8 text-center tracking-wide text-white">Regístrate</h2>
 

@@ -14,7 +14,10 @@ const useNotifications = (userId) => {
     const [mainNotifications, setMainNotifications] = useState([]);
     const [followRequests, setFollowRequests] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    
     const [selectedPostModal, setSelectedPostModal] = useState(null);
+    const [selectedDropId, setSelectedDropId] = useState(null);
+    
     const [isLoadingPost, setIsLoadingPost] = useState(false);
     const [targetCommentId, setTargetCommentId] = useState(null);
     
@@ -69,9 +72,18 @@ const useNotifications = (userId) => {
         } catch (error) {}
     };
 
-    const openNotificationPost = async (postId, commentId, closeDropdown) => {
+    const openNotificationPost = async (postId, dropId, commentId, closeDropdown) => {
         if (closeDropdown) closeDropdown();
         
+        if (dropId) {
+            const safeDropId = getSafeId(dropId);
+            if (safeDropId) {
+                setSelectedDropId(safeDropId);
+                setTargetCommentId(getSafeId(commentId)); 
+            }
+            return;
+        }
+
         const safePostId = getSafeId(postId);
         if (!safePostId) return showToast("No se pudo identificar la publicación.", 'error');
 
@@ -130,6 +142,7 @@ const useNotifications = (userId) => {
     return {
         mainNotifications, followRequests, unreadCount, handleAccept, handleReject, markAllAsRead,
         selectedPostModal, setSelectedPostModal, isLoadingPost, openNotificationPost, targetCommentId,
+        selectedDropId, setSelectedDropId
     };
 };
 

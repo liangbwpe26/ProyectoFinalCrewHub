@@ -14,7 +14,7 @@ const EditProfile = () => {
     const {
         displayName, setDisplayName, dateOfBirth, setDateOfBirth,
         isPrivate, setIsPrivate, previewUrl, handleImageChange, loading, submitProfile,
-        cropImageSrc, setCropImageSrc, handleCropComplete, cropType, // 🔥 Añadido cropType
+        cropImageSrc, setCropImageSrc, handleCropComplete, cropType,
         businessSlogan, setBusinessSlogan, previewBannerUrl, handleBannerChange
     } = useProfileForm(activeUser || {});
 
