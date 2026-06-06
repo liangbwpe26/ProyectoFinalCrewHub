@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Ticket; // Asumiendo que creas un modelo Ticket en MongoDB
+use App\Models\Ticket;
 
 class SettingsController extends Controller
 {
@@ -35,16 +35,25 @@ class SettingsController extends Controller
         return response()->json(['success' => true, 'message' => 'Cuenta actualizada.']);
     }
 
-    // 2. Guardar el JSON de preferencias
     public function updateNotifications(Request $request)
     {
         $user = $request->user();
-        
-        // MongoDB acepta arrays asociativos directo
-        $user->notification_prefs = $request->all();
+
+        $validated = $request->validate([
+            'likes' => 'required|boolean',
+            'follows' => 'required|boolean',
+            'messages' => 'required|boolean',
+            'communities' => 'required|boolean',
+        ]);
+
+        $user->notification_prefs = $validated;
         $user->save();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Preferencias guardadas correctamente.',
+            'user' => $user->fresh()
+        ]);
     }
 
     // 3. Sistema de Tickets
@@ -58,7 +67,6 @@ class SettingsController extends Controller
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
 
-        // Guardamos el ticket real en la base de datos
         \App\Models\Ticket::create([
             'user_id' => $myId,
             'subject' => $request->subject,
@@ -68,4 +76,6 @@ class SettingsController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    
 }

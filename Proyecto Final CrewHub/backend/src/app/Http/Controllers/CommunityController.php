@@ -35,7 +35,7 @@ class CommunityController extends Controller
             'description' => $request->description,
             'creator_id' => $userId,
             'members' => [$userId],
-            'admins' => [$userId], // El creador nace siendo administrador
+            'admins' => [$userId],
             'require_post_approval' => true,
             'tags' => $request->tags ?? []
         ]);
@@ -47,7 +47,7 @@ class CommunityController extends Controller
         ], 201);
     }
 
-    // 3. Ver una comunidad específica por su SLUG
+    // 3. Ver una comunidad específica 
     public function show($slug)
     {
         $community = Community::where('slug', $slug)->first();
@@ -72,11 +72,9 @@ class CommunityController extends Controller
         $members = $community->members ?? [];
 
         if (in_array($userId, $members)) {
-            // Si ya es miembro, lo sacamos (Salir)
             $members = array_values(array_diff($members, [$userId]));
             $status = 'left';
         } else {
-            // Si no es miembro, lo agregamos (Unirse)
             $members[] = $userId;
             $status = 'joined';
         }
@@ -122,12 +120,10 @@ class CommunityController extends Controller
         $userId = Auth::id();
         $admins = is_object($community->admins) ? (array) $community->admins : ($community->admins ?? []);
 
-        // Seguridad: Verificar si el usuario que consulta es administrador del grupo
         if (!in_array($userId, $admins)) {
             return response()->json(['success' => false, 'message' => 'No autorizado. No eres administrador de esta comunidad.'], 403);
         }
 
-        // Buscamos las publicaciones con estado 'pending' que pertenecen a esta comunidad
         $pendingPosts = \App\Models\Post::with('user')
             ->where('community_id', $id)
             ->where('status', 'pending')
@@ -163,7 +159,6 @@ class CommunityController extends Controller
         $userId = Auth::id();
         $admins = is_object($community->admins) ? (array) $community->admins : ($community->admins ?? []);
 
-        // Seguridad: Solo un administrador de esta comunidad específica puede moderar
         if (!in_array($userId, $admins)) {
             return response()->json(['success' => false, 'message' => 'No tienes permisos para moderar en esta comunidad.'], 403);
         }
@@ -175,7 +170,6 @@ class CommunityController extends Controller
                 'message' => 'Publicación aprobada correctamente. Ahora es visible en el feed.'
             ]);
         } else {
-            // Si el administrador la rechaza, la eliminamos directamente de la base de datos
             $post->delete();
             return response()->json([
                 'success' => true,
@@ -198,7 +192,6 @@ class CommunityController extends Controller
         $memberIds = is_object($community->members) ? (array) $community->members : ($community->members ?? []);
         $adminIds = is_object($community->admins) ? (array) $community->admins : ($community->admins ?? []);
 
-        // Buscamos a los usuarios que pertenezcan a la lista de miembros
         $query = \App\Models\User::whereIn('_id', $memberIds);
 
         if (!empty($search)) {
@@ -210,13 +203,11 @@ class CommunityController extends Controller
 
         $users = $query->get(['_id', 'username', 'display_name', 'profile_picture']);
 
-        // Añadimos una bandera para saber si cada usuario es administrador
         $users->transform(function ($user) use ($adminIds) {
             $user->is_admin = in_array((string) $user->_id, $adminIds);
             return $user;
         });
 
-        // Ordenamos para que los administradores salgan primero
         $sortedUsers = $users->sortByDesc('is_admin')->values();
 
         return response()->json(['success' => true, 'members' => $sortedUsers]);

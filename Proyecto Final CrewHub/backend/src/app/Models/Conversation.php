@@ -13,7 +13,7 @@ class Conversation extends Model
         'is_group',
         'name',
         'participant_ids',
-        'room_hash', // <-- NUEVO CAMPO AÑADIDO
+        'room_hash',
         'last_message_at',
     ];
 

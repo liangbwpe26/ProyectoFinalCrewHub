@@ -68,14 +68,13 @@ class ChatController extends Controller
             return false;
 
         if ($privacy === 'following') {
-            // Verifica si el targetUser sigue al sender
             return \App\Models\Follow::where('follower_id', (string) ($targetUser->_id ?? $targetUser->id))
                 ->where('followed_id', $senderIdStr)
                 ->where('status', 'accepted')
                 ->exists();
         }
 
-        return true; // everyone
+        return true;
     }
 
     public function getUnreadCount(Request $request)
@@ -396,7 +395,7 @@ class ChatController extends Controller
             'content' => $request->input('content'),
             'story_media_path' => $request->input('story_media_path'),
             'story_media_type' => $request->input('story_media_type'),
-            'read_by' => [(string) $me->id], // Yo ya lo leí porque lo envié
+            'read_by' => [(string) $me->id],
         ]);
 
         $conversation->update(['last_message_at' => now()]);

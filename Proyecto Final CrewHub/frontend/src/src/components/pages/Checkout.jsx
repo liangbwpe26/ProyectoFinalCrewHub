@@ -4,7 +4,6 @@ import { AuthContext } from '../../contexts/AuthContext.jsx';
 import { useMonetization } from '../../hooks/useMonetization.js';
 import Navbar from '../structure/Navbar.jsx';
 
-// 🔥 NUEVA INSIGNIA DE SEGURIDAD SVG
 const SecureBadge = () => (
     <div className="flex items-center gap-1.5 bg-[#00ba7c]/10 text-[#00ba7c] border border-[#00ba7c]/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit mb-4">
         <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
@@ -35,10 +34,8 @@ const Checkout = () => {
             let success = false;
             
             if (state.type === 'ads') {
-                // await buyAdPlan(state.planId); 
                 success = true; 
             } else if (state.type === 'verification') {
-                // await buyVerification();
                 success = true;
             }
 
@@ -56,14 +53,12 @@ const Checkout = () => {
 
     return (
         <Fragment>
-            {/* 🔥 FONDO PREMIUM */}
             <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1f1f] via-[#0a0a0a] to-black text-white font-sans flex flex-col relative">
                 <Navbar />
 
                 <main className="flex-1 w-full max-w-[950px] mx-auto pt-[120px] px-5 pb-12 flex flex-col md:flex-row gap-8 relative z-10">
                     
                     <div className="w-full md:w-1/3 flex flex-col gap-6">
-                        {/* PANEL DE RESUMEN DE CRISTAL */}
                         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-7 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
                             <h2 className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-6 border-b border-[#333] pb-3">Resumen de Compra</h2>
                             
@@ -98,7 +93,6 @@ const Checkout = () => {
                     </div>
 
                     <div className="w-full md:w-2/3">
-                        {/* PANEL DE PAGO DE CRISTAL */}
                         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
                             
                             {isSuccess ? (
@@ -125,7 +119,6 @@ const Checkout = () => {
                                         <div className="flex flex-col gap-2.5">
                                             <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-1">Número de Tarjeta</label>
                                             <div className="relative">
-                                                {/* 🔥 EFECTO SHADOW-INNER PARA QUE PAREZCA HUNDIDO */}
                                                 <input 
                                                     type="text" 
                                                     required

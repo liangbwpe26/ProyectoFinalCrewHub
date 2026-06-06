@@ -92,7 +92,7 @@ class DropController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'video' => 'required|mimetypes:video/mp4,video/quicktime|max:51200',
+            'video' => 'required|mimetypes:video/mp4,video/quicktime,video/webm,video/x-matroska|max:102400',
             'description' => 'nullable|string|max:500',
             'allow_downloads' => 'required|boolean'
         ]);
@@ -218,12 +218,28 @@ class DropController extends Controller
         return response()->json(['success' => true, 'reposted' => !$isActive]);
     }
 
-    public function getComments($id)
+    public function getComments(Request $request, $id)
     {
+        $me = $request->user();
+        $myId = $me ? (string) ($me->_id ?? $me->id) : null;
+
         $comments = Comment::with('user')->where('drop_id', $id)->orderBy('created_at', 'desc')->get();
+
+        $comments->transform(function ($comment) use ($myId) {
+            $likedBy = $comment->liked_by ?? [];
+            if (is_object($likedBy)) $likedBy = (array) $likedBy;
+            if (is_string($likedBy) && json_decode($likedBy, true)) {
+                $likedBy = json_decode($likedBy, true);
+            }
+
+            $comment->reactions_count = count($likedBy);
+            $comment->has_reacted = $myId ? in_array($myId, $likedBy) : false;
+
+            return $comment;
+        });
+
         return response()->json(['success' => true, 'comments' => $comments]);
     }
-
     public function addComment(Request $request, $id)
     {
         $request->validate(['content' => 'required|string|max:500']);
@@ -277,7 +293,6 @@ class DropController extends Controller
         return response()->json(['success' => true, 'comment' => $comment->load('user')]);
     }
 
-    // Obtener los drops guardados por el usuario
     public function getSavedDrops(Request $request)
     {
         $me = $request->user();
@@ -338,5 +353,38 @@ class DropController extends Controller
         $comment->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function toggleCommentLike(Request $request, $id)
+    {
+        $comment = Comment::find($id);
+        if (!$comment) return response()->json(['success' => false], 404);
+
+        $myId = (string) ($request->user()->_id ?? $request->user()->id);
+        $array = is_array($comment->liked_by) ? $comment->liked_by : (array)$comment->liked_by;
+        $isActive = in_array($myId, $array);
+
+        if ($isActive) {
+            $array = array_values(array_diff($array, [$myId]));
+            Notification::where('sender_id', $myId)->where('comment_id', $id)->where('type', 'comment_reaction')->delete();
+        } else {
+            $array[] = $myId;
+            if ($comment->user_id !== $myId) {
+
+                $notif = Notification::create([
+                    'recipient_id' => $comment->user_id,
+                    'sender_id' => $myId,
+                    'type' => 'comment_reaction',
+                    'drop_id' => $comment->drop_id, 
+                    'comment_id' => $comment->_id,
+                    'is_read' => false
+                ]);
+                $notif->load('sender');
+                try { broadcast(new NotificationSent($notif)); } catch (\Exception $e) {}
+            }
+        }
+
+        $comment->forceFill(['liked_by' => array_values($array)])->save();
+        return response()->json(['success' => true, 'reacted' => !$isActive]);
     }
 }

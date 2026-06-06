@@ -1,6 +1,7 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAPI } from '../../services/api.js';
+import { AuthContext } from '../../contexts/AuthContext.jsx';
 
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1 text-[9px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-2 py-0.5 rounded-full border border-[#333] shadow-inner w-fit mt-1 group-hover:border-[#00ba7c] transition-colors">
@@ -13,19 +14,32 @@ const LocationBadge = ({ country }) => (
 );
 
 const RightSidebar = () => {
+    const { activeUser } = useContext(AuthContext); 
     const [suggestions, setSuggestions] = useState({ users: [], communities: [] });
     const [loading, setLoading] = useState(true);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     useEffect(() => {
-        loadSuggestions();
-    }, []);
+        if (activeUser) {
+            loadSuggestions();
+        }
+    }, [activeUser]);
 
     const loadSuggestions = async () => {
         try {
             const data = await fetchAPI('/suggestions');
             if (data.success) {
-                setSuggestions({ users: data.users || [], communities: data.communities || [] });
+                const myId = activeUser?._id || activeUser?.id;
+                
+                const filteredCommunities = (data.communities || []).filter(community => {
+                    if (!community.members) return true;
+                    return !community.members.includes(myId);
+                });
+
+                setSuggestions({ 
+                    users: data.users || [], 
+                    communities: filteredCommunities 
+                });
             }
         } catch (error) {
         } finally {

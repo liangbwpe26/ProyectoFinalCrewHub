@@ -55,8 +55,6 @@ const RoutesApp = () => {
             <Routes>
                 {/* RUTAS PÚBLICAS Y DE AUTENTICACIÓN */}
                 <Route path="/login" element={!activeUser ? <Login /> : <Navigate to="/" />} />
-                
-                {/* 🔥 Al registrarse, el AuthContext se actualiza y lo empuja a /setup-profile */}
                 <Route path="/register" element={!activeUser ? <Register /> : <Navigate to="/setup-profile" />} />
                 
                 <Route path="/verify-email" element={!activeUser ? <VerifyEmail /> : <Navigate to="/" />} />

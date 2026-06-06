@@ -4,7 +4,6 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import ImageCropperModal from './ImageCropperModal.jsx';
 import { fetchAPI } from '../services/api.js';
 
-// 🔥 NUEVO COMPONENTE: Insignia de Geolocalización Integrada
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1.5 text-[10px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-3 py-1.5 rounded-full border border-[#333] shadow-inner w-fit cursor-default hover:border-[#0095f6] hover:text-[#0095f6] transition-colors">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -17,7 +16,7 @@ const LocationBadge = ({ country }) => (
 
 const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }) => {
     const { showToast } = useToast();
-    const { activeUser } = useContext(AuthContext); // Extraemos al usuario para su foto
+    const { activeUser } = useContext(AuthContext); 
 
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
@@ -36,17 +35,30 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
     const tagDropdownRef = useRef(null);
     
     const CATEGORIES = [
-        { id: 'tecnologia', label: 'Tecnología' },
-        { id: 'deportes', label: 'Deportes' },
+        { id: 'estilo-de-vida', label: 'Estilo de Vida' },
+        { id: 'humor', label: 'Humor y Memes' },
+        { id: 'pensamientos', label: 'Pensamientos y Reflexiones' },
+        { id: 'actualidad', label: 'Actualidad y Noticias' },
+        
+        { id: 'cine-y-series', label: 'Cine y Series' },
         { id: 'musica', label: 'Música' },
-        { id: 'arte', label: 'Arte y Diseño' },
+        { id: 'arte-y-diseno', label: 'Arte y Diseño' },
+        { id: 'fotografia', label: 'Fotografía' },
+        { id: 'anime', label: 'Anime y Cultura Geek' },
+        
         { id: 'videojuegos', label: 'Videojuegos' },
-        { id: 'viajes', label: 'Viajes' },
-        { id: 'comida', label: 'Gastronomía' },
-        { id: 'estilo_de_vida', label: 'Estilo de Vida' }
+        { id: 'deportes-fitness', label: 'Deportes' },
+        { id: 'viajes', label: 'Viajes y Aventura' },
+        { id: 'gastronomia', label: 'Gastronomía' },
+        
+        { id: 'tecnologia', label: 'Tecnología' },
+        { id: 'educacion', label: 'Educación y Aprendizaje' },
+        { id: 'negocios', label: 'Negocios y Finanzas' },
+        { id: 'desarrollo-web', label: 'Desarrollo Web' },
+        { id: 'cocina', label: 'Cocina' }
     ];
-
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    
     const getAvatar = (user) => {
         if (user?.profile_picture) return user.profile_picture.startsWith('http') ? user.profile_picture : `${BACKEND_URL}${user.profile_picture}`;
         return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=262626&color=fff&bold=true`;
@@ -83,12 +95,18 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!file) return showToast('Por favor selecciona una imagen', 'error');
+        
+        if (!file && !description.trim()) {
+            return showToast('Agrega una foto o escribe algo para publicar.', 'error');
+        }
 
         setIsSubmitting(true);
         const formData = new FormData();
 
-        formData.append('image', file);
+        if (file) {
+            formData.append('image', file);
+        }
+        
         formData.append('description', description);
         
         if (!communityId) formData.append('category', category);
@@ -102,7 +120,14 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
             if (data.success) {
                 showToast(data.message || 'Publicación enviada con éxito', 'success');
                 if (onPostCreated) onPostCreated(data.post, data.status);
-                setFile(null); setPreviewUrl(''); setDescription(''); setCategory(''); setCommunityTag('');
+                
+                // Limpiamos todo el formulario
+                setFile(null); 
+                setPreviewUrl(''); 
+                setDescription(''); 
+                setCategory(''); 
+                setCommunityTag('');
+                if (fileInputRef.current) fileInputRef.current.value = '';
             } else {
                 showToast(data.message || 'Error al publicar', 'error');
             }
@@ -113,12 +138,12 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
         }
     };
 
-    const isFormValid = file && (communityId ? true : category !== '');
+    const hasContent = file !== null || description.trim().length > 0;
+    const isFormValid = hasContent && (communityId ? true : category !== '');
 
     return (
         <Fragment>
-            {/* 🔥 MAGIA VISUAL: Panel de Cristal */}
-            <div className="bg-[#121212]/90 backdrop-blur-xl p-5 md:p-6 rounded-2xl border border-[#262626] shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+            <div className="bg-[#121212]/90 backdrop-blur-xl p-5 md:p-6 rounded-3xl border border-[#262626] shadow-[0_8px_30px_rgb(0,0,0,0.5)] transition-all">
                 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     
@@ -133,25 +158,25 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
                                 placeholder="¿Qué estás pensando?"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="w-full p-3 rounded-xl border border-transparent bg-transparent text-white min-h-[60px] resize-y outline-none focus:border-[#333] focus:bg-[#1a1a1a] transition-all text-sm md:text-base placeholder:text-gray-600"
+                                className="w-full p-4 rounded-2xl border border-transparent bg-transparent text-white min-h-[60px] resize-y outline-none focus:border-[#333] focus:bg-[#0a0a0a]/50 focus:shadow-inner transition-all text-sm md:text-[15px] placeholder:text-gray-500 leading-relaxed custom-scrollbar"
                             />
 
                             {/* PREVIEW DE IMAGEN */}
                             {previewUrl && (
                                 <div className="relative w-full max-w-[300px] mt-2 group">
-                                    <img src={previewUrl} alt="Preview" className="w-full rounded-xl border border-[#333] block shadow-md" />
+                                    <img src={previewUrl} alt="Preview" className="w-full rounded-2xl border border-[#333] block shadow-md" />
                                     <button
                                         type="button"
-                                        onClick={() => { setFile(null); setPreviewUrl(''); }}
-                                        className="absolute top-2 right-2 bg-black/70 text-white border-none rounded-full w-8 h-8 flex justify-center items-center cursor-pointer font-bold hover:bg-[#ff4d4d] transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                        onClick={() => { setFile(null); setPreviewUrl(''); if(fileInputRef.current) fileInputRef.current.value = ''; }}
+                                        className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white border-none rounded-full w-8 h-8 flex justify-center items-center cursor-pointer font-bold hover:bg-[#ff4d4d] transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 shadow-lg"
                                     >✕</button>
                                 </div>
                             )}
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                {/* BOTÓN DE SUBIDA PREMIUM */}
-                                <label className="flex items-center gap-2 text-xs font-bold text-[#00ba7c] bg-[#00ba7c]/10 px-4 py-2 rounded-full cursor-pointer hover:bg-[#00ba7c]/20 transition-colors border border-[#00ba7c]/20 shadow-sm">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <div className="flex flex-wrap items-center gap-3 mt-1">
+                                {/* BOTÓN DE SUBIDA */}
+                                <label className="flex items-center gap-2 text-xs font-bold text-[#0095f6] bg-[#0095f6]/10 px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#0095f6] hover:text-white transition-colors border border-[#0095f6]/20 shadow-sm">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
                                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                         <polyline points="21 15 16 10 5 21"></polyline>
@@ -165,23 +190,23 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
                                     <div className="relative flex-1 min-w-[150px]" ref={dropdownRef}>
                                         <div
                                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                            className={`w-full px-4 py-2 rounded-full border ${isDropdownOpen ? 'border-[#0095f6] bg-[#0095f6]/5' : 'border-[#333] bg-[#1a1a1a]'} transition cursor-pointer flex justify-between items-center`}
+                                            className={`w-full px-4 py-2.5 rounded-full border ${isDropdownOpen ? 'border-[#00ba7c] bg-[#00ba7c]/5' : 'border-[#333] bg-[#1a1a1a]/50 shadow-inner'} transition-colors cursor-pointer flex justify-between items-center`}
                                         >
-                                            <span className={`text-xs font-bold ${category ? 'text-white' : 'text-gray-500'}`}>
+                                            <span className={`text-xs font-bold uppercase tracking-widest ${category ? 'text-[#00ba7c]' : 'text-gray-500'}`}>
                                                 {category ? CATEGORIES.find(c => c.id === category)?.label : 'Categoría...'}
                                             </span>
-                                            <svg className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-[#0095f6]' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-[#00ba7c]' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </div>
                                         {isDropdownOpen && (
-                                            <div className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.8)] z-[50] overflow-hidden">
-                                                <div className="max-h-[220px] overflow-y-auto custom-scrollbar py-1">
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#333] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] z-[50] overflow-hidden">
+                                                <div className="max-h-[220px] overflow-y-auto custom-scrollbar py-2">
                                                     {CATEGORIES.map(cat => (
                                                         <div
                                                             key={cat.id}
                                                             onClick={() => { setCategory(cat.id); setIsDropdownOpen(false); }}
-                                                            className={`px-4 py-2.5 text-xs font-bold cursor-pointer transition flex items-center gap-2 ${category === cat.id ? 'bg-[#0095f6]/10 text-[#0095f6] border-l-2 border-[#0095f6]' : 'text-gray-300 hover:bg-[#262626] hover:text-white border-l-2 border-transparent'}`}
+                                                            className={`px-5 py-3 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-2 ${category === cat.id ? 'bg-[#00ba7c]/10 text-[#00ba7c]' : 'text-gray-400 hover:bg-[#262626] hover:text-white'}`}
                                                         >
                                                             {cat.label}
                                                         </div>
@@ -194,21 +219,21 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
                                     <div className="relative flex-1 min-w-[150px]" ref={tagDropdownRef}>
                                         <div
                                             onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
-                                            className={`w-full px-4 py-2 rounded-full border ${isTagDropdownOpen ? 'border-[#0095f6] bg-[#0095f6]/5' : 'border-[#333] bg-[#1a1a1a]'} transition cursor-pointer flex justify-between items-center`}
+                                            className={`w-full px-4 py-2.5 rounded-full border ${isTagDropdownOpen ? 'border-[#00ba7c] bg-[#00ba7c]/5' : 'border-[#333] bg-[#1a1a1a]/50 shadow-inner'} transition-colors cursor-pointer flex justify-between items-center`}
                                         >
-                                            <span className={`text-xs font-bold ${communityTag ? 'text-white' : 'text-gray-500'}`}>
+                                            <span className={`text-xs font-bold uppercase tracking-widest ${communityTag ? 'text-[#00ba7c]' : 'text-gray-500'}`}>
                                                 {communityTag || 'Etiqueta (Opcional)'}
                                             </span>
-                                            <svg className={`w-4 h-4 transition-transform duration-300 ${isTagDropdownOpen ? 'rotate-180 text-[#0095f6]' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className={`w-4 h-4 transition-transform duration-300 ${isTagDropdownOpen ? 'rotate-180 text-[#00ba7c]' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </div>
                                         {isTagDropdownOpen && (
-                                            <div className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.8)] z-[50] overflow-hidden">
-                                                <div className="max-h-[220px] overflow-y-auto custom-scrollbar py-1">
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#333] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] z-[50] overflow-hidden">
+                                                <div className="max-h-[220px] overflow-y-auto custom-scrollbar py-2">
                                                     <div 
                                                         onClick={() => { setCommunityTag(''); setIsTagDropdownOpen(false); }} 
-                                                        className="px-4 py-2.5 text-xs font-bold cursor-pointer text-gray-400 hover:bg-[#262626] hover:text-white transition"
+                                                        className="px-5 py-3 text-xs font-bold uppercase tracking-widest cursor-pointer text-gray-500 hover:bg-[#262626] hover:text-white transition-colors"
                                                     >
                                                         Sin etiqueta
                                                     </div>
@@ -216,7 +241,7 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
                                                         <div
                                                             key={i}
                                                             onClick={() => { setCommunityTag(tag); setIsTagDropdownOpen(false); }}
-                                                            className={`px-4 py-2.5 text-xs font-bold cursor-pointer transition flex items-center gap-2 ${communityTag === tag ? 'bg-[#0095f6]/10 text-[#0095f6] border-l-2 border-[#0095f6]' : 'text-gray-300 hover:bg-[#262626] hover:text-white border-l-2 border-transparent'}`}
+                                                            className={`px-5 py-3 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-2 ${communityTag === tag ? 'bg-[#00ba7c]/10 text-[#00ba7c]' : 'text-gray-400 hover:bg-[#262626] hover:text-white'}`}
                                                         >
                                                             {tag}
                                                         </div>
@@ -230,19 +255,19 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
                         </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#262626]">
+                    <div className="flex justify-between items-center mt-3 pt-4 border-t border-[#262626]">
                         <LocationBadge country="España" />
                         
                         <div className="flex gap-3">
                             {onCancel && (
-                                <button type="button" onClick={onCancel} className="px-5 py-2 rounded-full border-none bg-transparent text-gray-400 cursor-pointer font-bold hover:bg-[#262626] transition text-sm">
+                                <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-full border-none bg-transparent text-gray-400 cursor-pointer font-bold uppercase tracking-widest text-[10px] hover:bg-[#262626] hover:text-white transition-colors">
                                     Cancelar
                                 </button>
                             )}
                             <button 
                                 type="submit" 
                                 disabled={isSubmitting || !isFormValid} 
-                                className={`px-6 py-2 rounded-full border-none font-bold text-sm transition-all ${isFormValid ? 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white cursor-pointer hover:scale-105 shadow-[0_0_15px_rgba(0,149,246,0.3)]' : 'bg-[#262626] text-gray-500 cursor-not-allowed'}`}
+                                className={`px-8 py-2.5 rounded-full border-none font-black uppercase tracking-widest text-[11px] transition-all shadow-md ${isFormValid ? 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white cursor-pointer hover:scale-105 shadow-[0_0_15px_rgba(0,149,246,0.3)]' : 'bg-[#262626] text-gray-500 cursor-not-allowed'}`}
                             >
                                 {isSubmitting ? 'Publicando...' : 'Publicar'}
                             </button>
@@ -252,7 +277,7 @@ const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }
             </div>
 
             {cropImageSrc && (
-                <ImageCropperModal imageSrc={cropImageSrc} aspectRatio={1} onCropComplete={handleCropComplete} onCancel={() => { setCropImageSrc(null); fileInputRef.current.value = ''; }} />
+                <ImageCropperModal imageSrc={cropImageSrc} aspectRatio={1} onCropComplete={handleCropComplete} onCancel={() => { setCropImageSrc(null); if(fileInputRef.current) fileInputRef.current.value = ''; }} />
             )}
         </Fragment>
     );

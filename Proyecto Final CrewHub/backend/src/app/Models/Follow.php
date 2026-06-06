@@ -10,9 +10,9 @@ class Follow extends Model
     protected $collection = 'follows';
     protected $guarded = [];
     protected $fillable = [
-        'follower_id', // El ID del usuario que da clic a "Seguir"
-        'followed_id', // El ID del usuario que recibe el seguimiento
-        'status', // 'pending' o 'accepted' (si es privado, empieza como 'pending')
+        'follower_id',
+        'followed_id',
+        'status',
     ];
 
     public function follower()
@@ -20,7 +20,6 @@ class Follow extends Model
         return $this->belongsTo(User::class, 'follower_id');
     }
 
-    // El usuario que "es seguido" (el perfil que miramos)
     public function followed()
     {
         return $this->belongsTo(User::class, 'followed_id');

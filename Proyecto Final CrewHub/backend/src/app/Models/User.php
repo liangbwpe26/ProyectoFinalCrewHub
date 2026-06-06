@@ -76,4 +76,12 @@ class User extends Authenticatable
         
         return in_array($this->username, $admins);
     }
+
+    public function wantsNotification($category)
+    {
+        if (!isset($this->notification_prefs) || !is_array($this->notification_prefs)) {
+            return true;
+        }
+        return $this->notification_prefs[$category] ?? true;
+    }
 }

@@ -40,10 +40,8 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8',
             ]);
 
-            // 2. Generamos el código de 6 dígitos
             $verificationCode = rand(100000, 999999);
 
-            // 3. Creación del documento en MongoDB
             $user = User::create([
                 'username' => $validatedData['username'],
                 'email' => $validatedData['email'],
@@ -52,14 +50,12 @@ class AuthController extends Controller
                 'verification_code' => (string) $verificationCode // Guardamos el código
             ]);
 
-            // 4. Enviamos el correo REAL usando Resend
             Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, 'registro'));
 
-            // OJO: Ya no generamos el token aquí. El usuario debe verificar su correo primero.
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario registrado exitosamente. Por favor verifica tu correo.',
-                'email' => $user->email // Devolvemos el correo para que React sepa a dónde se envió
+                'email' => $user->email
             ], 201);
 
         } catch (ValidationException $e) {
@@ -98,7 +94,6 @@ class AuthController extends Controller
             'verification_code' => null
         ]);
 
-        // INICIO DE SESIÓN AUTOMÁTICO
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -168,14 +163,12 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            // Falso positivo por seguridad (para que no averigüen qué correos existen)
             return response()->json(['success' => true]);
         }
 
         $resetCode = rand(100000, 999999);
         $user->update(['reset_password_code' => (string) $resetCode]);
 
-        // Enviamos el correo REAL usando Resend
         Mail::to($user->email)->send(new VerificationCodeMail($resetCode, 'recuperacion'));
 
         return response()->json(['success' => true]);
@@ -198,7 +191,6 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Código incorrecto o expirado.'], 400);
         }
 
-        // Actualizamos la contraseña y borramos el código
         $user->update([
             'password' => Hash::make($request->new_password),
             'reset_password_code' => null
@@ -224,11 +216,9 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Este correo ya está verificado.'], 400);
         }
 
-        // Generamos un código nuevo
         $newCode = rand(100000, 999999);
         $user->update(['verification_code' => (string) $newCode]);
 
-        // Lo enviamos (Recuerda: solo llegará si el correo es tu matbenesc@alu.edu.gva.es)
         Mail::to($user->email)->send(new \App\Mail\VerificationCodeMail($newCode, 'registro'));
 
         return response()->json([

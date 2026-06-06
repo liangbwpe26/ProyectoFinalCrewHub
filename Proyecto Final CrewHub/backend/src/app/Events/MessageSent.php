@@ -22,13 +22,11 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // Emitimos al canal de la sala de chat Y al canal personal del remitente
         $channels = [
             new PrivateChannel('chat.' . $this->message['conversation_id']),
             new PrivateChannel('App.Models.User.' . $this->message['sender_id'])
         ];
 
-        // Si tenemos el destinatario, le disparamos también a su canal personal
         if ($this->receiverId) {
             $channels[] = new PrivateChannel('App.Models.User.' . $this->receiverId);
         }

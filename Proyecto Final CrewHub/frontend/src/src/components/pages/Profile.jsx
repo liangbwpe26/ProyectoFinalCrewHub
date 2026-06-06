@@ -214,16 +214,25 @@ const Profile = () => {
                                 <div className="grid grid-cols-3 gap-1 md:gap-2 rounded-2xl overflow-hidden">
                                     {displayPosts.map((item, index) => {
                                         const isDrop = !!item.video_url;
+                                        const isTextOnly = !item.video_url && !item.image_path;
                                         const itemId = item._id || item.id || index;
 
                                         return (
-                                            <div key={itemId} onClick={() => isDrop ? setSelectedDropId(itemId) : setSelectedPost(item)} className="aspect-square bg-[#121212] relative cursor-pointer group">
+                                            <div key={itemId} onClick={() => isDrop ? setSelectedDropId(itemId) : setSelectedPost(item)} className="aspect-square bg-[#121212] border border-[#262626] relative cursor-pointer group overflow-hidden">
                                                 {isDrop ? (
                                                     <video src={item.video_url} className="w-full h-full object-cover block" />
+                                                ) : isTextOnly ? (
+                                                    <div className="w-full h-full flex items-center justify-center p-3 text-center bg-gradient-to-br from-[#1a1a1a] to-[#111]">
+                                                        <p className="text-gray-300 text-[10px] md:text-sm font-medium line-clamp-4 m-0 break-words leading-tight group-hover:text-white transition-colors">
+                                                            {item.description}
+                                                        </p>
+                                                    </div>
                                                 ) : (
                                                     <img src={getPostImage(item.image_path)} alt="Publicación" className="w-full h-full object-cover block" />
                                                 )}
+                                                
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
+                                                
                                                 {isDrop && (
                                                     <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-md text-white border border-[#333]">
                                                         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
@@ -232,6 +241,11 @@ const Profile = () => {
                                                 {activeTab === 'reposts' && !isDrop && (
                                                     <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-[#00ba7c]">
                                                         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                                                    </div>
+                                                )}
+                                                {isTextOnly && (
+                                                    <div className="absolute bottom-2 left-2 bg-black/60 px-1.5 py-0.5 rounded-md text-gray-400 border border-[#333]">
+                                                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
                                                     </div>
                                                 )}
                                             </div>
@@ -252,7 +266,10 @@ const Profile = () => {
 
                     {selectedPost && (
                         <div className="fixed inset-0 bg-black/90 z-[10000] flex justify-center items-center p-2 md:p-5 backdrop-blur-sm" onClick={() => setSelectedPost(null)}>
-                            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-xl border border-[#262626] overflow-y-auto custom-scrollbar flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl">
+                            
+                            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 md:top-8 md:right-8 z-[10000] bg-black/50 hover:bg-[#ff4d4d] text-white border border-[#333] rounded-full w-10 h-10 flex justify-center items-center cursor-pointer transition-colors backdrop-blur-md shadow-2xl">✕</button>
+
+                            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-[0_15px_50px_rgba(0,0,0,0.8)] overflow-y-auto custom-scrollbar relative">
                                 <PostCard
                                     initialPost={{ ...selectedPost, user: selectedPost.user || (activeTab === 'saved' || activeTab === 'reposts' ? selectedPost.user : profile) }}
                                     getAvatar={getAvatar}

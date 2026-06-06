@@ -7,7 +7,7 @@ import ReportModal from './ReportModal.jsx';
 import VerifiedBadge from './VerifiedBadge.jsx';
 import { AuthContext } from '../contexts/AuthContext.jsx'; 
 
-const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDeleteSuccess }) => {
+const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDeleteSuccess, targetCommentId }) => {
     const {
         postData, isDeleted, isEditing, setIsEditing, editDescription, setEditDescription,
         showMenu, setShowMenu, isDeleteModalOpen, setIsDeleteModalOpen,
@@ -24,9 +24,11 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
     
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://crewhub.es:8000';
 
+    const isTextOnly = !postData.image_path;
+
     return (
         <Fragment>
-            <div className={`w-full max-w-[600px] mx-auto bg-[#121212]/80 backdrop-blur-xl border ${isAd ? 'border-[#00ba7c]/50 shadow-[0_8px_30px_rgba(0,186,124,0.15)]' : 'border-[#262626] shadow-[0_8px_30px_rgb(0,0,0,0.5)]'} rounded-3xl overflow-hidden ${isModal ? 'h-full border-none shadow-none rounded-none' : 'mb-8'}`}>
+            <div className={`flex flex-col w-full mx-auto bg-[#121212]/80 backdrop-blur-xl ${isAd ? 'border-[#00ba7c]/50 shadow-[0_8px_30px_rgba(0,186,124,0.15)]' : 'border-[#262626]'} ${isModal ? 'h-auto border-none shadow-none rounded-none' : 'max-w-[600px] rounded-3xl mb-8 border shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden'}`}>
 
                 <div className="flex justify-between items-center p-5 border-b border-[#262626]/50 bg-[#1a1a1a]/30">
                     {postData.community ? (
@@ -94,15 +96,23 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
                     </div>
                 </div>
 
-                <div className={isModal ? "bg-[#050505] flex justify-center items-center border-y border-[#262626]" : "bg-[#050505]"}>
-                    <img
-                        src={getPostImage(postData.image_path)}
-                        alt="Publicación"
-                        className={`w-full object-cover shadow-inner ${isModal ? 'max-h-[60vh] object-contain' : ''}`}
-                    />
-                </div>
+                {isTextOnly ? (
+                    <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] p-10 md:p-16 flex items-center justify-center min-h-[250px] text-center border-y border-[#262626]">
+                         <p className="text-xl md:text-3xl text-white font-medium leading-relaxed tracking-wide italic">
+                            "{postData.description}"
+                        </p>
+                    </div>
+                ) : (
+                    <div className="bg-[#050505] flex justify-center items-center border-y border-[#262626]">
+                        <img
+                            src={getPostImage(postData.image_path)}
+                            alt="Publicación"
+                            className={`w-full ${isModal ? 'max-h-[60vh] object-contain' : 'max-h-[70vh] object-cover'}`}
+                        />
+                    </div>
+                )}
 
-                <div className="p-5 md:p-6 bg-[#121212]/90">
+                <div className={`p-5 md:p-6 bg-[#121212]/90 flex-1 flex flex-col ${isTextOnly ? 'pt-4 md:pt-5' : ''}`}>
                     <div className="flex justify-between items-center mb-5">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest m-0">
                             {new Date(postData.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -117,19 +127,21 @@ const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDel
 
                     {isEditing ? (
                         <div className="flex flex-col gap-3 mb-5">
-                            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full bg-[#0a0a0a]/50 shadow-inner border border-[#333] text-white p-4 rounded-xl text-sm font-medium outline-none focus:border-[#0095f6] transition-colors resize-none custom-scrollbar" rows="3" />
+                            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className={`w-full bg-[#0a0a0a]/50 shadow-inner border border-[#333] text-white p-4 rounded-xl font-medium outline-none focus:border-[#0095f6] transition-colors resize-none custom-scrollbar ${isTextOnly ? 'text-base md:text-lg' : 'text-sm'}`} rows="3" />
                             <div className="flex justify-end gap-3">
                                 <button onClick={() => setIsEditing(false)} className="text-gray-400 border-none bg-transparent cursor-pointer font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
                                 <button onClick={handleSaveEdit} className="bg-[#0095f6]/10 border border-[#0095f6]/30 text-[#0095f6] px-4 py-2 rounded-lg cursor-pointer font-bold text-xs uppercase tracking-widest hover:bg-[#0095f6] hover:text-white transition-colors">Guardar</button>
                             </div>
                         </div>
                     ) : (
-                        postData.description && (
-                            <p className="text-sm md:text-[15px] text-gray-200 mb-5 leading-relaxed font-medium">{postData.description}</p>
+                        !isTextOnly && postData.description && (
+                            <p className="text-sm md:text-[15px] text-gray-200 mb-5 leading-relaxed font-medium">
+                                {postData.description}
+                            </p>
                         )
                     )}
 
-                    <PostActions post={postData} />
+                    <PostActions post={postData} targetCommentId={targetCommentId} />
                 </div>
             </div>
 

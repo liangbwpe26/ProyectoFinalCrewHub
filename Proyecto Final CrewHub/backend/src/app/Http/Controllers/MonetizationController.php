@@ -7,7 +7,6 @@ use App\Models\Post;
 
 class MonetizationController extends Controller
 {
-    // Simular el pago para tener el check azul (Verified)
     public function subscribe(Request $request)
     {
         $user = $request->user();
@@ -19,7 +18,6 @@ class MonetizationController extends Controller
             ], 400);
         }
 
-        // Aquí iría la lógica de Stripe, pero pasamos de frente al éxito
         $user->forceFill(['is_verified' => true])->save();
 
         return response()->json([
@@ -29,8 +27,6 @@ class MonetizationController extends Controller
         ]);
     }
 
-    // Simular el pago para volverse cuenta Business
-    // Pasarse a cuenta Business (Ahora es GRATIS)
     public function upgradeToBusiness(Request $request)
     {
         $request->validate([
@@ -58,7 +54,6 @@ class MonetizationController extends Controller
         ]);
     }
 
-    // Simular el pago para promocionar un Post específico
     public function promotePost(Request $request, $postId)
     {
         $request->validate([
@@ -76,7 +71,6 @@ class MonetizationController extends Controller
 
         $post = Post::where('_id', $postId)->orWhere('id', $postId)->first();
 
-        // Validamos que el post exista y sea del pata que quiere pagar
         if (!$post || (string)$post->user_id !== (string)($user->_id ?? $user->id)) {
             return response()->json([
                 'success' => false, 
@@ -84,7 +78,6 @@ class MonetizationController extends Controller
             ], 404);
         }
 
-        // Le ponemos esteroides al post sumándole los días que pagó
         $post->forceFill([
             'is_promoted' => true,
             'promoted_until' => now()->addDays($request->days)
@@ -114,7 +107,6 @@ class MonetizationController extends Controller
         ]);
     }
 
-    // Volver a ser un usuario normal (Desactivar Business)
     public function downgradeBusiness(Request $request)
     {
         $user = $request->user();

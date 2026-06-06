@@ -1,8 +1,9 @@
-import React, { useContext, useState, useRef, useEffect, Fragment } from 'react';
+import React, { Fragment, useState, useContext, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import { usePostInteractions } from '../hooks/usePostInteractions';
 import { fetchAPI } from '../services/api.js';
+import ConfirmModal from './ConfirmModal.jsx'; 
 
 const PostActions = ({ post, targetCommentId = null }) => {
     const { activeUser } = useContext(AuthContext);
@@ -11,6 +12,8 @@ const PostActions = ({ post, targetCommentId = null }) => {
     const [hasScrolledToTarget, setHasScrolledToTarget] = useState(false);
     const [hasSaved, setHasSaved] = useState(post.has_saved || false);
     const [hasReposted, setHasReposted] = useState(post.has_reposted || false);
+    
+    const [commentToDelete, setCommentToDelete] = useState(null);
 
     const {
         hasReacted, reactionsCount, handlePostReact,
@@ -54,6 +57,31 @@ const PostActions = ({ post, targetCommentId = null }) => {
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
         </svg>
     );
+
+    const canDeleteComment = (commentUser) => {
+        const myId = activeUser?._id || activeUser?.id;
+        const contentOwnerId = post.user?._id || post.user?.id;
+        const commentOwnerId = commentUser?._id || commentUser?.id;
+        return myId === commentOwnerId || myId === contentOwnerId;
+    };
+
+    const executeDeleteComment = async () => {
+        if (!commentToDelete) return;
+        try {
+            const data = await fetchAPI(`/comments/${commentToDelete}`, { method: 'DELETE' });
+            if (data.success) {
+                const el = document.getElementById(`comment-${commentToDelete}`);
+                if (el) {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.style.display = 'none', 300);
+                }
+            }
+        } catch (error) {
+            console.error("Error al eliminar", error);
+        } finally {
+            setCommentToDelete(null);
+        }
+    };
 
     const handlePostSave = async () => {
         const previousState = hasSaved;
@@ -171,6 +199,10 @@ const PostActions = ({ post, targetCommentId = null }) => {
                                                         <HappyFace filled={comment.has_reacted} size={14} /> {comment.reactions_count > 0 && <span>{comment.reactions_count}</span>}
                                                     </button>
                                                     <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${comment.user.username} `); inputRef.current.focus(); }} className="bg-transparent border-none text-inherit cursor-pointer p-0 hover:text-gray-300 transition-colors">Responder</button>
+                                                    
+                                                    {canDeleteComment(comment.user) && (
+                                                        <button onClick={() => setCommentToDelete(comment._id || comment.id)} className="bg-transparent border-none text-gray-500 hover:text-[#ff4d4d] cursor-pointer p-0 transition-colors">Eliminar</button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -193,6 +225,10 @@ const PostActions = ({ post, targetCommentId = null }) => {
                                                                         <HappyFace filled={reply.has_reacted} size={12} /> {reply.reactions_count > 0 && <span>{reply.reactions_count}</span>}
                                                                     </button>
                                                                     <button onClick={() => { setReplyingTo(comment._id || comment.id); setNewComment(`@${reply.user.username} `); inputRef.current.focus(); }} className="bg-transparent border-none text-inherit cursor-pointer p-0 hover:text-gray-300">Responder</button>
+                                                                    
+                                                                    {canDeleteComment(reply.user) && (
+                                                                        <button onClick={() => setCommentToDelete(reply._id || reply.id)} className="bg-transparent border-none text-gray-500 hover:text-[#ff4d4d] cursor-pointer p-0 transition-colors">Eliminar</button>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -259,6 +295,14 @@ const PostActions = ({ post, targetCommentId = null }) => {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal 
+                isOpen={!!commentToDelete} 
+                title="¿Eliminar comentario?" 
+                message="¿Seguro que quieres eliminar este comentario? Esta acción no se puede deshacer." 
+                onConfirm={executeDeleteComment} 
+                onCancel={() => setCommentToDelete(null)} 
+            />
         </Fragment>
     );
 };

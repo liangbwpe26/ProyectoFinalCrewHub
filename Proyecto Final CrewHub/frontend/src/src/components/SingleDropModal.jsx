@@ -24,7 +24,6 @@ const SingleDropModal = ({ dropId, onClose }) => {
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
     const [activeCommentMenuId, setActiveCommentMenuId] = useState(null);
 
-    // NUEVOS ESTADOS PARA EL MODAL DE CONFIRMACIÓN
     const [commentToDelete, setCommentToDelete] = useState(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
@@ -32,6 +31,15 @@ const SingleDropModal = ({ dropId, onClose }) => {
 
     const videoRef = useRef(null);
     const myIdStr = activeUser?._id || activeUser?.id;
+
+    const HappyFace = ({ filled, size = 24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "#ffdd00" : "none"} stroke={filled ? "#000" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+        </svg>
+    );
 
     useEffect(() => {
         const fetchSingleDrop = async () => {
@@ -83,7 +91,6 @@ const SingleDropModal = ({ dropId, onClose }) => {
         onClose();
     };
 
-    // NUEVA FUNCIÓN PARA EJECUTAR EL BORRADO DEL COMENTARIO
     const executeDeleteComment = async () => {
         if (!commentToDelete) return;
         try {
@@ -95,6 +102,26 @@ const SingleDropModal = ({ dropId, onClose }) => {
         } catch (err) {}
         setIsConfirmModalOpen(false);
         setCommentToDelete(null);
+    };
+
+    const handleCommentReact = async (commentId) => {
+        setCommentsList(prev => prev.map(c => {
+            if ((c._id || c.id) === commentId) {
+                const wasReacted = c.has_reacted;
+                return { 
+                    ...c, 
+                    has_reacted: !wasReacted, 
+                    reactions_count: wasReacted ? Math.max(0, (c.reactions_count || 0) - 1) : (c.reactions_count || 0) + 1 
+                };
+            }
+            return c;
+        }));
+
+        try {
+            await fetchAPI(`/drops/comments/${commentId}/react`, { method: 'POST' });
+        } catch (error) {
+            console.error("Error al reaccionar al comentario", error);
+        }
     };
 
     const togglePlay = () => {
@@ -257,6 +284,12 @@ const SingleDropModal = ({ dropId, onClose }) => {
                                             <div className="flex-1">
                                                 <Link to={`/${c.user?.username}`} onClick={onClose} className="text-gray-400 text-xs font-bold block mb-1 no-underline hover:text-white transition">@{c.user?.username}</Link>
                                                 <p className="text-white text-sm m-0 leading-tight">{renderCommentContent(c.content)}</p>
+                                                
+                                                <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
+                                                    <button onClick={(e) => { e.stopPropagation(); handleCommentReact(commentId); }} className={`bg-transparent border-none cursor-pointer flex items-center gap-1.5 p-0 transition-colors ${c.has_reacted ? 'text-[#ffdd00]' : 'text-inherit hover:text-gray-300'}`}>
+                                                        <HappyFace filled={c.has_reacted} size={14} /> {c.reactions_count > 0 && <span>{c.reactions_count}</span>}
+                                                    </button>
+                                                </div>
                                             </div>
                                             
                                             {canDelete && (
@@ -301,7 +334,6 @@ const SingleDropModal = ({ dropId, onClose }) => {
                 )}
             </div>
 
-            {/* AQUÍ SE RENDERIZAN LOS MODALES GLOBALES */}
             {isReportModalOpen && (
                 <div onClick={e => e.stopPropagation()}>
                     <ReportModal 

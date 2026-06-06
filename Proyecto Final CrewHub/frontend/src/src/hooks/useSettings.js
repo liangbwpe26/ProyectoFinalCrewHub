@@ -52,7 +52,7 @@ export const useSettings = () => {
             const body = { email, current_password: currentPassword, new_password: newPassword };
             const res = await fetchAPI('/settings/account', { 
                 method: 'PUT', 
-                headers: { 'Content-Type': 'application/json' }, // <-- PARCHE APLICADO
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body) 
             });
             
@@ -76,7 +76,7 @@ export const useSettings = () => {
         try {
             const res = await fetchAPI('/settings/notifications', { 
                 method: 'PUT', 
-                headers: { 'Content-Type': 'application/json' }, // <-- PARCHE APLICADO
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(notifPrefs) 
             });
             if (res.success) showAlert('Guardado', 'Tus preferencias han sido actualizadas.', 'success');

@@ -12,6 +12,9 @@ export const useProfileForm = (initialData) => {
     const [bannerFile, setBannerFile] = useState(null);
     const [previewBannerUrl, setPreviewBannerUrl] = useState(initialData?.banner_picture || '');
 
+    const [cropImageSrc, setCropImageSrc] = useState(null);
+    const [cropType, setCropType] = useState(null); // Puede ser 'avatar' o 'banner'
+
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
     const getAvatar = (user) => {
@@ -31,22 +34,43 @@ export const useProfileForm = (initialData) => {
             setDateOfBirth(initialData.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
             setIsPrivate(initialData.is_private || false);
             setPreviewUrl(getAvatar(initialData));
+            setBusinessSlogan(initialData.business_slogan || '');
+            setPreviewBannerUrl(initialData.banner_picture || '');
         }
     }, [initialData?.id]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setImageFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            setCropType('avatar');
+            setCropImageSrc(reader.result);
+        };
     };
 
     const handleBannerChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            setBannerFile(file);
-            setPreviewBannerUrl(URL.createObjectURL(file));
+        if (!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            setCropType('banner');
+            setCropImageSrc(reader.result);
+        };
+    };
+
+    const handleCropComplete = (croppedFile) => {
+        if (cropType === 'avatar') {
+            setImageFile(croppedFile);
+            setPreviewUrl(URL.createObjectURL(croppedFile));
+        } else if (cropType === 'banner') {
+            setBannerFile(croppedFile);
+            setPreviewBannerUrl(URL.createObjectURL(croppedFile));
         }
+        setCropImageSrc(null);
+        setCropType(null);
     };
 
     const submitProfile = async (onSuccessCallback) => {
@@ -79,5 +103,6 @@ export const useProfileForm = (initialData) => {
         previewUrl, handleImageChange, isPrivate, setIsPrivate,
         loading, submitProfile, businessSlogan, setBusinessSlogan,
         previewBannerUrl, handleBannerChange,
+        cropImageSrc, setCropImageSrc, handleCropComplete, cropType 
     };
 };

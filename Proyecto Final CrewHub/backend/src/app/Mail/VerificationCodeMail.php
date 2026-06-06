@@ -15,7 +15,7 @@ class VerificationCodeMail extends Mailable
     use Queueable, SerializesModels;
 
     public $code;
-    public $type; // 'registro' o 'recuperacion'
+    public $type;
 
     /**
      * Create a new message instance.
@@ -43,7 +43,6 @@ class VerificationCodeMail extends Mailable
      */
     public function content(): Content
     {
-        // Le diremos a Laravel que use una vista (HTML) que crearemos a continuación
         return new Content(view: 'emails.verification_code');
     }
 

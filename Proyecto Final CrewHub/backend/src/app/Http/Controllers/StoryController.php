@@ -30,7 +30,6 @@ class StoryController extends Controller
         $me = $request->user();
         $myId = (string) ($me->_id ?? $me->id);
         
-        // 🔥 LA LICUADORA: Destruimos cualquier salto de línea, espacio o caracter fantasma
         $rawSlug = (string) $request->input('community_slug');
         $rawId = (string) $request->input('community_id');
         
@@ -40,23 +39,19 @@ class StoryController extends Controller
         if (!empty($communityId) || !empty($communitySlug)) {
             $community = null;
 
-            // Traemos TODAS las comunidades y las filtramos pasándolas por la licuadora
             $allCommunities = Community::all();
             
             foreach ($allCommunities as $c) {
-                // Limpiamos también lo que viene de la Base de Datos por si acaso
                 $dbSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$c->slug);
                 $dbId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($c->_id ?? $c->id));
                 
-                // Si la versión limpia de React encaja con la versión limpia de la BD, la atrapamos.
                 if ((!empty($communitySlug) && $dbSlug === $communitySlug) || 
                     (!empty($communityId) && $dbId === $communityId)) {
                     $community = $c;
-                    break; // La encontramos, salimos del bucle
+                    break;
                 }
             }
 
-            // Si aún así no la encuentra, ya es brujería
             if (!$community) {
                 return response()->json(['success' => false, 'message' => 'Comunidad no encontrada a pesar de la limpieza.'], 404);
             }

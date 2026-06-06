@@ -27,8 +27,8 @@ class PostController extends Controller
             'community_tag' => 'nullable|string'
         ]);
 
-        if (!$request->hasFile('image') && !$request->filled('original_post_id')) {
-            return response()->json(['success' => false, 'message' => 'Se requiere una imagen o un post original.'], 422);
+        if (!$request->hasFile('image') && !$request->filled('original_post_id') && !$request->filled('description')) {
+            return response()->json(['success' => false, 'message' => 'Debes incluir una imagen, un texto o compartir un post original.'], 422);
         }
 
         $me = $request->user();
@@ -343,5 +343,61 @@ class PostController extends Controller
             ]);
             return response()->json(['success' => true, 'status' => 'added']);
         }
+    }
+
+    public function deleteComment(Request $request, $id)
+    {
+        $me = $request->user();
+        $myId = (string) ($me->_id ?? $me->id);
+        
+        $comment = Comment::find($id);
+        if (!$comment) {
+            return response()->json(['success' => false, 'message' => 'Comentario no encontrado'], 404);
+        }
+
+        $post = Post::find($comment->post_id);
+        
+        $isCommentOwner = (string) $comment->user_id === $myId;
+        $isPostOwner = $post && (string) $post->user_id === $myId;
+        $isPlatformAdmin = ($me->is_admin || $me->username === 'liangbw_');
+
+        if (!$isCommentOwner && !$isPostOwner && !$isPlatformAdmin) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para borrar esto'], 403);
+        }
+
+        $comment->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function toggleCommentLike(Request $request, $id)
+    {
+        $comment = Comment::find($id);
+        if (!$comment) return response()->json(['success' => false], 404);
+
+        $myId = (string) ($request->user()->_id ?? $request->user()->id);
+        $array = is_array($comment->liked_by) ? $comment->liked_by : (array)$comment->liked_by;
+        $isActive = in_array($myId, $array);
+
+        if ($isActive) {
+            $array = array_values(array_diff($array, [$myId]));
+            Notification::where('sender_id', $myId)->where('comment_id', $id)->where('type', 'comment_reaction')->delete();
+        } else {
+            $array[] = $myId;
+            if ($comment->user_id !== $myId) {
+                $notif = Notification::create([
+                    'recipient_id' => $comment->user_id,
+                    'sender_id' => $myId,
+                    'type' => 'comment_reaction',
+                    'post_id' => $comment->post_id ?? null,
+                    'comment_id' => $comment->_id,
+                    'is_read' => false
+                ]);
+                $notif->load('sender');
+                try { broadcast(new NotificationSent($notif)); } catch (\Exception $e) {}
+            }
+        }
+
+        $comment->forceFill(['liked_by' => array_values($array)])->save();
+        return response()->json(['success' => true, 'reacted' => !$isActive]);
     }
 }

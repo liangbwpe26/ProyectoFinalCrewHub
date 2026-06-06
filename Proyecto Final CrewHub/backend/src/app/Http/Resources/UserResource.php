@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'is_business' => $this->is_business ?? false,
             'is_verified' => $this->is_verified ?? false,
             'business_category' => $this->business_category,
+            'notification_prefs' => $this->notification_prefs,
         ];
     }
 }

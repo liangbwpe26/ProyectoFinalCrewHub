@@ -2,8 +2,8 @@ import React, { useContext, useState, useRef, useEffect, Fragment } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import useNotifications, { getSafeId } from '../../hooks/useNotifications.js';
-import PostActions from '../PostActions.jsx';
 import SingleDropModal from '../SingleDropModal.jsx';
+import PostCard from '../PostCard.jsx'; // Importamos tu componente principal
 
 const Navbar = () => {
     const { activeUser, logout } = useContext(AuthContext);
@@ -161,6 +161,8 @@ const Navbar = () => {
                                                                         notif.type === 'drop_comment' ? 'comentó en tu Drop.' :
                                                                         notif.type === 'report_resolved' ? 'resolvió tu reporte. ¡Gracias por ayudar!' :
                                                                         notif.type === 'strike_warning' ? 'eliminó tu publicación por violar las normas. (+1 Strike)' :
+                                                                        notif.type === 'story_reaction' ? 'reaccionó a tu historia.' :
+                                                                        notif.type === 'story_reply' ? 'respondió a tu historia.' :
                                                                         'le dio me gusta a tu post.'
                                                                     }
                                                                 </p>
@@ -218,21 +220,17 @@ const Navbar = () => {
                                         <strong className="text-white text-sm block truncate">{activeUser?.display_name || activeUser?.username}</strong>
                                         <span className="text-gray-500 text-xs truncate">@{activeUser?.username}</span>
                                     </div>
-
                                     <Link to={`/${activeUser?.username}`} className="block w-full text-left px-4 py-2.5 text-white text-sm font-bold bg-transparent border-none hover:bg-[#1a1a1a] transition cursor-pointer no-underline">
                                         Ver mi perfil
                                     </Link>
-
                                     <Link to="/settings" className="block w-full text-left px-4 py-2.5 text-white text-sm font-bold bg-transparent border-none hover:bg-[#1a1a1a] transition cursor-pointer no-underline">
                                         Configuración
                                     </Link>
-
                                     {(activeUser?.is_admin || activeUser?.username === 'liangbw_') && (
                                         <Link to="/admin" className="block w-full text-left px-4 py-2.5 text-[#ff4d4d] text-sm font-bold bg-transparent border-none hover:bg-[#1a1a1a] transition cursor-pointer no-underline border-y border-[#262626]">
                                             Panel de Moderación
                                         </Link>
                                     )}
-
                                     <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 mt-1 text-[#ff4d4d] text-sm font-bold bg-transparent border-none hover:bg-[#1a1a1a] transition cursor-pointer">
                                         Cerrar sesión
                                     </button>
@@ -255,45 +253,32 @@ const Navbar = () => {
                         </Link>
                     </div>
                 )}
-
-                {selectedPostModal && (
-                    <div className="fixed inset-0 bg-black/95 z-[9999] flex justify-center items-center p-2 md:p-5 cursor-default backdrop-blur-md" onClick={() => setSelectedPostModal(null)}>
-                        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-[0_15px_50px_rgba(0,0,0,0.8)] overflow-hidden">
-                            <div className="p-4 flex justify-between items-center border-b border-[#262626] shrink-0 bg-[#121212]">
-                                <Link to={`/${selectedPostModal.user?.username}`} onClick={() => setSelectedPostModal(null)} className="flex items-center gap-3 no-underline group">
-                                    <img src={getAvatar(selectedPostModal.user)} alt="avatar" className="w-9 h-9 rounded-full object-cover border border-[#333]" />
-                                    <strong className="text-white text-sm group-hover:underline">{selectedPostModal.user?.username}</strong>
-                                </Link>
-                                <button onClick={() => setSelectedPostModal(null)} className="bg-transparent text-gray-500 hover:text-white border-none text-2xl cursor-pointer font-bold leading-none">✕</button>
-                            </div>
-
-                            <div className="overflow-y-auto flex-1 flex flex-col min-h-0 custom-scrollbar">
-                                <div className="bg-black flex justify-center items-center shrink-0 border-b border-[#262626]">
-                                    <img src={selectedPostModal.image_path.startsWith('http') ? selectedPostModal.image_path : `${BACKEND_URL}${selectedPostModal.image_path}`} alt="Post" className="w-full max-h-[45vh] object-contain" />
-                                </div>
-                                {selectedPostModal.description && (
-                                    <div className="p-4 pb-0 shrink-0">
-                                        <p className="m-0 text-[14px] text-gray-300 leading-relaxed">
-                                            <strong className="text-white mr-2">@{selectedPostModal.user?.username}</strong>
-                                            {selectedPostModal.description}
-                                        </p>
-                                    </div>
-                                )}
-                                <div className="p-4 shrink-0 flex-1">
-                                    <PostActions post={selectedPostModal} targetCommentId={targetCommentId} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {selectedDropId && (
-                    <SingleDropModal
-                        dropId={selectedDropId}
-                        onClose={() => setSelectedDropId(null)}
-                    />
-                )}
             </nav>
+
+
+            {selectedPostModal && (
+                <div className="fixed inset-0 bg-black/95 z-[9999] flex justify-center items-center p-2 md:p-5 backdrop-blur-md" onClick={() => setSelectedPostModal(null)}>
+                    
+                    <button onClick={() => setSelectedPostModal(null)} className="absolute top-4 right-4 md:top-8 md:right-8 z-[10000] bg-black/50 hover:bg-[#ff4d4d] text-white border border-[#333] rounded-full w-10 h-10 flex justify-center items-center cursor-pointer transition-colors backdrop-blur-md shadow-2xl">✕</button>
+                    
+                    <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[600px] bg-[#121212] rounded-2xl border border-[#262626] flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-[0_15px_50px_rgba(0,0,0,0.8)] overflow-y-auto custom-scrollbar relative">
+                        <PostCard 
+                            initialPost={selectedPostModal} 
+                            getAvatar={getAvatar} 
+                            isModal={true} 
+                            onCloseModal={() => setSelectedPostModal(null)}
+                            targetCommentId={targetCommentId}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {selectedDropId && (
+                <SingleDropModal
+                    dropId={selectedDropId}
+                    onClose={() => setSelectedDropId(null)}
+                />
+            )}
         </Fragment>
     );
 };

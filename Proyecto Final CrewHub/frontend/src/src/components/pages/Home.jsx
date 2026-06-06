@@ -9,7 +9,6 @@ import CreatePost from "../CreatePost.jsx";
 import StoriesBar from "../StoriesBar.jsx";
 import PostSkeleton from '../ui/PostSkeleton.jsx';
 
-// 🔥 COMPONENTE: Insignia de Geolocalización para la búsqueda
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1 text-[9px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-2 py-0.5 rounded-full border border-[#333] shadow-inner w-fit mt-1 group-hover:border-[#00ba7c] transition-colors">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#00ba7c]">
@@ -27,6 +26,8 @@ const Home = () => {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+
+    const myId = activeUser?._id || activeUser?.id;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -83,6 +84,17 @@ const Home = () => {
     const addNewPostToFeed = (newPost) => setFilter('all');
 
     if (!activeUser) return null;
+
+    // 🔥 LA SOLUCIÓN: Filtramos los posts antes de renderizarlos
+    const displayPosts = posts.filter(post => {
+        if (filter === 'following') {
+            const postUserId = post.user?._id || post.user?.id;
+            // Si el post es tuyo, lo ocultamos de esta pestaña
+            return postUserId !== myId;
+        }
+        // Si estamos en "Para Ti" (all), mostramos todo
+        return true;
+    });
 
     return (
         <Layout>
@@ -161,13 +173,13 @@ const Home = () => {
                             <PostSkeleton />
                             <PostSkeleton />
                         </>
-                    ) : posts.length === 0 ? (
+                    ) : displayPosts.length === 0 ? (
                         <div className="bg-[#121212]/80 backdrop-blur-xl p-10 rounded-2xl border border-[#262626] text-center shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
                             <h2 className="text-lg md:text-xl text-white font-bold mb-2 mt-0 tracking-wide">No hay publicaciones</h2>
                             <p className="text-gray-500 text-sm">Sigue a más personas para ver su contenido aquí.</p>
                         </div>
                     ) : (
-                        posts.map(post => <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />)
+                        displayPosts.map(post => <PostCard key={post.id || post._id} initialPost={post} getAvatar={getAvatar} />)
                     )}
                 </div>
             </div>

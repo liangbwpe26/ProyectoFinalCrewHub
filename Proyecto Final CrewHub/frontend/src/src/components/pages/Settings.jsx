@@ -100,7 +100,7 @@ const Settings = () => {
 
                                 <div className="mt-2">
                                     <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Contraseña Actual (Requerida para guardar)</label>
-                                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#121212] text-white outline-none focus:border-[#0095f6] transition text-sm" placeholder="••••••••" required />
+                                    <input type="password" onChange={e => setCurrentPassword(e.target.value)} className="w-full p-3.5 rounded-xl border border-[#333] bg-[#121212] text-white outline-none focus:border-[#0095f6] transition text-sm" placeholder="••••••••" required />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">

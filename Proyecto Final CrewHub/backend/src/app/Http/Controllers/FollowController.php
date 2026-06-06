@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 
 class FollowController extends Controller
 {
-    // Función para empezar a seguir a alguien (o enviar solicitud)
     public function follow(Request $request, $id)
     {
         $me = $request->user();
@@ -27,8 +26,14 @@ class FollowController extends Controller
         }
 
         $exists = Follow::where('follower_id', $me->_id)->where('followed_id', $id)->first();
+        
         if ($exists) {
-            return response()->json(['success' => false, 'message' => 'Ya existe una relación o solicitud.'], 400);
+            $exists->delete();
+            return response()->json([
+                'success' => true, 
+                'status' => 'none', 
+                'message' => 'Has dejado de seguir a este usuario.'
+            ]);
         }
 
         $isPrivate = $targetUser->is_private ?? false;
@@ -64,7 +69,6 @@ class FollowController extends Controller
         ]);
     }
 
-    // Función para dejar de seguir
     public function unfollow(Request $request, $id)
     {
         $me = $request->user();
@@ -79,18 +83,15 @@ class FollowController extends Controller
         return response()->json(['success' => false, 'message' => 'No sigues a este usuario.'], 400);
     }
 
-    // EL ALGORITMO DE MUTUALS
     public function getMutuals(Request $request)
     {
         $me = $request->user();
 
-        // 1. A quiénes sigo yo (aceptados o antiguos sin status)
         $followingIds = Follow::where('follower_id', $me->_id)
             ->where(function($query) {
                 $query->where('status', 'accepted')->orWhereNull('status');
             })->pluck('followed_id')->toArray();
 
-        // 2. Quiénes me siguen a mí (aceptados o antiguos)
         $followerIds = Follow::where('followed_id', $me->_id)
             ->where(function($query) {
                 $query->where('status', 'accepted')->orWhereNull('status');
@@ -105,17 +106,14 @@ class FollowController extends Controller
         ]);
     }
 
-    // 1. OBTENER SOLICITUDES PENDIENTES
     public function getPendingRequests(Request $request)
     {
         $me = $request->user();
 
-        // Buscamos los IDs de las personas que me quieren seguir y están en espera
         $pendingFollowerIds = Follow::where('followed_id', $me->_id)
             ->where('status', 'pending')
             ->pluck('follower_id')->toArray();
 
-        // Obtenemos los datos públicos de esos usuarios para mostrarlos en la UI
         $pendingUsers = User::whereIn('_id', $pendingFollowerIds)
             ->get(['_id', 'username', 'display_name', 'profile_picture']);
 
@@ -125,7 +123,6 @@ class FollowController extends Controller
         ]);
     }
 
-    // 2. ACEPTAR SOLICITUD
     public function acceptRequest(Request $request, $followerId)
     {
         $me = $request->user();
@@ -138,7 +135,6 @@ class FollowController extends Controller
         if ($follow) {
             $follow->update(['status' => 'accepted']);
 
-            // LIMPIEZA: Borramos la notificación de solicitud ya que ha sido aceptada
             Notification::where('recipient_id', $me->_id)
                 ->where('sender_id', $followerId)
                 ->where('type', 'follow_request')
@@ -150,7 +146,6 @@ class FollowController extends Controller
         return response()->json(['success' => false], 404);
     }
 
-    // 3. RECHAZAR SOLICITUD
    public function rejectRequest(Request $request, $followerId)
     {
         $me = $request->user();
@@ -162,7 +157,6 @@ class FollowController extends Controller
         if ($follow) {
             $follow->delete();
 
-            // LIMPIEZA: Borramos la notificación
             Notification::where('recipient_id', $me->_id)
                 ->where('sender_id', $followerId)
                 ->where('type', 'follow_request')
@@ -183,7 +177,6 @@ class FollowController extends Controller
         $limit = 10;
         $me = $request->user();
 
-        // 1. Buscamos a los seguidores
         $followerIds = Follow::whereIn('followed_id', [$user->_id, (string)$user->_id])
             ->where(function($query) {
                 $query->where('status', 'accepted')->orWhereNull('status');
@@ -203,36 +196,29 @@ class FollowController extends Controller
             ->take($limit)
             ->get(['_id', 'username', 'display_name', 'profile_picture']);
 
-        // 👉 LA MAGIA ABSOLUTA (Diccionario PHP)
         if ($me) {
             $myIdStr = (string)($me->id ?? $me->_id);
 
-            // Sacamos los IDs de los 10 usuarios que estamos viendo
             $listIdsStr = $followers->map(function($u) { return (string)($u->id ?? $u->_id); })->toArray();
             
-            // Los convertimos a ObjectId por seguridad para la búsqueda
             $listObjectIds = array_map(function($id) {
                 try { return new ObjectId($id); } catch(\Exception $e) { return $id; }
             }, $listIdsStr);
 
-            // Buscamos DE UN SOLO GOLPE a cuáles de estos 10 usuarios sigues tú
             $myFollows = Follow::whereIn('follower_id', [$me->_id, $myIdStr])
                 ->whereIn('followed_id', array_merge($listIdsStr, $listObjectIds))
                 ->get();
 
-            // Armamos un diccionario PHP: ['ID_DEL_USUARIO' => 'accepted']
             $statusMap = [];
             foreach($myFollows as $f) {
                 $statusMap[(string)$f->followed_id] = $f->status ?? 'accepted';
             }
 
-            // Repartimos el estado exacto sin preguntarle a la BD de nuevo
             $followers->transform(function ($u) use ($myIdStr, $statusMap) {
                 $idStr = (string)($u->id ?? $u->_id);
                 if ($idStr === $myIdStr) {
                     $u->follow_status = 'self';
                 } else {
-                    // Buscamos en el diccionario. Si no está, es 'none' (Seguir)
                     $u->follow_status = $statusMap[$idStr] ?? 'none';
                 }
                 return $u;
@@ -255,7 +241,6 @@ class FollowController extends Controller
         $limit = 10;
         $me = $request->user();
 
-        // 1. Buscamos a los seguidos
         $followingIds = Follow::whereIn('follower_id', [$user->_id, (string)$user->_id])
             ->where(function($query) {
                 $query->where('status', 'accepted')->orWhereNull('status');
@@ -275,7 +260,6 @@ class FollowController extends Controller
             ->take($limit)
             ->get(['_id', 'username', 'display_name', 'profile_picture']);
 
-        // 👉 LA MISMA MAGIA ABSOLUTA AQUÍ
         if ($me) {
             $myIdStr = (string)($me->id ?? $me->_id);
 

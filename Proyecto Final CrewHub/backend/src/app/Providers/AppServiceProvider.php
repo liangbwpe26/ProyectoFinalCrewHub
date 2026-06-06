@@ -16,7 +16,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Le decimos a Sanctum que use el modelo que acabamos de crear
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
     }
 }

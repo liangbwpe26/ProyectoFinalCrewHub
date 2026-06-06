@@ -16,7 +16,7 @@ use App\Models\SavedPost;
 class PostInteractionController extends Controller
 {
     /**
-     * 1. REACCIÓN A LA PUBLICACIÓN (Carita Feliz)
+     * 1. REACCIÓN A LA PUBLICACIÓN
      */
     public function toggleReaction(Request $request, $postId)
     {
@@ -28,7 +28,6 @@ class PostInteractionController extends Controller
 
         if ($existingReaction) {
             $existingReaction->delete();
-            // Borrar notificación si quita el like
             Notification::where('sender_id', $me->_id)->where('post_id', $postId)->where('type', 'post_reaction')->delete();
             return response()->json(['success' => true, 'reacted' => false]);
         } else {
@@ -37,7 +36,6 @@ class PostInteractionController extends Controller
                 'post_id' => $postId
             ]);
 
-            // Disparar Notificación de Like en Post
             $post = Post::find($postId);
             if ($post && $post->user_id !== $me->_id) {
                 $notif = Notification::create([
@@ -61,26 +59,22 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 2. OBTENER COMENTARIOS (Con Paginación de 5 en 5)
+     * 2. OBTENER COMENTARIOS 
      */
     public function getComments(Request $request, $postId)
     {
         $me = $request->user();
 
-        // Obtenemos desde dónde empezar (0 por defecto) y el límite (5)
         $offset = (int) $request->query('offset', 0);
         $limit = 5;
 
-        // Preparamos la consulta base
         $query = Comment::with(['user'])
             ->where('post_id', $postId)
             ->whereNull('parent_id')
             ->orderBy('created_at', 'desc');
 
-        // Contamos cuántos comentarios principales hay en total
         $totalCount = $query->count();
 
-        // Traemos solo los 5 que tocan
         $comments = $query->skip($offset)->take($limit)->get();
 
         $comments->transform(function ($comment) use ($me) {
@@ -107,7 +101,6 @@ class PostInteractionController extends Controller
         return response()->json([
             'success' => true,
             'comments' => $comments,
-            // Enviamos un booleano al frontend para saber si aún quedan más por cargar
             'hasMore' => ($offset + $limit) < $totalCount
         ]);
     }
@@ -152,7 +145,6 @@ class PostInteractionController extends Controller
         $content = $request->input('content');
         $parentId = $request->input('parent_id');
 
-        // 1. Crear el comentario
         $comment = Comment::create([
             'user_id' => $me->_id,
             'post_id' => $postId,
@@ -162,7 +154,6 @@ class PostInteractionController extends Controller
 
         $parentUserId = null;
 
-        // 2. NOTIFICACIÓN POR RESPUESTA
         if ($parentId) {
             $parentComment = Comment::find($parentId);
             if ($parentComment && $parentComment->user_id !== $me->_id) {
@@ -177,7 +168,6 @@ class PostInteractionController extends Controller
                     'is_read' => false
                 ]);
 
-                // Disparar WebSocket para la respuesta
                 try {
                     broadcast(new NotificationSent($notif));
                 } catch (\Exception $e) {
@@ -194,7 +184,6 @@ class PostInteractionController extends Controller
             $userToTag = User::where('username', $username)->first();
 
             if ($userToTag && $userToTag->_id !== $me->_id) {
-                // No repetir si ya notificamos por respuesta
                 if ($parentUserId && (string) $userToTag->_id === (string) $parentUserId) {
                     continue;
                 }
@@ -226,7 +215,7 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 4. REACCIONAR A UN COMENTARIO (Carita Feliz en Comentarios)
+     * 4. REACCIONAR A UN COMENTARIOS
      */
     public function toggleCommentReaction(Request $request, $commentId)
     {
@@ -236,10 +225,8 @@ class PostInteractionController extends Controller
             ->first();
 
         if ($existing) {
-            // Si ya reaccionó, la quitamos
             $existing->delete();
 
-            // BONUS: Borramos la notificación para no confundir al usuario
             Notification::where('sender_id', $me->_id)
                 ->where('comment_id', $commentId)
                 ->where('type', 'comment_reaction')
@@ -248,16 +235,13 @@ class PostInteractionController extends Controller
             return response()->json(['success' => true, 'reacted' => false]);
         }
 
-        // Si no ha reaccionado, la creamos
         CommentReaction::create([
             'user_id' => $me->_id,
             'comment_id' => $commentId
         ]);
 
-        // --- MAGIA NUEVA: CREAR NOTIFICACIÓN ---
         $comment = Comment::find($commentId);
 
-        // Solo notificamos si el comentario existe y NO es de nosotros mismos
         if ($comment && $comment->user_id !== $me->_id) {
             $notif = Notification::create([
                 'recipient_id' => $comment->user_id,
@@ -292,18 +276,15 @@ class PostInteractionController extends Controller
             return response()->json(['success' => true, 'users' => []]);
         }
 
-        // Obtener IDs de amigos mutuos
         $followingIds = Follow::where('follower_id', $me->_id)->where('status', 'accepted')->pluck('followed_id')->toArray();
         $followerIds = Follow::where('followed_id', $me->_id)->where('status', 'accepted')->pluck('follower_id')->toArray();
         $mutualIds = array_intersect($followingIds, $followerIds);
 
-        // Buscar usuarios por username
         $users = User::where('username', 'like', "%{$query}%")
             ->where('_id', '!=', $me->_id)
             ->take(10)
             ->get(['_id', 'username', 'profile_picture', 'display_name']);
 
-        // Ordenar: Amigos mutuos arriba
         $sortedUsers = $users->sortByDesc(function ($user) use ($mutualIds) {
             return in_array($user->_id, $mutualIds) ? 1 : 0;
         })->values();

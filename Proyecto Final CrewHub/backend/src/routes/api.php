@@ -16,6 +16,7 @@ use App\Http\Controllers\DropController;
 use App\Http\Controllers\ReportController;
 use App\Http\Middleware\ProfanityFilter;
 use App\Http\Controllers\MonetizationController;
+use App\Http\Controllers\SettingsController;
 
 // Rutas Públicas
 Route::middleware(['api'])->group(function () {
@@ -36,9 +37,9 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::get('/user', [AuthController::class, 'show']);
     Route::put('/user/interests', [UserController::class, 'updateInterests']);
     Route::get('/interests', [UserController::class, 'getAvailableInterests']);
-    Route::put('/settings/account', [App\Http\Controllers\SettingsController::class, 'updateAccount']);
-    Route::put('/settings/notifications', [App\Http\Controllers\SettingsController::class, 'updateNotifications']);
-    Route::post('/support/tickets', [App\Http\Controllers\SettingsController::class, 'storeTicket']);
+    Route::put('/settings/account', [SettingsController::class, 'updateAccount']);
+    Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications']);
+    Route::post('/support/tickets', [SettingsController::class, 'storeTicket']);
 
     // --- SISTEMA DE USUARIOS Y PERFILES ---
     Route::get('/users/search', [UserController::class, 'search']);
@@ -57,9 +58,7 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::post('/monetization/downgrade', [MonetizationController::class, 'downgradeBusiness']);
     Route::post('/users/{username}/block', [UserController::class, 'toggleBlock']);
     
-    
     Route::get('/users/{username}', [UserController::class, 'show']);
-
 
     // --- SISTEMA DE SEGUIDORES ---
     Route::post('/follow/{id}', [FollowController::class, 'follow']);
@@ -96,13 +95,14 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::post('/posts/{postId}/save', [PostInteractionController::class, 'toggleSave']);
     Route::get('/saved-posts', [PostInteractionController::class, 'getSavedPosts']);
 
-    // --- INTERACCIONES (REACCIONES Y COMENTARIOS) ---
+    // --- INTERACCIONES (REACCIONES Y COMENTARIOS DE POSTS) ---
     Route::post('/posts/{postId}/react', [PostInteractionController::class, 'toggleReaction']);
     Route::post('/posts/{postId}/comments', [PostInteractionController::class, 'addComment']);
     Route::get('/posts/{postId}/comments', [PostInteractionController::class, 'getComments']);
-    Route::post('/comments/{commentId}/react', [PostInteractionController::class, 'toggleCommentReaction']);
     Route::get('/comments/{commentId}/replies', [PostInteractionController::class, 'getReplies']);
     Route::get('/mentions/search', [PostInteractionController::class, 'searchMentions']);
+    Route::delete('/comments/{id}', [PostController::class, 'deleteComment']);
+    Route::post('/comments/{id}/react', [PostController::class, 'toggleCommentLike']);
 
     // --- DROPS ---
     Route::get('/drops/feed', [DropController::class, 'feed']);
@@ -117,6 +117,7 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::get('/drops/{id}/comments', [DropController::class, 'getComments']);
     Route::post('/drops/{id}/comments', [DropController::class, 'addComment']);
     Route::delete('/drops/comments/{id}', [DropController::class, 'deleteComment']);
+    Route::post('/drops/comments/{id}/react', [DropController::class, 'toggleCommentLike']);
 
     // --- HISTORIAS ---
     Route::get('/stories/feed', [StoryController::class, 'getFeedStories']);
@@ -149,9 +150,9 @@ Route::middleware(['auth:sanctum', ProfanityFilter::class])->group(function () {
     Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/admin/reports', [ReportController::class, 'index']);
     Route::post('/admin/reports/{id}/resolve', [ReportController::class, 'resolve']);
-    Route::get('/admin/tickets', [App\Http\Controllers\ReportController::class, 'getTickets']);
-    Route::post('/admin/tickets/{id}/resolve', [App\Http\Controllers\ReportController::class, 'resolveTicket']);
-    Route::get('/admin/users/sanctioned', [App\Http\Controllers\ReportController::class, 'getSanctionedUsers']);
-    Route::post('/admin/users/{id}/toggle-ban', [App\Http\Controllers\ReportController::class, 'toggleBan']);
-    Route::post('/admin/users/{id}/reset-strikes', [App\Http\Controllers\ReportController::class, 'resetStrikes']);
+    Route::get('/admin/tickets', [ReportController::class, 'getTickets']);
+    Route::post('/admin/tickets/{id}/resolve', [ReportController::class, 'resolveTicket']);
+    Route::get('/admin/users/sanctioned', [ReportController::class, 'getSanctionedUsers']);
+    Route::post('/admin/users/{id}/toggle-ban', [ReportController::class, 'toggleBan']);
+    Route::post('/admin/users/{id}/reset-strikes', [ReportController::class, 'resetStrikes']);
 });

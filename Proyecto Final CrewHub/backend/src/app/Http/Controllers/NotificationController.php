@@ -7,19 +7,15 @@ use App\Models\Notification;
 
 class NotificationController extends Controller
 {
-    // Obtener todas las notificaciones separadas por tipo
     public function index(Request $request)
     {
         $me = $request->user();
 
-        // Cargamos todas las notificaciones del usuario con sus relaciones
-        // 'sender' para saber quién lo hizo, 'post' para mostrar la miniatura si aplica
         $allNotifications = Notification::with(['sender', 'post'])
             ->where('recipient_id', $me->_id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Clasificamos en dos colecciones
         $main = $allNotifications->filter(function($n) {
             return $n->type !== 'follow_request';
         })->values();
@@ -36,7 +32,6 @@ class NotificationController extends Controller
         ]);
     }
 
-    // Marcar todas como leídas (se activa al abrir la campana)
     public function markAsRead(Request $request)
     {
         Notification::where('recipient_id', $request->user()->_id)

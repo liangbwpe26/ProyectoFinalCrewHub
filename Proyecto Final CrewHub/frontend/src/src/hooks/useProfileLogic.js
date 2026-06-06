@@ -36,7 +36,6 @@ export const useProfileLogic = (username, isMyProfile) => {
 
     const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
 
-
     useEffect(() => {
         if (activeTab === 'saved' && savedPosts.length === 0 && savedDrops.length === 0 && isMyProfile) {
             const fetchSaved = async () => {
@@ -148,7 +147,8 @@ export const useProfileLogic = (username, isMyProfile) => {
         setFollowPage(1);
         setFollowHasMore(true);
         setIsFollowModalOpen(true);
-        fetchFollowData(type, 1);
+        
+        fetchFollowData(type, 1, true);
     };
 
     const closeFollowModal = () => {
@@ -156,15 +156,20 @@ export const useProfileLogic = (username, isMyProfile) => {
         setFollowUsers([]);
     };
 
-    const fetchFollowData = async (type, page) => {
-        if (isFollowLoading || !followHasMore) return;
+    const fetchFollowData = async (type, page, forceRefresh = false) => {
+        if (isFollowLoading || (!forceRefresh && !followHasMore)) return;
+        
         setIsFollowLoading(true);
         try {
-            const endpoint = type === 'followers' ? `/users/${username}/followers?page=${page}` : `/users/${username}/following?page=${page}`;
+            const offset = (page - 1) * 10;
+            const endpoint = type === 'followers' 
+                ? `/users/${username}/followers?offset=${offset}` 
+                : `/users/${username}/following?offset=${offset}`;
+                
             const data = await fetchAPI(endpoint);
             if (data.success) {
-                setFollowUsers(prev => page === 1 ? data.users : [...prev, ...data.users]);
-                setFollowHasMore(data.has_more);
+                setFollowUsers(prev => forceRefresh ? data.users : [...prev, ...data.users]);
+                setFollowHasMore(data.hasMore); 
                 setFollowPage(page);
             }
         } catch (error) { } finally {

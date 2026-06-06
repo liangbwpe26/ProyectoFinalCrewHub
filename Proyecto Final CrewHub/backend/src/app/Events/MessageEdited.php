@@ -22,13 +22,11 @@ class MessageEdited implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // Avisamos a la sala de chat Y a la bandeja del que editó
         $channels = [
             new PrivateChannel('chat.' . $this->message['conversation_id']),
             new PrivateChannel('App.Models.User.' . $this->message['sender_id'])
         ];
 
-        // Si tenemos la ID de la otra persona, le avisamos a su bandeja
         if ($this->receiverId) {
             $channels[] = new PrivateChannel('App.Models.User.' . $this->receiverId);
         }

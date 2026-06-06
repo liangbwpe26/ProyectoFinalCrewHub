@@ -36,6 +36,15 @@ const DropsFeed = () => {
     const myIdStr = activeUser?._id || activeUser?.id;
 
     const videoRefs = useRef({});
+
+    const HappyFace = ({ filled, size = 24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "#ffdd00" : "none"} stroke={filled ? "#000" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+        </svg>
+    );
     
     const togglePlay = (dropId) => {
         const video = videoRefs.current[dropId];
@@ -85,6 +94,26 @@ const DropsFeed = () => {
         setCommentToDelete(null);
     };
 
+    const handleCommentReact = async (commentId) => {
+        setCommentsList(prev => prev.map(c => {
+            if ((c._id || c.id) === commentId) {
+                const wasReacted = c.has_reacted;
+                return { 
+                    ...c, 
+                    has_reacted: !wasReacted, 
+                    reactions_count: wasReacted ? Math.max(0, (c.reactions_count || 0) - 1) : (c.reactions_count || 0) + 1 
+                };
+            }
+            return c;
+        }));
+
+        try {
+            await fetchAPI(`/drops/comments/${commentId}/react`, { method: 'POST' });
+        } catch (error) {
+            console.error("Error al reaccionar al comentario", error);
+        }
+    };
+
     const renderCommentContent = (content) => {
         if (!content) return null;
         return content.split(/(@[a-zA-Z0-9_]+)/g).map((part, index) => {
@@ -111,11 +140,9 @@ const DropsFeed = () => {
 
     return (
         <Fragment>
-            {/* FONDO COMPLETAMENTE NEGRO PARA MAXIMIZAR EL CONTRASTE DEL VIDEO */}
             <div className="bg-[#000] h-screen overflow-hidden flex flex-col select-none relative">
                 <Navbar />
                 
-                {/* BOTÓN MUTE (CRISTAL) */}
                 <button 
                     onClick={() => setIsGlobalMuted(!isGlobalMuted)}
                     className="absolute top-20 right-6 z-50 bg-black/40 backdrop-blur-md border border-white/10 text-white w-10 h-10 rounded-full flex justify-center items-center cursor-pointer hover:bg-black/70 hover:scale-105 transition-all shadow-lg"
@@ -127,7 +154,6 @@ const DropsFeed = () => {
                     )}
                 </button>
 
-                {/* BOTÓN SUBIR (NEÓN) */}
                 <button 
                     onClick={() => setIsUploadOpen(true)}
                     className="absolute bottom-6 right-6 z-50 bg-gradient-to-r from-[#ff4d4d] to-[#d43838] text-white w-14 h-14 rounded-full flex justify-center items-center shadow-[0_0_20px_rgba(255,77,77,0.5)] cursor-pointer hover:scale-110 transition-transform border-none"
@@ -181,7 +207,6 @@ const DropsFeed = () => {
                                             </div>
 
                                             <div className="flex flex-col items-center gap-4 relative z-20 pointer-events-auto">
-                                                {/* 🔥 BOTONES DE CRISTAL ESMERILADO */}
                                                 <div className="flex flex-col items-center group">
                                                     <button onClick={() => toggleAction(dropId, 'like')} className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 cursor-pointer hover:bg-black/70 hover:scale-105 transition-all active:scale-95 shadow-lg">
                                                         <svg width="24" height="24" viewBox="0 0 24 24" fill={drop.has_liked ? "#ff4d4d" : "none"} stroke={drop.has_liked ? "#ff4d4d" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
@@ -244,7 +269,6 @@ const DropsFeed = () => {
                                             </div>
                                         </div>
                                         
-                                        {/* PANEL DE COMENTARIOS (CRISTAL OSCURO) */}
                                         {activeCommentsDropId === dropId && (
                                             <div className="absolute bottom-0 w-full h-[70%] bg-[#121212]/95 backdrop-blur-3xl rounded-t-3xl z-50 flex flex-col shadow-[0_-15px_50px_rgba(0,0,0,0.8)] border-t border-[#333]">
                                                 <div className="flex justify-between items-center p-4 border-b border-[#262626]">
@@ -271,6 +295,12 @@ const DropsFeed = () => {
                                                                     <div className="flex-1 bg-[#1a1a1a]/50 p-3 rounded-2xl rounded-tl-none border border-[#262626]">
                                                                         <Link to={`/${c.user?.username}`} className="text-gray-400 text-xs font-bold block mb-1.5 no-underline hover:text-white transition">@{c.user?.username}</Link>
                                                                         <p className="text-white text-[13px] m-0 leading-relaxed">{renderCommentContent(c.content)}</p>
+                                                                        
+                                                                        <div className="flex items-center gap-4 mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleCommentReact(commentId); }} className={`bg-transparent border-none cursor-pointer flex items-center gap-1.5 p-0 transition-colors ${c.has_reacted ? 'text-[#ffdd00]' : 'text-inherit hover:text-gray-300'}`}>
+                                                                                <HappyFace filled={c.has_reacted} size={12} /> {c.reactions_count > 0 && <span>{c.reactions_count}</span>}
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
 
                                                                     {canDelete && (

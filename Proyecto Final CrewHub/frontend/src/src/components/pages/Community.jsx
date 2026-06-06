@@ -121,6 +121,7 @@ const Community = () => {
     const currentUserId = activeUser?.id || activeUser?._id;
     const isMember = community.members?.includes(currentUserId);
     const isAdmin = community.admins?.includes(currentUserId);
+    const isCreator = community.creator_id === currentUserId;
 
     const handlePostCreated = (newPost, status) => {
         if (status === 'approved') {
@@ -137,11 +138,11 @@ const Community = () => {
     return (
         <Layout>
             <div className="w-full max-w-[600px] mx-auto flex flex-col pb-12 px-2 md:px-0 relative z-10">
-                
+
                 {selectedStoryFile && (
                     <StoryManager
                         file={selectedStoryFile}
-                        community={community} 
+                        community={community}
                         onClose={(success) => {
                             setSelectedStoryFile(null);
                             if (success) {
@@ -153,7 +154,7 @@ const Community = () => {
 
                 <div className="mb-4 mt-2">
                     <Link to="/communities" className="text-gray-500 hover:text-white no-underline text-sm font-bold transition-colors flex items-center gap-2">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>
                         Volver a Comunidades
                     </Link>
                 </div>
@@ -181,15 +182,22 @@ const Community = () => {
                         </div>
 
                         <div className="flex justify-end pt-3 md:pt-4">
-                            <button onClick={toggleMembership} className={`px-6 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md ${isMember ? 'bg-[#1a1a1a]/80 text-white border border-[#333] hover:bg-[#262626]' : 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white border-none hover:scale-105 shadow-[0_0_15px_rgba(0,149,246,0.3)]'}`}>
-                                {isMember ? 'Eres miembro' : 'Unirse al grupo'}
-                            </button>
+                            {isCreator ? (
+                                <span className="px-6 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm bg-[#1a1a1a]/80 text-[#00ba7c] border border-[#00ba7c]/30 shadow-md flex items-center gap-2">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                    Creador
+                                </span>
+                            ) : (
+                                <button onClick={toggleMembership} className={`px-6 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md ${isMember ? 'bg-[#1a1a1a]/80 text-white border border-[#333] hover:bg-[#ff4d4d]/10 hover:text-[#ff4d4d] hover:border-[#ff4d4d]/30' : 'bg-gradient-to-r from-[#0095f6] to-[#0077c5] text-white border-none hover:scale-105 shadow-[0_0_15px_rgba(0,149,246,0.3)]'}`}>
+                                    {isMember ? 'Salir del grupo' : 'Unirse al grupo'}
+                                </button>
+                            )}
                         </div>
 
                         <div className="mt-4 md:mt-6">
                             <h1 className="text-2xl md:text-4xl font-black text-white m-0 tracking-wide">{community.name}</h1>
                             <p className="text-gray-400 text-sm md:text-base mt-2 mb-4 leading-relaxed">{community.description}</p>
-                            
+
                             <div className="flex gap-3 items-center">
                                 <div className="text-xs font-bold tracking-widest text-[#00ba7c] bg-[#00ba7c]/10 border border-[#00ba7c]/20 px-3 py-1 rounded-md uppercase">
                                     {community.members?.length || 0} Miembros
@@ -211,20 +219,7 @@ const Community = () => {
                     </div>
                 )}
 
-                {/* ZONA DE CONTENIDO */}
-                {!isMember ? (
-                    <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-10 text-center shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-gray-500 shadow-inner">
-                                <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
-                            </div>
-                            <div>
-                                <h3 className="text-white text-xl font-black m-0 mb-1">Grupo privado</h3>
-                                <p className="text-gray-500 text-sm m-0">Únete a la comunidad para ver y compartir publicaciones.</p>
-                            </div>
-                        </div>
-                    </div>
-                ) : activeTab === 'feed' ? (
+                {activeTab === 'feed' ? (
                     <div className="flex flex-col gap-6">
                         {community.rules && (
                             <div className="bg-[#1a1a1a]/80 backdrop-blur-md border border-[#333] rounded-2xl p-5 shadow-lg">
@@ -236,9 +231,11 @@ const Community = () => {
                             </div>
                         )}
 
-                        <div className="mb-2">
-                            <CreatePost onPostCreated={handlePostCreated} communityId={community._id || community.id} communityTags={community.tags || []} />
-                        </div>
+                        {isMember && (
+                            <div className="mb-2">
+                                <CreatePost onPostCreated={handlePostCreated} communityId={community._id || community.id} communityTags={community.tags || []} />
+                            </div>
+                        )}
 
                         {community.tags && community.tags.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
@@ -267,9 +264,9 @@ const Community = () => {
                             <h3 className="text-white text-lg font-black m-0 tracking-wide">Miembros ({membersList.length})</h3>
                             <div className="relative">
                                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                <input 
-                                    type="text" 
-                                    placeholder="Buscar miembro..." 
+                                <input
+                                    type="text"
+                                    placeholder="Buscar miembro..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full md:w-[200px] pl-9 pr-4 py-2.5 rounded-full border border-[#333] bg-[#0a0a0a]/50 text-white outline-none focus:border-[#00ba7c] transition-colors text-sm shadow-inner placeholder:text-gray-600"
@@ -283,31 +280,67 @@ const Community = () => {
                             <div className="text-center py-8 text-gray-500">No se encontraron miembros.</div>
                         ) : (
                             <div className="flex flex-col gap-2">
-                                {membersList.map(member => (
-                                    <div key={member._id || member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#1a1a1a]/80 transition-colors border border-transparent hover:border-[#333] group">
-                                        <Link to={`/${member.username}`} className="flex items-center gap-3 no-underline text-white flex-1 min-w-0">
-                                            <img src={getAvatar(member)} alt={member.username} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shrink-0 border border-[#333] shadow-sm" />
-                                            <div className="flex flex-col min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <strong className="text-sm truncate group-hover:underline tracking-wide">{member.display_name || member.username}</strong>
-                                                    {member.is_admin && <span className="bg-[#00ba7c]/10 text-[#00ba7c] text-[9px] px-2 py-0.5 rounded-md uppercase font-black tracking-widest border border-[#00ba7c]/20">Admin</span>}
-                                                </div>
-                                                <span className="text-xs text-gray-500 truncate">@{member.username}</span>
-                                            </div>
-                                        </Link>
+                                {membersList.map(member => {
+                                    // Evaluamos si el miembro es admin específicamente de esta comunidad o si es el creador
+                                    const memberId = member._id || member.id;
+                                    const isCommunityAdmin = community.admins?.includes(memberId) || community.creator_id === memberId;
 
-                                        {isAdmin && (member._id || member.id) !== currentUserId && (
-                                            <div className="flex gap-2 shrink-0 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                {!member.is_admin && (
-                                                    <button onClick={() => promoteMember(member._id || member.id)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#00ba7c]/10 text-[#00ba7c] border border-[#00ba7c]/30 hover:bg-[#00ba7c] hover:text-white cursor-pointer transition-all shadow-sm">
-                                                        Promover
+                                    return (
+                                        <div key={memberId} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#1a1a1a]/80 transition-colors border border-transparent hover:border-[#333] group">
+                                            <Link to={`/${member.username}`} className="flex items-center gap-3 no-underline text-white flex-1 min-w-0">
+                                                <img src={getAvatar(member)} alt={member.username} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shrink-0 border border-[#333] shadow-sm" />
+                                                <div className="flex flex-col min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <strong className="text-sm truncate group-hover:underline tracking-wide">{member.display_name || member.username}</strong>
+                                                        {isCommunityAdmin && <span className="bg-[#00ba7c]/10 text-[#00ba7c] text-[9px] px-2 py-0.5 rounded-md uppercase font-black tracking-widest border border-[#00ba7c]/20">Admin</span>}
+                                                    </div>
+                                                    <span className="text-xs text-gray-500 truncate">@{member.username}</span>
+                                                </div>
+                                            </Link>
+
+                                            {isAdmin && memberId !== currentUserId && (
+                                                <div className="flex gap-2 shrink-0 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                    {!isCommunityAdmin && (
+                                                        <button onClick={() => promoteMember(memberId)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#00ba7c]/10 text-[#00ba7c] border border-[#00ba7c]/30 hover:bg-[#00ba7c] hover:text-white cursor-pointer transition-all shadow-sm">
+                                                            Promover
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => kickMember(memberId)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/30 hover:bg-[#ff4d4d] hover:text-white cursor-pointer transition-all shadow-sm">
+                                                        Expulsar
                                                     </button>
-                                                )}
-                                                <button onClick={() => kickMember(member._id || member.id)} className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/30 hover:bg-[#ff4d4d] hover:text-white cursor-pointer transition-all shadow-sm">
-                                                    Expulsar
-                                                </button>
-                                            </div>
-                                        )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                ) : activeTab === 'pending' && isAdmin ? (
+                    <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#262626] rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <h3 className="text-white text-lg font-black m-0 mb-6 tracking-wide border-b border-[#333] pb-4">Solicitudes Pendientes ({pendingPosts.length})</h3>
+                        {pendingPosts.length === 0 ? (
+                            <div className="text-center py-10 text-gray-500 font-bold">No hay publicaciones pendientes de revisión.</div>
+                        ) : (
+                            <div className="flex flex-col gap-6">
+                                {pendingPosts.map(post => (
+                                    <div key={post._id || post.id} className="border border-[#333] rounded-2xl p-4 bg-[#1a1a1a]/50">
+                                        <PostCard initialPost={post} getAvatar={getAvatar} />
+                                        
+                                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-[#333]">
+                                            <button 
+                                                onClick={() => moderatePost(post._id || post.id, 'reject')} 
+                                                className="px-5 py-2 rounded-full font-bold text-xs bg-transparent border border-[#ff4d4d]/50 text-[#ff4d4d] hover:bg-[#ff4d4d] hover:text-white transition-colors cursor-pointer"
+                                            >
+                                                Rechazar
+                                            </button>
+                                            <button 
+                                                onClick={() => moderatePost(post._id || post.id, 'approve')} 
+                                                className="px-5 py-2 rounded-full font-bold text-xs bg-[#00ba7c] border-none text-white hover:bg-[#009b67] transition-colors cursor-pointer shadow-[0_0_10px_rgba(0,186,124,0.3)]"
+                                            >
+                                                Aprobar Publicación
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

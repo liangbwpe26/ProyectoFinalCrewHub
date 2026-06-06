@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// Asegúrate de usar el modelo correcto según tu base de datos (MongoDB o MySQL)
 use MongoDB\Laravel\Eloquent\Model; 
 
 class Repost extends Model

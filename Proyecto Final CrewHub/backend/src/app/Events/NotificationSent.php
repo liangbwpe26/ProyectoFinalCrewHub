@@ -32,14 +32,13 @@ class NotificationSent implements ShouldBroadcastNow
     {
         $this->notification->load(['sender', 'post']);
         
-        // Contamos exactamente cuántas no leídas tiene el usuario en la BD en este milisegundo
         $unreadCount = Notification::where('recipient_id', $this->notification->recipient_id)
                                    ->where('is_read', false)
                                    ->count();
 
         return [
             'notification' => $this->notification->toArray(),
-            'unread_count' => $unreadCount // <--- Mandamos el número absoluto
+            'unread_count' => $unreadCount
         ];
     }
 
