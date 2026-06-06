@@ -6,6 +6,7 @@ import SingleDropModal from '../SingleDropModal.jsx';
 import PostCard from '../PostCard.jsx'; 
 
 const Navbar = () => {
+    // Contextos y estados
     const { activeUser, logout } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
@@ -136,7 +137,6 @@ const Navbar = () => {
                                                         <div
                                                             key={getSafeId(notif._id) || getSafeId(notif.id)}
                                                             onClick={() => {
-                                                                // 🔥 INYECTAMOS postId y dropId SEPARADOS
                                                                 openNotificationPost(postId, dropId, notif.comment_id, () => setIsNotiOpen(false));
                                                             }}
                                                             className="flex items-center gap-3 p-3 hover:bg-[#1a1a1a] rounded-xl transition cursor-pointer mb-1 border border-transparent hover:border-[#333]"
