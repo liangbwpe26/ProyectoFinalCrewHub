@@ -15,7 +15,7 @@ export const ERRORS = {
 
 // Función helper para intentar extraer el error del backend o dar uno por defecto
 export const getErrorMessage = (errorData, defaultKey = 'DEFAULT') => {
-    // Si el backend nos mandó un mensaje de error específico, lo usamos (opcional)
+    // Si el backend nos mandó un mensaje de error específico
     if (errorData && errorData.message) return errorData.message;
     
     // Si no, buscamos en nuestro diccionario

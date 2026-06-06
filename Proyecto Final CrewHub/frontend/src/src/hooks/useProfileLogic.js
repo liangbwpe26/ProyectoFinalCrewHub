@@ -4,6 +4,8 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
 
 export const useProfileLogic = (username, isMyProfile) => {
+    // Estados para manejar los datos del perfil, posts, estado de carga, errores, modales de opciones y seguimiento, 
+    // paginación de seguidores/following, pestañas activas para mostrar posts guardados y reposts, y modales para reportar y ver métricas
     const { activeUser } = useContext(AuthContext);
     const { showToast } = useToast();
 
@@ -36,6 +38,8 @@ export const useProfileLogic = (username, isMyProfile) => {
 
     const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
 
+    // Efecto para cargar los posts guardados y reposts del usuario cuando se cambia la pestaña activa, asegurando que los datos 
+    // se carguen solo cuando sea necesario y evitando recargas innecesarias
     useEffect(() => {
         if (activeTab === 'saved' && savedPosts.length === 0 && savedDrops.length === 0 && isMyProfile) {
             const fetchSaved = async () => {
@@ -55,6 +59,8 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     }, [activeTab, savedPosts.length, savedDrops.length, isMyProfile]);
 
+    // Efecto para cargar los reposts del usuario cuando se cambia a la pestaña de reposts, asegurando que los datos se carguen solo cuando sea necesario 
+    // y evitando recargas innecesarias
     useEffect(() => {
         if (activeTab === 'reposts' && repostedPosts.length === 0) {
             const fetchReposts = async () => {
@@ -79,6 +85,7 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     }, [activeTab, repostedPosts.length, username]);
 
+    // Función para cargar los datos del perfil desde la API, incluyendo información del usuario y sus posts, manejando el estado de carga y errores según corresponda
     const loadProfileData = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -97,12 +104,16 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     }, [username]);
 
+    // Efecto para cargar los datos del perfil al montar el componente o cuando cambie el nombre de usuario, asegurando que los datos se actualicen 
+    // correctamente y manejando el estado de carga y errores
     useEffect(() => {
         if (username) {
             loadProfileData();
         }
     }, [username, loadProfileData]);
 
+    // Función para manejar el toggle de seguir/dejar de seguir al usuario del perfil, enviando la solicitud a la API y 
+    // actualizando el estado local del perfil con el nuevo estado de seguimiento
     const toggleFollow = async () => {
         if (!profile || profile.blocked_by_me || profile.blocked_by_them) return;
 
@@ -122,6 +133,8 @@ export const useProfileLogic = (username, isMyProfile) => {
         } catch (error) { }
     };
 
+    // Función para manejar el bloqueo/desbloqueo del usuario del perfil, enviando la solicitud a la API y actualizando el 
+    // estado local del perfil para reflejar el nuevo estado de bloqueo
     const handleBlockUser = async () => {
         setIsOptionsOpen(false);
         try {
@@ -135,11 +148,15 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     };
 
+    // Función para agregar un nuevo post al inicio de la lista de posts del perfil, actualizando el estado local de posts 
+    // con el nuevo post recibido y cerrando el modal de creación de post
     const addNewPostToProfile = (newPost) => {
         setPosts(prev => [newPost, ...prev]);
         setIsModalOpen(false);
     };
 
+    // Función para abrir el modal de seguidores o siguiendo, configurando el tipo de modal, reseteando los datos de usuarios y paginación, 
+    // y cargando los datos correspondientes desde la API
     const openFollowModal = (type) => {
         if (profile.blocked_by_me || profile.blocked_by_them) return;
         setFollowModalType(type);
@@ -151,11 +168,14 @@ export const useProfileLogic = (username, isMyProfile) => {
         fetchFollowData(type, 1, true);
     };
 
+    // Función para cerrar el modal de seguidores o siguiendo, reseteando los datos de usuarios y cerrando el modal
     const closeFollowModal = () => {
         setIsFollowModalOpen(false);
         setFollowUsers([]);
     };
 
+    // Función para manejar la actualización de la categoría de negocio, enviando la solicitud a la API con la nueva categoría y 
+    // actualizando el estado del usuario activo y mostrando mensajes de toast según corresponda
     const fetchFollowData = async (type, page, forceRefresh = false) => {
         if (isFollowLoading || (!forceRefresh && !followHasMore)) return;
         
@@ -177,6 +197,8 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     };
 
+    // Función para manejar el evento de scroll en el modal de seguidores o siguiendo, verificando si se ha llegado al final de la lista y si hay más usuarios para cargar,
+    // en cuyo caso se llama a la función de carga para obtener la siguiente página de datos
     const handleFollowModalScroll = (e) => {
         const { scrollTop, clientHeight, scrollHeight } = e.target;
         if (scrollHeight - scrollTop <= clientHeight + 50 && !isFollowLoading && followHasMore) {
@@ -184,6 +206,8 @@ export const useProfileLogic = (username, isMyProfile) => {
         }
     };
 
+    // Función para marcar todas las notificaciones de seguimiento como leídas, enviando la solicitud a la API y actualizando 
+    // el estado local de solicitudes de seguimiento y conteo de notificaciones no leídas
     const toggleModalUserFollow = async (userId, currentStatus) => {
         try {
             const data = await fetchAPI(`/follow/${userId}`, { method: 'POST' });

@@ -4,6 +4,7 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
 export const useOnboarding = () => {
+    // Contexto para acceder al usuario activo y función para actualizarlo, así como la función de navegación de React Router
     const { activeUser, setActiveUser } = useContext(AuthContext);
     const navigate = useNavigate();
     
@@ -12,6 +13,7 @@ export const useOnboarding = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    // Efecto para cargar los intereses disponibles desde la API al montar el componente, actualizando el estado local con los datos obtenidos
     useEffect(() => {
         const fetchInterests = async () => {
             try {
@@ -29,6 +31,7 @@ export const useOnboarding = () => {
         fetchInterests();
     }, []);
 
+    // Función para manejar la selección o deselección de intereses por parte del usuario, actualizando el estado local de intereses seleccionados
     const toggleInterest = (slug) => {
         if (selectedInterests.includes(slug)) {
             setSelectedInterests(selectedInterests.filter(item => item !== slug));
@@ -37,6 +40,8 @@ export const useOnboarding = () => {
         }
     };
 
+    // Función para manejar el guardado de los intereses seleccionados, enviando la solicitud a la API para actualizar los intereses del usuario, 
+    // y actualizando el usuario activo en el contexto con los datos obtenidos, además de navegar a la página principal
     const handleSaveInterests = async () => {
         if (selectedInterests.length < 3) return; 
         

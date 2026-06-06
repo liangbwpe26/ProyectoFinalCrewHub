@@ -1,8 +1,11 @@
+// Importaciones necesarias para el hook personalizado de una comunidad específica
 import { useState, useEffect, useContext } from 'react';
 import { fetchAPI } from '../services/api.js';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 
+// Hook personalizado para manejar la lógica de una comunidad específica, incluyendo carga de datos, manejo de membresía, moderación de posts, etc.
 export const useCommunity = (slug) => {
+    // Obtener el usuario activo desde el contexto de autenticación
     const { activeUser } = useContext(AuthContext);
     const [community, setCommunity] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,7 +19,7 @@ export const useCommunity = (slug) => {
     const [uploadingStory, setUploadingStory] = useState(false);
     const [uploadingBanner, setUploadingBanner] = useState(false);
 
-    // Ahora loadPosts acepta un tag opcional
+    // Función para cargar los posts de la comunidad, con opción de filtrar por etiqueta
     const loadPosts = async (communityId, tag = '') => {
         setLoadingPosts(true);
         try {
@@ -32,6 +35,7 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para cargar los datos de la comunidad desde la API, incluyendo información básica y posts asociados
     const loadCommunity = async () => {
         setLoading(true);
         try {
@@ -49,10 +53,12 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Cargar los datos de la comunidad al montar el componente o cuando cambie el slug
     useEffect(() => {
         if (slug) loadCommunity();
     }, [slug]);
 
+    // Función para cargar los posts pendientes de moderación, solo para administradores de la comunidad
     const loadPendingPosts = async () => {
         if (!community) return;
         const communityId = community._id || community.id;
@@ -62,6 +68,7 @@ export const useCommunity = (slug) => {
         } catch (err) {}
     };
 
+    // Función para aprobar o rechazar un post pendiente, actualizando el estado local de posts y posts pendientes según corresponda
     const moderatePost = async (postId, action) => {
         try {
             const data = await fetchAPI(`/posts/${postId}/moderate`, {
@@ -80,6 +87,7 @@ export const useCommunity = (slug) => {
         } catch (err) {}
     };
 
+    // Función para unirse o salir de la comunidad, actualizando el estado local de la comunidad y su lista de miembros según corresponda
     const toggleMembership = async () => {
         if (!community || !activeUser) return;
         try {
@@ -99,6 +107,7 @@ export const useCommunity = (slug) => {
         } catch (err) {}
     };
 
+    // Función para cargar la lista de miembros de la comunidad, con opción de búsqueda por nombre de usuario
     const loadMembers = async (searchQuery = '') => {
         if (!community) return;
         setLoadingMembers(true);
@@ -111,6 +120,7 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para expulsar a un miembro de la comunidad, actualizando el estado local de la lista de miembros y la información de la comunidad según corresponda
     const kickMember = async (userId) => {
         if (!community) return;
         try {
@@ -123,6 +133,7 @@ export const useCommunity = (slug) => {
         } catch (err) {}
     };
 
+    // Función para promover a un miembro a administrador de la comunidad, actualizando el estado local de la lista de miembros según corresponda
     const promoteMember = async (userId) => {
         if (!community) return;
         try {
@@ -134,6 +145,7 @@ export const useCommunity = (slug) => {
         } catch (err) {}
     };
 
+    // Función para subir una historia a la comunidad, manejando el estado de carga y retornando el resultado de la operación
     const uploadCommunityStory = async (file) => {
         if (!community || !file) return { success: false };
         setUploadingStory(true);
@@ -154,6 +166,7 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para actualizar la configuración de la comunidad, enviando los datos modificados a la API y actualizando el estado local de la comunidad según corresponda
     const updateSettings = async (settingsData) => {
         if (!community) return { success: false };
         try {
@@ -170,6 +183,7 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para subir un nuevo banner para la comunidad, manejando el estado de carga y actualizando el estado local de la comunidad con la nueva ruta del banner si la operación es exitosa
     const uploadBanner = async (file) => {
         if (!community || !file) return { success: false };
         setUploadingBanner(true);
@@ -190,6 +204,7 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para subir un nuevo avatar para la comunidad, manejando el estado de carga y actualizando el estado local de la comunidad con la nueva ruta del avatar si la operación es exitosa
     const uploadAvatar = async (file) => {
         if (!community || !file) return { success: false };
         const formData = new FormData();
@@ -207,6 +222,8 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Función para eliminar la comunidad, enviando la solicitud a la API y retornando el resultado de la operación sin 
+    // modificar el estado local, ya que se asume que el componente padre manejará la redirección o actualización de la lista de comunidades tras la eliminación
     const deleteCommunity = async () => {
         if (!community) return { success: false };
         try {
@@ -220,6 +237,8 @@ export const useCommunity = (slug) => {
         }
     };
 
+    // Retornar los datos y funciones necesarias para manejar la lógica de la comunidad específica, 
+    // incluyendo información de la comunidad, estado de carga, manejo de membresía, moderación de posts, gestión de miembros, etc.
     return { 
         community, loading, error, toggleMembership, activeUser,
         posts, setPosts, pendingPosts, loadingPosts, loadPendingPosts, loadPosts, moderatePost,

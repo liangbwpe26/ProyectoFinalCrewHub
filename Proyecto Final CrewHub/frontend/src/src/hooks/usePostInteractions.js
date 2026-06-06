@@ -3,7 +3,9 @@ import { fetchAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
+// Hook personalizado para manejar las interacciones de los posts, incluyendo reacciones, comentarios, menciones y carga de comentarios con paginación
 export const usePostInteractions = (post, targetCommentId = null) => {
+    // Variables para obtener el ID seguro de la publicación, utilizando el campo _id o id según corresponda, y el contexto de toast para mostrar mensajes al usuario
     const postId = post._id || post.id;
     const { showToast } = useToast();
 
@@ -25,13 +27,14 @@ export const usePostInteractions = (post, targetCommentId = null) => {
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
 
+    // Función para manejar la reacción a la publicación, actualizando el estado de si el usuario ha reaccionado y el conteo de reacciones,
+    // y enviando la solicitud a la API para registrar la reacción, manejando errores y mostrando mensajes de toast según corresponda
     const handlePostReact = async () => {
         const wasReacted = hasReacted;
         setHasReacted(!wasReacted);
         setReactionsCount(prev => wasReacted ? prev - 1 : prev + 1);
 
         try {
-            // Llamada limpia
             const data = await fetchAPI(`/posts/${postId}/react`, { method: 'POST' });
             if (!data.success) {
                 setHasReacted(wasReacted);
@@ -45,6 +48,8 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     };
 
+    // Función para cargar los comentarios de la publicación desde la API, manejando la paginación con el offset y 
+    // actualizando el estado local con los nuevos comentarios obtenidos
     const fetchComments = useCallback(async (currentOffset = 0) => {
         if (currentOffset === 0) setLoadingComments(true);
         else setLoadingMore(true);
@@ -69,6 +74,8 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     }, [postId]);
 
+    // Efecto para cargar los comentarios al montar el componente si se proporciona un targetCommentId, y para hacer 
+    // scroll al comentario objetivo una vez que los comentarios han sido cargados
     useEffect(() => {
         if (targetCommentId) {
             setShowComments(true);
@@ -76,6 +83,8 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     }, [targetCommentId, fetchComments]);
 
+    // Efecto para hacer scroll al comentario objetivo una vez que los comentarios han sido cargados, verificando si el 
+    // targetCommentId está presente y si hay comentarios cargados,
     useEffect(() => {
         if (targetCommentId && comments.length > 0) {
             setTimeout(() => {
@@ -94,12 +103,16 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     }, [targetCommentId, comments]);
 
+    // Función para alternar la visibilidad de los comentarios, y si se van a mostrar los comentarios y aún no se han cargado, 
+    // llamar a la función para cargar los comentarios desde la API
     const toggleComments = () => {
         const willShow = !showComments;
         setShowComments(willShow);
         if (willShow && comments.length === 0) fetchComments();
     };
 
+    // Función para cargar todas las respuestas de un comentario específico, enviando la solicitud a la API y actualizando el 
+    // estado local de comentarios para incluir las respuestas obtenidas, manejando errores y mostrando mensajes de toast según corresponda
     const loadAllReplies = async (commentId) => {
         try {
             const data = await fetchAPI(`/comments/${commentId}/replies`);
@@ -114,6 +127,9 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     };
 
+    // Función para manejar el envío de un nuevo comentario, verificando que el contenido no esté vacío, enviando la solicitud a 
+    // la API para crear el comentario, y actualizando el estado local de comentarios y conteo de comentarios según corresponda, 
+    // además de manejar errores y mostrar mensajes de toast
     const submitComment = async (e, onSuccess) => {
         e.preventDefault();
         if (!newComment.trim()) {
@@ -144,6 +160,9 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     };
 
+    // Función para manejar el cambio en el campo de entrada del nuevo comentario, verificando si se está escribiendo una mención,
+    // y si es así, enviando la solicitud a la API para buscar usuarios que coincidan con la consulta de mención, y actualizando el estado local 
+    // con los resultados obtenidos, además de manejar errores y mostrar mensajes de toast según corresponda
     const handleInputChange = async (e) => {
         const value = e.target.value;
         setNewComment(value);
@@ -166,6 +185,8 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         }
     };
 
+    // Función para seleccionar un usuario de los resultados de mención, actualizando el campo de entrada del nuevo comentario para incluir la mención seleccionada,
+    // ocultando los resultados de mención y enfocando el campo de entrada para continuar escribiendo el comentario
     const selectMention = (username, inputRef) => {
         const words = newComment.split(" ");
         words[words.length - 1] = `@${username} `;
@@ -174,6 +195,9 @@ export const usePostInteractions = (post, targetCommentId = null) => {
         if (inputRef && inputRef.current) inputRef.current.focus();
     };
 
+    // Función para manejar la reacción a un comentario específico, enviando la solicitud a la API para registrar la reacción, 
+    // y actualizando el estado local de comentarios para reflejar el nuevo estado de reacción y conteo de reacciones, manejando errores y 
+    // mostrando mensajes de toast según corresponda
     const handleCommentReact = async (commentId) => {
         try {
             const data = await fetchAPI(`/comments/${commentId}/react`, { method: 'POST' });

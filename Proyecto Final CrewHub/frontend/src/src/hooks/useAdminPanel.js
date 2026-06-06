@@ -1,9 +1,14 @@
+// Importaciones necesarias para el hook personalizado 
+// useAdminPanel, incluyendo React, el contexto de autenticación, la función de navegación y la función para hacer peticiones a la API.
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
+// El hook useAdminPanel maneja la lógica relacionada con el panel de administración, incluyendo la verificación de permisos, 
+// la carga de datos y las acciones para resolver reportes, tickets y gestionar usuarios sancionados.
 export const useAdminPanel = () => {
+    // Obtiene el usuario activo del contexto de autenticación y la función de navegación para redirigir si el usuario no tiene permisos.
     const { activeUser } = useContext(AuthContext);
     const navigate = useNavigate();
     
@@ -13,12 +18,14 @@ export const useAdminPanel = () => {
     const [sanctionedUsers, setSanctionedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Verifica si el usuario activo es un administrador o tiene un nombre de usuario específico, y si no, lo redirige a la página principal.
     useEffect(() => {
         if (activeUser && !activeUser.is_admin && activeUser.username !== 'liangbw_') {
             navigate('/');
         }
     }, [activeUser, navigate]);
 
+    // Función para cargar los datos de reportes, tickets y usuarios sancionados desde la API, y actualizar el estado correspondiente.
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -38,12 +45,14 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Carga los datos al montar el componente y cada vez que el usuario activo cambie, siempre y cuando el usuario tenga permisos de administrador.
     useEffect(() => {
         if (activeUser?.is_admin || activeUser?.username === 'liangbw_') {
             fetchData();
         }
     }, [activeUser]);
 
+    // Función para resolver un reporte, que hace una petición a la API y actualiza el estado de reportes si la resolución es exitosa.
     const handleResolveReport = async (reportId) => {
         try {
             const res = await fetchAPI(`/admin/reports/${reportId}/resolve`, { method: 'POST' });
@@ -53,6 +62,7 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Función para eliminar el contenido reportado, que determina el endpoint correcto según el tipo de contenido, hace la petición de eliminación y resuelve el reporte si la eliminación es exitosa.
     const handleDeleteContent = async (report) => {
         if (!window.confirm(`¿Seguro que deseas eliminar este contenido?`)) return;
         try {
@@ -72,6 +82,7 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Función para resolver un ticket, que hace una petición a la API y actualiza el estado de tickets si la resolución es exitosa.
     const handleResolveTicket = async (ticketId) => {
         try {
             const res = await fetchAPI(`/admin/tickets/${ticketId}/resolve`, { method: 'POST' });
@@ -81,6 +92,7 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Función para alternar el estado de baneo de un usuario, que hace una petición a la API y recarga los datos si la operación es exitosa.
     const handleToggleBan = async (userId) => {
         try {
             const res = await fetchAPI(`/admin/users/${userId}/toggle-ban`, { method: 'POST' });
@@ -90,6 +102,7 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Función para resetear los strikes de un usuario, que hace una petición a la API y recarga los datos si la operación es exitosa.
     const handleResetStrikes = async (userId) => {
         if (!window.confirm("¿Seguro de perdonar a este usuario y dejar sus strikes en 0?")) return;
         try {
@@ -100,6 +113,8 @@ export const useAdminPanel = () => {
         }
     };
 
+    // Retorna el estado y las funciones necesarias para el panel de administración, incluyendo el usuario activo, 
+    // la pestaña activa, los datos cargados y las funciones para manejar las acciones administrativas.
     return {
         activeUser,
         activeTab, setActiveTab,

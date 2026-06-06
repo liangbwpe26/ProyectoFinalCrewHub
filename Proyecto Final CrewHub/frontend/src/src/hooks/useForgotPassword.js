@@ -4,11 +4,14 @@ import { useToast } from '../contexts/ToastContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
 export const useForgotPassword = () => {
+    // Estado para almacenar el correo electrónico ingresado por el usuario y el estado de carga durante la solicitud de restablecimiento de contraseña
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { showToast } = useToast();
 
+    // Función para manejar el envío del formulario, enviando los datos a la API para solicitar el restablecimiento de 
+    // contraseña y manejando el estado de carga y errores según corresponda
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!email || loading) return;

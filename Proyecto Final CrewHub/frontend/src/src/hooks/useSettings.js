@@ -3,18 +3,18 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
 export const useSettings = () => {
+    // Estado para manejar mensajes de alerta, estado de carga y datos relacionados con la cuenta, notificaciones y soporte, 
+    // así como funciones para mostrar alertas y manejar actualizaciones de cuenta, preferencias de notificaciones y envío de tickets de soporte
     const { activeUser } = useContext(AuthContext);
 
     const [alertMessage, setAlertMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Estados: Cuenta
     const [email, setEmail] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    // Estados: Notificaciones
     const [notifPrefs, setNotifPrefs] = useState({
         likes: true,
         follows: true,
@@ -22,7 +22,6 @@ export const useSettings = () => {
         communities: true
     });
 
-    // Estados: Soporte (Tickets)
     const [ticketSubject, setTicketSubject] = useState('');
     const [ticketMessage, setTicketMessage] = useState('');
 
@@ -36,11 +35,14 @@ export const useSettings = () => {
         }
     }, [activeUser]);
 
+    // Función para mostrar mensajes de alerta, estableciendo el mensaje y tipo de alerta, y limpiándolo después de un tiempo determinado
     const showAlert = (title, text, type) => {
         setAlertMessage({ title, text, type });
         setTimeout(() => setAlertMessage(null), 4000);
     };
 
+    // Función para manejar la actualización de los datos de la cuenta, enviando los datos a la API para 
+    // actualizar la cuenta del usuario y manejando el estado de carga y mensajes de alerta según corresponda
     const handleUpdateAccount = async (e) => {
         e.preventDefault();
         if (newPassword && newPassword !== confirmPassword) {
@@ -71,6 +73,8 @@ export const useSettings = () => {
         }
     };
 
+    // Función para manejar la actualización de las preferencias de notificaciones, enviando los datos a la API para 
+    // actualizar las preferencias del usuario y manejando el estado de carga y mensajes de alerta según corresponda
     const handleUpdateNotifications = async () => {
         setIsLoading(true);
         try {
@@ -87,6 +91,8 @@ export const useSettings = () => {
         }
     };
 
+    // Función para manejar el envío de un ticket de soporte, enviando los datos a la API para crear un nuevo ticket y 
+    // manejando el estado de carga y mensajes de alerta según corresponda
     const handleSubmitTicket = async (e) => {
         e.preventDefault();
         if (!ticketSubject.trim() || !ticketMessage.trim()) {

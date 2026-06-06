@@ -1,3 +1,4 @@
+// Archivo para la tematización por países, no se ha podido implementar en el tiempo disponible pero se deja la estructura para futuras mejoras.
 export const COUNTRY_THEMES = {
     // España
     ES: { 

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { fetchAPI } from '../services/api.js';
 
+// Hook personalizado para manejar la lógica de creación de comunidades
 export const useCreateCommunity = (onSuccessCallback) => {
+    // Estado para almacenar los datos del formulario, el estado de carga y cualquier error que ocurra durante la creación de la comunidad
     const [formData, setFormData] = useState({
         name: '',
         description: ''
@@ -9,6 +11,7 @@ export const useCreateCommunity = (onSuccessCallback) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Función para manejar los cambios en los campos del formulario, actualizando el estado local con los nuevos valores
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -16,6 +19,7 @@ export const useCreateCommunity = (onSuccessCallback) => {
         });
     };
 
+    // Función para manejar el envío del formulario, enviando los datos a la API para crear una nueva comunidad y manejando el estado de carga y errores según corresponda
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);

@@ -4,6 +4,7 @@ import echo from '../services/echo.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
+// Hook personalizado para manejar la lógica de las notificaciones, incluyendo la carga inicial, manejo de solicitudes de seguimiento,
 export const getSafeId = (idField) => {
     if (!idField) return null;
     if (typeof idField === 'object' && idField.$oid) return idField.$oid;
@@ -11,6 +12,7 @@ export const getSafeId = (idField) => {
 };
 
 const useNotifications = (userId) => {
+    // Estados para manejar las notificaciones principales, solicitudes de seguimiento, conteo de no leídas, y detalles para modales de publicaciones y drops
     const [mainNotifications, setMainNotifications] = useState([]);
     const [followRequests, setFollowRequests] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -24,6 +26,8 @@ const useNotifications = (userId) => {
     const { showToast } = useToast();
     const processedIds = useRef(new Set());
 
+    // Función para cargar todas las notificaciones desde la API, incluyendo las notificaciones principales, 
+    // solicitudes de seguimiento y conteo de no leídas, y actualizar el estado local con los datos obtenidos
     const fetchAll = useCallback(async () => {
         try {
             const data = await fetchAPI('/notifications');
@@ -37,6 +41,7 @@ const useNotifications = (userId) => {
         }
     }, []);
 
+    // Función para marcar todas las notificaciones como leídas, enviando la solicitud a la API y actualizando el conteo de no leídas en el estado local
     const markAllAsRead = async () => {
         if (unreadCount === 0) return;
         try {
@@ -45,6 +50,8 @@ const useNotifications = (userId) => {
         } catch (error) {}
     };
 
+    // Funciones para manejar la aceptación o rechazo de solicitudes de seguimiento, enviando las solicitudes correspondientes 
+    // a la API y actualizando el estado local de solicitudes de seguimiento y mostrando mensajes de toast según corresponda
     const handleAccept = async (notification) => {
         const followerId = getSafeId(notification.sender_id) || getSafeId(notification.sender?._id);
         if (!followerId) return;
@@ -60,6 +67,8 @@ const useNotifications = (userId) => {
         }
     };
 
+    // Función para manejar el rechazo de solicitudes de seguimiento, enviando la solicitud correspondiente a la API y 
+    // actualizando el estado local de solicitudes de seguimiento
     const handleReject = async (notification) => {
         const followerId = getSafeId(notification.sender_id) || getSafeId(notification.sender?._id);
         if (!followerId) return;
@@ -72,6 +81,9 @@ const useNotifications = (userId) => {
         } catch (error) {}
     };
 
+    // Función para abrir el modal de una publicación desde una notificación, verificando si la notificación corresponde 
+    // a un drop o a un post, y cargando los detalles necesarios desde la API para mostrar en el modal, además de manejar el 
+    // estado de carga y mostrar mensajes de error según corresponda
     const openNotificationPost = async (postId, dropId, commentId, closeDropdown) => {
         if (closeDropdown) closeDropdown();
         
@@ -103,10 +115,14 @@ const useNotifications = (userId) => {
         }
     };
 
+    // Efecto para cargar las notificaciones al montar el componente, y efecto para configurar la conexión a Echo y 
+    // manejar las notificaciones en tiempo real, actualizando el estado local según corresponda y limpiando la conexión al desmontar el componente
     useEffect(() => {
         fetchAll();
     }, [fetchAll]);
 
+    // Efecto para configurar la conexión a Echo y manejar las notificaciones en tiempo real, actualizando el estado 
+    // local según corresponda y limpiando la conexión al desmontar el componente
     useEffect(() => {
         if (!userId || !echo) return;
 

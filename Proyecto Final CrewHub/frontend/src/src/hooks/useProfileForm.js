@@ -4,6 +4,8 @@ import { useToast } from '../contexts/ToastContext.jsx';
 import { ERRORS } from '../utils/errorMessages.js';
 
 export const useProfileForm = (initialData) => {
+    // Estados para manejar los campos del formulario de perfil, archivos de imagen para avatar y banner, URLs de vista previa, 
+    // y estado de carga durante la actualización del perfil
     const [displayName, setDisplayName] = useState(initialData?.display_name || "");
     const [dateOfBirth, setDateOfBirth] = useState(initialData?.date_of_birth ? initialData.date_of_birth.split('T')[0] : "");
     const [imageFile, setImageFile] = useState(null);
@@ -13,10 +15,11 @@ export const useProfileForm = (initialData) => {
     const [previewBannerUrl, setPreviewBannerUrl] = useState(initialData?.banner_picture || '');
 
     const [cropImageSrc, setCropImageSrc] = useState(null);
-    const [cropType, setCropType] = useState(null); // Puede ser 'avatar' o 'banner'
+    const [cropType, setCropType] = useState(null);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
+    // Función para obtener la URL del avatar de un usuario, manejando casos donde no hay imagen de perfil
     const getAvatar = (user) => {
         if (!user) return `https://ui-avatars.com/api/?name=U&background=262626&color=fff&bold=true&size=150`;
         return user.profile_picture
@@ -28,6 +31,8 @@ export const useProfileForm = (initialData) => {
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
 
+    // Efecto para actualizar los estados de los campos del formulario y URLs de vista previa cuando los datos iniciales cambian,
+    // asegurando que el formulario se sincronicen con los datos del usuario activo
     useEffect(() => {
         if (initialData && initialData.id) {
             setDisplayName(initialData.display_name || "");
@@ -39,6 +44,7 @@ export const useProfileForm = (initialData) => {
         }
     }, [initialData?.id]);
 
+    // Función para manejar el cambio en el campo de selección de imagen de avatar, leyendo el archivo seleccionado y configurando la imagen para recorte
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -50,6 +56,7 @@ export const useProfileForm = (initialData) => {
         };
     };
 
+    // Función para manejar el cambio en el campo de selección de imagen de banner, leyendo el archivo seleccionado y configurando la imagen para recorte
     const handleBannerChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -61,6 +68,8 @@ export const useProfileForm = (initialData) => {
         };
     };
 
+    // Función para manejar la finalización del recorte de la imagen, actualizando el archivo de imagen correspondiente (avatar o banner) y 
+    // configurando la URL de vista previa para mostrar la imagen recortada
     const handleCropComplete = (croppedFile) => {
         if (cropType === 'avatar') {
             setImageFile(croppedFile);
@@ -73,6 +82,8 @@ export const useProfileForm = (initialData) => {
         setCropType(null);
     };
 
+    // Función para manejar el envío del formulario de perfil, enviando los datos a la API para actualizar el perfil del usuario y 
+    // manejando el estado de carga y errores según corresponda
     const submitProfile = async (onSuccessCallback) => {
         setLoading(true);
         const formData = new FormData();

@@ -4,6 +4,7 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { fetchAPI } from '../services/api.js';
 
+// Hook para gestionar la verificación de email
 export const useVerifyEmail = (initialEmail) => {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext);
@@ -14,6 +15,7 @@ export const useVerifyEmail = (initialEmail) => {
     const [loading, setLoading] = useState(false);
     const [resendLoading, setResendLoading] = useState(false);
 
+    // Verifica el código de email
     const handleVerify = async (e) => {
         e.preventDefault();
         if (code.length < 5 || !email || loading) return;
@@ -27,6 +29,7 @@ export const useVerifyEmail = (initialEmail) => {
 
             if (data.success) {
                 showToast(data.message, 'success');
+                // Inicia sesión y redirige al home
                 login(data.user, data.token);
                 navigate('/');
             } else {
@@ -39,6 +42,7 @@ export const useVerifyEmail = (initialEmail) => {
         }
     };
 
+    // Reenvía el código de verificación
     const handleResendCode = async () => {
         if (!email || resendLoading) return;
         
@@ -61,6 +65,7 @@ export const useVerifyEmail = (initialEmail) => {
         }
     };
 
+    // Filtra solo números en el código
     const handleCodeChange = (e) => {
         setCode(e.target.value.replace(/[^0-9]/g, ''));
     };
