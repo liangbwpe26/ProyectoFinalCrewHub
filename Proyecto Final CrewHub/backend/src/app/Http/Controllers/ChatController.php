@@ -13,8 +13,18 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controlador para la lógica de chat, conversaciones y mensajes.
+ */
 class ChatController extends Controller
 {
+    /**
+     * Obtiene una conversación existente entre dos usuarios o la crea si no existe.
+     *
+     * @param mixed $myId Identificador del usuario actual.
+     * @param mixed $theirId Identificador del usuario objetivo.
+     * @return Conversation
+     */
     private function getOrCreateConversation($myId, $theirId)
     {
         $ids = [(string) $myId, (string) $theirId];
@@ -36,6 +46,12 @@ class ChatController extends Controller
         return $conversation;
     }
 
+    /**
+     * Prepara los datos de un mensaje para su emisión por WebSocket.
+     *
+     * @param Message $msg Mensaje a preparar.
+     * @return array
+     */
     private function prepareMessageForBroadcast($msg)
     {
         $data = $msg->toArray();
@@ -46,6 +62,13 @@ class ChatController extends Controller
         return $data;
     }
 
+    /**
+     * Obtiene el identificador del receptor en una conversación privada.
+     *
+     * @param Conversation|null $conversation Conversación a examinar.
+     * @param string $myIdStr Identificador del usuario actual.
+     * @return string|null
+     */
     private function getReceiverId($conversation, $myIdStr)
     {
         if (!$conversation)
@@ -57,6 +80,13 @@ class ChatController extends Controller
         return null;
     }
 
+    /**
+     * Verifica si un usuario puede enviar un mensaje a otro según su privacidad.
+     *
+     * @param string $senderIdStr Identificador del remitente.
+     * @param mixed $targetUser Usuario destino cuya configuración de privacidad se evalúa.
+     * @return bool
+     */
     private function canMessage($senderIdStr, $targetUser)
     {
         if ($senderIdStr === (string) ($targetUser->_id ?? $targetUser->id))
@@ -77,6 +107,12 @@ class ChatController extends Controller
         return true;
     }
 
+    /**
+     * Obtiene el número total de conversaciones con mensajes no leídos.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUnreadCount(Request $request)
     {
         $me = $request->user();
@@ -117,6 +153,13 @@ class ChatController extends Controller
     }
 
 
+    /**
+     * Marca todos los mensajes de una conversación como leídos para el usuario actual.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param string $username Nombre de usuario del interlocutor.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function markChatAsRead(Request $request, $username)
     {
         $me = $request->user();
@@ -142,6 +185,13 @@ class ChatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Recupera los mensajes de una conversación con otro usuario.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param string $username Nombre de usuario del interlocutor.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getMessages(Request $request, $username)
     {
         $me = $request->user();
@@ -181,6 +231,13 @@ class ChatController extends Controller
         ]);
     }
 
+    /**
+     * Envía un mensaje a otro usuario y dispara el evento correspondiente.
+     *
+     * @param Request $request Solicitud HTTP con los datos del mensaje.
+     * @param string $username Nombre de usuario del destinatario.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function sendMessage(Request $request, $username)
     {
         try {
@@ -237,6 +294,12 @@ class ChatController extends Controller
         }
     }
 
+    /**
+     * Obtiene la lista de conversaciones del usuario actual.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getConversations(Request $request)
     {
         $me = $request->user();
@@ -307,6 +370,13 @@ class ChatController extends Controller
         return response()->json(['success' => true, 'conversations' => $chatList]);
     }
 
+    /**
+     * Edita un mensaje enviado por el usuario actual dentro del tiempo permitido.
+     *
+     * @param Request $request Solicitud HTTP con el contenido actualizado.
+     * @param mixed $messageId Identificador del mensaje a editar.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function editMessage(Request $request, $messageId)
     {
         $me = $request->user();
@@ -332,6 +402,13 @@ class ChatController extends Controller
         return response()->json(['success' => true, 'message' => $cleanMsg]);
     }
 
+    /**
+     * Elimina un mensaje de forma local o para todos según el tipo de eliminación.
+     *
+     * @param Request $request Solicitud HTTP con el tipo de eliminación.
+     * @param mixed $messageId Identificador del mensaje a eliminar.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function deleteMessage(Request $request, $messageId)
     {
         $me = $request->user();
@@ -368,6 +445,13 @@ class ChatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Envía una respuesta a una historia como mensaje directo.
+     *
+     * @param Request $request Solicitud HTTP con el contenido de la respuesta y datos de la historia.
+     * @param mixed $userId Identificador del usuario que creó la historia.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function replyToStory(Request $request, $userId)
     {
         $me = $request->user();

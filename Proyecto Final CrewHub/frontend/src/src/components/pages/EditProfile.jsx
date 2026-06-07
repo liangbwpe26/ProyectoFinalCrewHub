@@ -6,6 +6,8 @@ import { useMonetization } from '../../hooks/useMonetization.js';
 import ImageCropperModal from '../ImageCropperModal.jsx';
 import ConfirmModal from '../ConfirmModal.jsx';
 
+// Componente: EditProfile
+// Formulario para editar perfil de usuario y opciones de negocio.
 const EditProfile = () => {
     const { activeUser, setActiveUser } = useContext(AuthContext);
     const fileInputRef = useRef(null);

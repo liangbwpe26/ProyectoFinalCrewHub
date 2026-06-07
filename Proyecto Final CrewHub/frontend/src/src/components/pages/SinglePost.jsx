@@ -5,6 +5,8 @@ import { useToast } from "../../contexts/ToastContext.jsx";
 import PostCard from "../PostCard.jsx";
 import Layout from "../structure/Layout.jsx";
 
+// Componente: SinglePost
+// Muestra una publicación individual con comentarios y acciones.
 const SinglePost = () => {
     const { id } = useParams(); 
     const navigate = useNavigate();

@@ -1,5 +1,7 @@
 import React from 'react';
 
+// Componente: PostSkeleton
+// Placeholder visual usado mientras carga una publicación.
 const PostSkeleton = () => {
     return (
         <div className="bg-[#121212] border border-[#262626] rounded-2xl p-4 md:p-5 mb-5 w-full animate-pulse shadow-lg">

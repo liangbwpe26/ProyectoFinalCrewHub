@@ -10,15 +10,32 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Correo para enviar un código de verificación según el tipo de acción.
+ */
 class VerificationCodeMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * Código de verificación enviado al usuario.
+     *
+     * @var string
+     */
     public $code;
+
+    /**
+     * Tipo de mensaje: 'registro' o 'recuperacion'.
+     *
+     * @var string
+     */
     public $type;
 
     /**
-     * Create a new message instance.
+     * Crea una nueva instancia del mensaje.
+     *
+     * @param string $code Código de verificación.
+     * @param string $type Tipo de correo ('registro' o 'recuperacion').
      */
     public function __construct($code, $type = 'registro')
     {
@@ -27,19 +44,19 @@ class VerificationCodeMail extends Mailable
     }
 
     /**
-     * Get the message envelope.
+     * Obtiene el sobre del mensaje con el asunto adecuado.
      */
     public function envelope(): Envelope
     {
-        $subject = $this->type === 'registro' 
-            ? 'Bienvenido a CrewHub - Verifica tu cuenta' 
+        $subject = $this->type === 'registro'
+            ? 'Bienvenido a CrewHub - Verifica tu cuenta'
             : 'CrewHub - Recuperación de contraseña';
 
         return new Envelope(subject: $subject);
     }
 
     /**
-     * Get the message content definition.
+     * Define la vista que se usará para el contenido del correo.
      */
     public function content(): Content
     {
@@ -47,7 +64,7 @@ class VerificationCodeMail extends Mailable
     }
 
     /**
-     * Get the attachments for the message.
+     * Adjuntos del mensaje.
      *
      * @return array<int, Attachment>
      */

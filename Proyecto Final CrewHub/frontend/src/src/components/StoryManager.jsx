@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import { fetchAPI } from '../services/api.js';
 
+// Función: getCroppedImg
+// Recorta una imagen en base a pixelCrop y devuelve un Blob/URL.
 const getCroppedImg = async (imageSrc, pixelCrop) => {
     const image = new Image();
     image.src = imageSrc;

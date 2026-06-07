@@ -6,6 +6,27 @@ use MongoDB\Laravel\Eloquent\Model;
 
 class Post extends Model
 {
+    /**
+     * Modelo de publicación (post) generado por usuarios.
+     *
+     * Campos comunes:
+     * - user_id: autor de la publicación
+     * - content: texto del post
+     * - image_path: ruta de imagen asociada
+     * - description: descripción breve
+     * - category: categoría del post
+     * - community_id: comunidad asociada
+     * - status: estado ('approved' por defecto)
+     * - original_post_id: referencia a un post original (repost)
+     * - is_promoted, promoted_until: promoción del post
+     *
+     * Relaciones:
+     * - user(): autor
+     * - community(): comunidad asociada
+     * - originalPost(): post original si es repost
+     *
+     * @package App\Models
+     */
     protected $fillable = [
         'user_id',
         'content',

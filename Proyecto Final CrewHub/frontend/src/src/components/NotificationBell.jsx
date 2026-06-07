@@ -3,6 +3,8 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import useNotifications, { getSafeId } from '../hooks/useNotifications.js';
 import PostActions from './PostActions.jsx';
 
+// Componente: NotificationBell
+// Campana de notificaciones con lista y acciones rápidas.
 const NotificationBell = () => {
     const { activeUser } = useContext(AuthContext);
     const [isOpen, setIsOpen] = useState(false);

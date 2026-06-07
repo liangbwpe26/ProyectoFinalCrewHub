@@ -11,14 +11,23 @@ use Illuminate\Support\Facades\Storage;
 
 class CommunityController extends Controller
 {
-    // 1. Listar todas las comunidades (Explorar)
+    /**
+     * Get all communities ordered by creation date.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         $communities = Community::orderBy('created_at', 'desc')->get();
         return response()->json(['success' => true, 'communities' => $communities]);
     }
 
-    // 2. Crear una nueva comunidad
+    /**
+     * Create a new community.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -47,7 +56,12 @@ class CommunityController extends Controller
         ], 201);
     }
 
-    // 3. Ver una comunidad específica 
+    /**
+     * Get a specific community by slug.
+     *
+     * @param string $slug
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show($slug)
     {
         $community = Community::where('slug', $slug)->first();
@@ -59,7 +73,12 @@ class CommunityController extends Controller
         return response()->json(['success' => true, 'community' => $community]);
     }
 
-    // 4. Unirse o Salir de una comunidad
+    /**
+     * Toggle membership status for a community.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleMembership($id)
     {
         $community = Community::find($id);
@@ -88,7 +107,12 @@ class CommunityController extends Controller
         ]);
     }
 
-    // 5. Eliminar comunidad (Solo el creador)
+    /**
+     * Delete a community. Only the creator can delete it.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $community = Community::find($id);
@@ -107,7 +131,10 @@ class CommunityController extends Controller
     }
 
     /**
-     * Obtener las publicaciones pendientes de aprobación (Solo para administradores)
+     * Get pending posts for approval. Only administrators can access.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getPendingPosts($id)
     {
@@ -137,7 +164,11 @@ class CommunityController extends Controller
     }
 
     /**
-     * Aprobar o rechazar una publicación pendiente
+     * Approve or reject a pending post. Only administrators can perform this action.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $postId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function moderatePost(Request $request, $postId)
     {
@@ -179,7 +210,11 @@ class CommunityController extends Controller
     }
 
     /**
-     * Obtener los miembros de una comunidad (con buscador opcional)
+     * Get members of a community with optional search filter.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getMembers(Request $request, $id)
     {
@@ -214,7 +249,11 @@ class CommunityController extends Controller
     }
 
     /**
-     * Expulsar a un miembro
+     * Remove a member from the community. Only administrators can perform this action.
+     *
+     * @param int $id
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function removeMember($id, $userId)
     {
@@ -239,7 +278,11 @@ class CommunityController extends Controller
     }
 
     /**
-     * Promover a Administrador
+     * Promote a member to administrator. Only administrators can perform this action.
+     *
+     * @param int $id
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function promoteToAdmin($id, $userId)
     {
@@ -262,7 +305,14 @@ class CommunityController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // Actualizar reglas y etiquetas
+    /**
+     * Update community settings including name, description, rules, and tags.
+     * Only administrators can perform this action.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateSettings(Request $request, $id)
     {
         $community = Community::find($id);
@@ -285,7 +335,13 @@ class CommunityController extends Controller
         return response()->json(['success' => true, 'community' => $community]);
     }
 
-    // Subir imagen de portada
+    /**
+     * Upload a banner image for the community. Only administrators can perform this action.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadBanner(Request $request, $id)
     {
         $community = Community::find($id);
@@ -299,6 +355,13 @@ class CommunityController extends Controller
         return response()->json(['success' => true, 'banner_path' => $community->banner_path]);
     }
 
+    /**
+     * Upload an avatar image for the community. Only administrators can perform this action.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadAvatar(Request $request, $id)
     {
         $community = Community::find($id);

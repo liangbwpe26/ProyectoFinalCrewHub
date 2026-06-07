@@ -8,6 +8,8 @@ import UploadDropModal from '../UploadDropModal.jsx';
 import ReportModal from '../ReportModal.jsx';
 import ConfirmModal from '../ConfirmModal.jsx';
 
+// Componente: DropsFeed
+// Muestra y gestiona drops (videos cortos), subida y comentarios.
 const DropsFeed = () => {
     const { activeUser } = useContext(AuthContext);
     const { 

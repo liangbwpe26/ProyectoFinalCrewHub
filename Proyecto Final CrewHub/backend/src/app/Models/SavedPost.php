@@ -6,6 +6,18 @@ use MongoDB\Laravel\Eloquent\Model;
 
 class SavedPost extends Model
 {
+    /**
+     * Publicación guardada por un usuario.
+     *
+     * Campos rellenables:
+     * - user_id: ID del usuario que guardó
+     * - post_id: ID de la publicación guardada
+     *
+     * Relaciones:
+     * - post(): publicación guardada
+     *
+     * @package App\Models
+     */
     protected $connection = 'mongodb';
     protected $collection = 'saved_posts';
 

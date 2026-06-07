@@ -4,6 +4,8 @@ import Layout from '../structure/Layout.jsx';
 import { useCommunities } from '../../hooks/useCommunities.js';
 import CreateCommunityModal from '../CreateCommunityModal.jsx';
 
+// Componente: Communities
+// Lista y gestión de comunidades; incluye búsqueda y creación.
 const Communities = () => {
     const { communities, setCommunities, loading } = useCommunities();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

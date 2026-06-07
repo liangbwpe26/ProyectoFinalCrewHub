@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useRegisterLogic } from "../../hooks/useRegisterLogic.js";
 import logoImg from "../../assets/logo.png";
 
+// Componente: Register
+// Formulario de registro de nuevos usuarios.
 const Register = () => {
     const navigate = useNavigate();
     const { userData, updateData, handleRegister, loading } = useRegisterLogic();

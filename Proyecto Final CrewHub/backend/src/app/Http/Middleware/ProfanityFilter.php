@@ -7,15 +7,35 @@ use Illuminate\Http\Request;
 
 class ProfanityFilter
 {
+    /**
+     * Lista de palabras prohibidas que se deben filtrar.
+     *
+     * @var string[]
+     */
     protected $badWords = [
         'idiota', 'estupido', 'imbecil', 'basura', 'mierda', 'puta', 'cabron', ''
     ];
-    
+
+    /**
+     * Rutas que se excluyen del filtrado de palabrotas.
+     * Se admiten coincidencias con comodines (ej. api/messages/*).
+     *
+     * @var string[]
+     */
     protected $except = [
         'api/messages/*',
         'api/chats/*'
     ];
 
+    /**
+     * Maneja la petición entrante y aplica el filtrado de palabras.
+     * Solo modifica peticiones que no estén en la lista de excepciones
+     * y que sean de tipo POST, PUT o PATCH.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  \Closure $next
+     * @return mixed
+     */
     public function handle(Request $request, Closure $next)
     {
         if ($this->inExceptArray($request)) {
@@ -31,6 +51,12 @@ class ProfanityFilter
         return $next($request);
     }
 
+    /**
+     * Comprueba si la petición coincide con alguna ruta excluida.
+     *
+     * @param  mixed $request
+     * @return bool
+     */
     protected function inExceptArray($request)
     {
         foreach ($this->except as $except) {
@@ -46,6 +72,13 @@ class ProfanityFilter
         return false;
     }
 
+    /**
+     * Limpia recursivamente los datos reemplazando palabras prohibidas por '***'.
+     * Filtra cadenas y arrays anidados.
+     *
+     * @param  mixed $data
+     * @return mixed
+     */
     private function cleanData($data)
     {
         $palabrasValidas = array_filter($this->badWords, function($word) {

@@ -2,6 +2,8 @@ import React, { useState, useEffect, Fragment, useContext, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 
+// Componente: StoryViewer
+// Visualizador de stories en pantalla completa con navegación y acciones.
 const StoryViewer = ({ feed, initialUserId, onClose, onStoryViewed, onDeleteStory, onToggleLike, onGetStats, onReply }) => {
     const { activeUser } = useContext(AuthContext);
     const myId = activeUser ? (activeUser.id || activeUser._id) : null;

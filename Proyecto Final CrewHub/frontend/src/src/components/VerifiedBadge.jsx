@@ -1,5 +1,7 @@
 import React from 'react';
 
+// Componente: VerifiedBadge
+// Icono SVG que indica cuenta verificada.
 const VerifiedBadge = ({ className = "w-6 h-6" }) => {
     return (
         <svg 

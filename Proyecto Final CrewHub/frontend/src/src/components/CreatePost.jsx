@@ -4,6 +4,8 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import ImageCropperModal from './ImageCropperModal.jsx';
 import { fetchAPI } from '../services/api.js';
 
+// Componente: LocationBadge
+// Pequeño badge para mostrar país en el formulario de creación.
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1.5 text-[10px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-3 py-1.5 rounded-full border border-[#333] shadow-inner w-fit cursor-default hover:border-[#0095f6] hover:text-[#0095f6] transition-colors">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -14,6 +16,8 @@ const LocationBadge = ({ country }) => (
     </div>
 );
 
+// Componente: CreatePost
+// Formulario para crear una nueva publicación con imagen/video.
 const CreatePost = ({ onPostCreated, onCancel, communityId, communityTags = [] }) => {
     const { showToast } = useToast();
     const { activeUser } = useContext(AuthContext); 

@@ -4,6 +4,8 @@ import { AuthContext } from '../../contexts/AuthContext.jsx';
 import { useMonetization } from '../../hooks/useMonetization.js';
 import Navbar from '../structure/Navbar.jsx';
 
+// Componente: SecureBadge
+// Badge visual que indica transacción segura.
 const SecureBadge = () => (
     <div className="flex items-center gap-1.5 bg-[#00ba7c]/10 text-[#00ba7c] border border-[#00ba7c]/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit mb-4">
         <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>

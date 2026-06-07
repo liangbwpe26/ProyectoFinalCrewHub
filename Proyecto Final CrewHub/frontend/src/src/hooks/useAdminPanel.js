@@ -1,5 +1,3 @@
-// Importaciones necesarias para el hook personalizado 
-// useAdminPanel, incluyendo React, el contexto de autenticación, la función de navegación y la función para hacer peticiones a la API.
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext.jsx';

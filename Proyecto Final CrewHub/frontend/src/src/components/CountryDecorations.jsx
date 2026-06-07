@@ -19,6 +19,8 @@ const THEMES = {
     }
 };
 
+// Componente: CountryDecorations
+// Aplica estilos y temas visuales según el país del usuario.
 const CountryDecorations = () => {
     const { activeUser } = useContext(AuthContext);
     const [country, setCountry] = useState('DEFAULT');

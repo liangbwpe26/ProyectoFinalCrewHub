@@ -1,5 +1,7 @@
 import React, { Fragment } from 'react';
 
+// Componente: ConfirmModal
+// Modal genérico para confirmar acciones destructivas.
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Eliminar", cancelText = "Cancelar" }) => {
     if (!isOpen) return null;
 

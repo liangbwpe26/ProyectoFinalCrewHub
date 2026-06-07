@@ -5,8 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Post;
 
+/**
+ * Controlador de monetización para usuarios y publicaciones.
+ */
 class MonetizationController extends Controller
 {
+    /**
+     * Activa la verificación de un usuario.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function subscribe(Request $request)
     {
         $user = $request->user();

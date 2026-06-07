@@ -6,6 +6,8 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import ReportModal from './ReportModal.jsx';
 import ConfirmModal from './ConfirmModal.jsx';
 
+// Componente: SingleDropModal
+// Modal que muestra un drop (video) con controles y comentarios.
 const SingleDropModal = ({ dropId, onClose }) => {
     const [drop, setDrop] = useState(null);
     const [loading, setLoading] = useState(true);

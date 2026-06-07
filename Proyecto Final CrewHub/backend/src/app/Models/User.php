@@ -11,6 +11,23 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Modelo de usuario.
+     *
+     * Campos rellenables (ejemplos):
+     * - username, email, password
+     * - display_name, profile_picture, banner_picture
+     * - date_of_birth, email_verified_at
+     * - interests: array de intereses
+     * - privacy_messages/privacy_comments: configuración de privacidad
+     * - is_business, is_verified: flags
+     * - business_category, business_slogan, ad_plan
+     *
+     * Atributos adicionales:
+     * - is_admin: atributo calculado que indica si el usuario es administrador
+     *
+     * @package App\Models
+     */
     protected $connection = 'mongodb';
     protected $collection = 'users';
 

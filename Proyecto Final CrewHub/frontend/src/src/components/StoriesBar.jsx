@@ -2,6 +2,8 @@ import React, { Fragment } from 'react';
 import { useStoriesBar } from '../hooks/useStoriesBar.js';
 import StoryViewer from './StoryViewer.jsx';
 
+// Componente: StoriesBar
+// Barra de historias (stories) con vista previa y apertura del viewer.
 const StoriesBar = ({ refreshKey = 0 }) => {
     const {
         storiesGroups, loading, viewingStoryOf, getAvatar, openStory, closeStory,

@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useResetPassword } from '../../hooks/useResetPassword.js';
 
+// Componente: ResetPassword
+// Pantalla para confirmar código y establecer nueva contraseña.
 const ResetPassword = () => {
     const location = useLocation();
     const initialEmail = location.state?.email || '';

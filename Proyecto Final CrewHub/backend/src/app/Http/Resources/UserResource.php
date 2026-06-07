@@ -4,10 +4,24 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Recurso de usuario para transformar el modelo en una respuesta JSON.
+ */
 class UserResource extends JsonResource
 {
+    /**
+     * Deshabilita el envoltorio automático de los recursos JSON.
+     *
+     * @var bool
+     */
     public static $wrap = false;
 
+    /**
+     * Transforma el recurso en un arreglo para la respuesta JSON.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed>
+     */
     public function toArray($request)
     {
         return [

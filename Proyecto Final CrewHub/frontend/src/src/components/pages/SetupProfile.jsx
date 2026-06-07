@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useProfileForm } from "../../hooks/useProfileForm.js";
 import { AuthContext } from "../../contexts/AuthContext.jsx";
 
+// Componente: SetupProfile
+// Flujo inicial para completar datos del perfil del usuario.
 const SetupProfile = () => {
     const { activeUser, setActiveUser } = useContext(AuthContext); 
     const navigate = useNavigate();

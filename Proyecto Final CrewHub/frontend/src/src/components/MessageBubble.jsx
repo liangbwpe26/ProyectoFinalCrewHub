@@ -1,5 +1,7 @@
 import React, { useState, Fragment } from 'react';
 
+// Componente: MessageBubble
+// Muestra un mensaje individual en el chat con acciones (editar, borrar).
 const MessageBubble = ({ message, activeUser, onDelete, onEdit }) => {
     const myId = activeUser._id || activeUser.id;
     const isMe = message.sender_id === myId;

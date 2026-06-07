@@ -10,8 +10,18 @@ use MongoDB\BSON\ObjectId;
 use App\Events\NotificationSent;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controlador para gestionar seguimientos y solicitudes de seguimiento.
+ */
 class FollowController extends Controller
 {
+    /**
+     * Permite seguir o dejar de seguir a un usuario.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $id Identificador del usuario a seguir o dejar de seguir.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function follow(Request $request, $id)
     {
         $me = $request->user();
@@ -69,6 +79,13 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * Deja de seguir a un usuario.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $id Identificador del usuario a dejar de seguir.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function unfollow(Request $request, $id)
     {
         $me = $request->user();
@@ -83,6 +100,12 @@ class FollowController extends Controller
         return response()->json(['success' => false, 'message' => 'No sigues a este usuario.'], 400);
     }
 
+    /**
+     * Obtiene los usuarios con seguimiento mutuo.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getMutuals(Request $request)
     {
         $me = $request->user();
@@ -106,6 +129,12 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * Obtiene las solicitudes de seguimiento pendientes para el usuario autenticado.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getPendingRequests(Request $request)
     {
         $me = $request->user();
@@ -123,6 +152,13 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * Acepta una solicitud de seguimiento pendiente.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $followerId Identificador del usuario que envió la solicitud.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function acceptRequest(Request $request, $followerId)
     {
         $me = $request->user();
@@ -146,6 +182,13 @@ class FollowController extends Controller
         return response()->json(['success' => false], 404);
     }
 
+    /**
+     * Rechaza una solicitud de seguimiento pendiente.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $followerId Identificador del usuario que envió la solicitud.
+     * @return \Illuminate\Http\JsonResponse
+     */
    public function rejectRequest(Request $request, $followerId)
     {
         $me = $request->user();
@@ -168,6 +211,13 @@ class FollowController extends Controller
         return response()->json(['success' => false], 404);
     }
 
+    /**
+     * Obtiene la lista de seguidores de un usuario.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $username Nombre de usuario a consultar.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getFollowers(Request $request, $username)
     {
         $user = User::where('username', $username)->first();
@@ -232,6 +282,13 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * Obtiene la lista de usuarios a los que sigue un usuario.
+     *
+     * @param Request $request Petición HTTP actual.
+     * @param string $username Nombre de usuario a consultar.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getFollowing(Request $request, $username)
     {
         $user = User::where('username', $username)->first();

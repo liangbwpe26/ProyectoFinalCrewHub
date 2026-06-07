@@ -5,6 +5,8 @@ import { useChatsLogic } from '../../hooks/useChatsLogic.js';
 import ChatRoom from '../ChatRoom.jsx';
 import Navbar from '../structure/Navbar.jsx';
 
+// Componente: Chats
+// Muestra la lista de conversaciones y carga mensajes del usuario.
 const Chats = () => {
     const { username } = useParams();
     const { activeUser } = useContext(AuthContext);

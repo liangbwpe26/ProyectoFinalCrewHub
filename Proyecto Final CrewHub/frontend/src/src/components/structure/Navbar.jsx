@@ -5,6 +5,8 @@ import useNotifications, { getSafeId } from '../../hooks/useNotifications.js';
 import SingleDropModal from '../SingleDropModal.jsx';
 import PostCard from '../PostCard.jsx'; 
 
+// Componente: Navbar
+// Barra superior con notificaciones, búsqueda y acceso al perfil.
 const Navbar = () => {
     // Contextos y estados
     const { activeUser, logout } = useContext(AuthContext);

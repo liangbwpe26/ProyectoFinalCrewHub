@@ -7,6 +7,8 @@ import ReportModal from './ReportModal.jsx';
 import VerifiedBadge from './VerifiedBadge.jsx';
 import { AuthContext } from '../contexts/AuthContext.jsx'; 
 
+// Componente: PostCard
+// Tarjeta que muestra una publicación con acciones y menú contextual.
 const PostCard = ({ initialPost, getAvatar, isModal = false, onCloseModal, onDeleteSuccess, targetCommentId }) => {
     const {
         postData, isDeleted, isEditing, setIsEditing, editDescription, setEditDescription,

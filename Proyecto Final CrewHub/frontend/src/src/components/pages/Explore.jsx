@@ -4,6 +4,8 @@ import Navbar from '../structure/Navbar.jsx';
 import { fetchAPI } from '../../services/api.js';
 import VerifiedBadge from '../VerifiedBadge.jsx';
 
+// Componente: LocationBadge
+// Badge pequeño que muestra el país en la UI.
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1 text-[9px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-2 py-0.5 rounded-full border border-[#333] shadow-inner w-fit mt-1 group-hover:border-[#0095f6] transition-colors">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0095f6]">

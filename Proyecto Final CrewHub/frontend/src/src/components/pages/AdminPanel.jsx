@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '../structure/Navbar.jsx';
 import { useAdminPanel } from '../../hooks/useAdminPanel.js';
 
+// Componente: AdminPanel
+// Panel administrativo para gestionar reports, tickets y usuarios sancionados.
 const AdminPanel = () => {
     const {
         activeUser,

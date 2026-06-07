@@ -2,6 +2,8 @@ import React, { useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext.jsx';
 import { ToastContext } from '../contexts/ToastContext.jsx'; 
 
+// Componente: GlobalNotificationListener
+// Escucha eventos en tiempo real (Echo) para mostrar notificaciones.
 const GlobalNotificationListener = () => {
     const { activeUser } = useContext(AuthContext);
     

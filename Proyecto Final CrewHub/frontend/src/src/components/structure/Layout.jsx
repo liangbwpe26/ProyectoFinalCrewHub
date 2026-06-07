@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom';
 import CountryDecorations from '../CountryDecorations.jsx';
 import './Layout.css';
 
+// Componente: Layout
+// Estructura principal de la app: header, sidebars y zona de contenido.
 const Layout = ({ children }) => {
     const { activeUser, logout } = useContext(AuthContext);
     const [showMobileMenu, setShowMobileMenu] = useState(false);

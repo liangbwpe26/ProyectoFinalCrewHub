@@ -1,6 +1,8 @@
 import React from 'react';
 import { useCreateCommunity } from '../hooks/useCreateCommunity.js';
 
+// Componente: CreateCommunityModal
+// Modal para crear una nueva comunidad.
 const CreateCommunityModal = ({ onClose, onCreated }) => {
     const { formData, handleChange, handleSubmit, loading, error } = useCreateCommunity((newCommunity) => {
         onCreated(newCommunity);

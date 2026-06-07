@@ -13,10 +13,19 @@ use App\Models\Reaction;
 use App\Events\NotificationSent;
 use App\Models\SavedPost;
 
+/**
+ * Controlador para gestionar interacciones en publicaciones.
+ * 
+ * Maneja reacciones, comentarios, menciones, respuestas y publicaciones guardadas.
+ */
 class PostInteractionController extends Controller
 {
     /**
-     * 1. REACCIÓN A LA PUBLICACIÓN
+     * Alterna la reacción de "me gusta" en una publicación.
+     *
+     * @param Request $request Objeto de la solicitud HTTP
+     * @param mixed $postId Identificador de la publicación
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el estado de la reacción
      */
     public function toggleReaction(Request $request, $postId)
     {
@@ -59,7 +68,11 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 2. OBTENER COMENTARIOS 
+     * Obtiene los comentarios de nivel superior de una publicación con paginación.
+     *
+     * @param Request $request Objeto de la solicitud HTTP
+     * @param mixed $postId Identificador de la publicación
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con comentarios y metadatos de paginación
      */
     public function getComments(Request $request, $postId)
     {
@@ -106,7 +119,11 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 3. AGREGAR COMENTARIO O RESPUESTA + DETECTAR @ETIQUETAS
+     * Add a comment or reply and notify mentioned users.
+     *
+     * @param Request $request
+     * @param mixed $postId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function addComment(Request $request, $postId)
     {
@@ -118,7 +135,6 @@ class PostInteractionController extends Controller
         $me = $request->user();
         $myIdStr = (string) ($me->_id ?? $me->id);
         
-        // --- FILTRO DE PRIVACIDAD PARA COMENTARIOS ---
         $post = Post::with('user')->find($postId);
         if (!$post) return response()->json(['success' => false, 'message' => 'Post no encontrado'], 404);
 
@@ -176,7 +192,6 @@ class PostInteractionController extends Controller
             }
         }
 
-        // 3. NOTIFICACIONES POR ETIQUETA (@username)
         preg_match_all('/@([a-zA-Z0-9_]+)/', $content, $matches);
         $usernamesInText = array_unique($matches[1]);
 
@@ -199,7 +214,6 @@ class PostInteractionController extends Controller
 
                 $notif->load(['sender', 'post']);
 
-                // Disparar WebSocket para la etiqueta
                 try {
                     broadcast(new NotificationSent($notif));
                 } catch (\Exception $e) {
@@ -215,7 +229,11 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 4. REACCIONAR A UN COMENTARIOS
+     * Toggle reaction on a comment.
+     *
+     * @param Request $request
+     * @param mixed $commentId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function toggleCommentReaction(Request $request, $commentId)
     {
@@ -264,8 +282,12 @@ class PostInteractionController extends Controller
     }
 
     /**
-     * 5. BUSCADOR DE MENCIONES (@)
-     * Prioriza amigos mutuos en los resultados.
+     * Search users for mention suggestions.
+     *
+     * Prioritizes mutual followers in results.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function searchMentions(Request $request)
     {
@@ -295,6 +317,13 @@ class PostInteractionController extends Controller
         ]);
     }
 
+    /**
+     * Retrieve replies for a specific comment.
+     *
+     * @param Request $request
+     * @param mixed $commentId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getReplies(Request $request, $commentId)
     {
         $me = $request->user();
@@ -316,6 +345,13 @@ class PostInteractionController extends Controller
         ]);
     }
 
+    /**
+     * Toggle saving a post for the authenticated user.
+     *
+     * @param Request $request
+     * @param mixed $postId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleSave(Request $request, $postId)
     {
         $me = $request->user();
@@ -338,6 +374,12 @@ class PostInteractionController extends Controller
         }
     }
 
+    /**
+     * Get saved posts for the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getSavedPosts(Request $request)
     {
         $me = $request->user();

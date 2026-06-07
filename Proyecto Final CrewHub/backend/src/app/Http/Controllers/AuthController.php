@@ -12,10 +12,20 @@ use Illuminate\Support\Facades\Auth;
 use Exception;
 use App\Http\Resources\UserResource;
 
+/**
+* Controlador de autenticación y registro de usuarios.
+* Provee endpoints para registro, verificación de correo, inicio de sesión,
+* recuperación de contraseña, reenvío de códigos y cierre de sesión.
+*/
+
 class AuthController extends Controller
 {
+    
     /**
-     * Registro de usuarios (Saneado, Validado y con Verificación de Correo)
+     * Registro de usuarios (saneado, validado y con verificación por correo).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request)
     {
@@ -74,7 +84,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Verificar el correo electrónico con el código
+     * Verifica el correo electrónico mediante un código enviado por email.
+     *
+     * Valida el código y marca el email como verificado, inicia sesión y
+     * regenera la sesión.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function verifyEmail(Request $request)
     {
@@ -105,9 +121,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Login de usuarios (Con escudo de verificación)
+     * Inicia sesión con email o username.
+     *
+     * Comprueba credenciales, estado de baneo y verificación de email,
+     * inicia la sesión y regenera la sesión.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-
     public function login(Request $request)
     {
         $request->validate([
@@ -154,7 +175,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Solicitar recuperación de contraseña
+     * Solicita la recuperación de contraseña enviando un código al email.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function forgotPassword(Request $request)
     {
@@ -175,7 +199,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Establecer la nueva contraseña
+     * Restablece la contraseña usando el código enviado por email.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function resetPassword(Request $request)
     {
@@ -200,7 +227,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Reenviar el código de verificación
+     * Reenvía el código de verificación al email del usuario.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function resendVerificationCode(Request $request)
     {
@@ -227,6 +257,12 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Cierra la sesión del usuario autenticado.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function logout(Request $request)
     {
         // 1. Obtener al usuario (para verificar si hay alguien)
@@ -249,7 +285,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Obtener el usuario autenticado enriquecido con su ubicación
+     * Devuelve el usuario autenticado como recurso enriquecido.
+     *
+     * @param Request $request
+     * @return \App\Http\Resources\UserResource
      */
     public function show(Request $request)
     {

@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useForgotPassword } from '../../hooks/useForgotPassword.js';
 
+// Componente: ForgotPassword
+// Formulario para solicitar restablecimiento de contraseña.
 const ForgotPassword = () => {
     const { email, setEmail, loading, handleSubmit } = useForgotPassword();
 

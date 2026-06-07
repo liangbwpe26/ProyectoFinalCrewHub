@@ -13,8 +13,19 @@ use App\Models\Reaction;
 use App\Models\Comment;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Controlador de usuarios.
+ *
+ * Gestiona búsquedas, sugerencias, bloqueos y actualización de perfil e intereses.
+ */
 class UserController extends Controller
 {
+    /**
+     * Buscar usuarios por término o categoría.
+     *
+     * @param Request $request Petición HTTP que contiene los parámetros 'q' (término) y/o 'category'.
+     * @return \Illuminate\Http\JsonResponse Lista de usuarios que coinciden con la búsqueda.
+     */
     public function search(Request $request)
     {
         $me = $request->user();
@@ -61,6 +72,14 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Actualizar intereses del usuario autenticado.
+     *
+     * Valida que 'interests' sea un array de cadenas y guarda los intereses en el usuario.
+     *
+     * @param Request $request Petición con el campo 'interests'.
+     * @return \Illuminate\Http\JsonResponse Resultado de la operación y usuario actualizado.
+     */
     public function updateInterests(Request $request)
     {
         $request->validate([
@@ -80,6 +99,11 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Obtener la lista de intereses disponibles.
+     *
+     * @return \Illuminate\Http\JsonResponse Lista de intereses.
+     */
     public function getAvailableInterests()
     {
         $interests = Interest::all();
@@ -89,6 +113,14 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Proponer usuarios y comunidades para el usuario autenticado.
+     *
+     * Excluye usuarios ya seguidos y los mezcla antes de devolver una selección.
+     *
+     * @param Request $request Petición HTTP (usuario autenticado).
+     * @return \Illuminate\Http\JsonResponse Usuarios y comunidades sugeridas.
+     */
     public function suggestions(Request $request)
     {
         $me = $request->user();
@@ -125,6 +157,15 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Alternar bloqueo de un usuario por nombre de usuario.
+     *
+     * Si el usuario ya está bloqueado lo desbloquea y viceversa. Al bloquear elimina relaciones de seguimiento entre ambos.
+     *
+     * @param Request $request Petición HTTP (usuario autenticado).
+     * @param string $username Nombre de usuario objetivo a bloquear/desbloquear.
+     * @return \Illuminate\Http\JsonResponse Estado actualizado de bloqueo.
+     */
     public function toggleBlock(Request $request, $username)
     {
         $me = $request->user();
@@ -169,6 +210,15 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Mostrar el perfil público de un usuario por nombre de usuario.
+     *
+     * Devuelve información del perfil, conteos, estado de seguimiento y publicaciones respetando privacidad y bloqueos.
+     *
+     * @param Request $request Petición HTTP (posible usuario autenticado).
+     * @param string $username Nombre de usuario a consultar.
+     * @return \Illuminate\Http\JsonResponse Datos del perfil y publicaciones o error.
+     */
     public function show(Request $request, $username)
     {
         try {
@@ -308,6 +358,14 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Actualizar perfil del usuario autenticado.
+     *
+     * Valida campos permitidos, procesa imágenes (perfil/banner) subiéndolas a S3 y guarda los cambios.
+     *
+     * @param Request $request Petición con campos editables del usuario.
+     * @return \Illuminate\Http\JsonResponse Usuario actualizado.
+     */
     public function update(Request $request)
     {
         $user = $request->user();

@@ -10,8 +10,19 @@ use App\Events\NotificationSent;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
+/**
+ * Controlador de drops responsable de manejar feeds, reacciones,
+ * comentarios y notificaciones relacionadas.
+ */
 class DropController extends Controller
 {
+    /**
+     * Convierte un valor a un array seguro para evitar errores
+     * con datos serializados o nulos.
+     *
+     * @param mixed $value Valor a convertir.
+     * @return array Valor convertido en array.
+     */
     private function safeArray($value)
     {
         if (is_array($value))
@@ -25,6 +36,12 @@ class DropController extends Controller
         return [$value];
     }
 
+    /**
+     * Retorna el feed de drops activos paginados.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con drops.
+     */
     public function feed(Request $request)
     {
         $me = $request->user();
@@ -64,6 +81,13 @@ class DropController extends Controller
         ]);
     }
 
+    /**
+     * Muestra un drop específico con datos agregados.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el drop.
+     */
     public function show(Request $request, $id)
     {
         $me = $request->user();
@@ -125,6 +149,13 @@ class DropController extends Controller
         return response()->json(['success' => true, 'drop' => $drop]);
     }
 
+    /**
+     * Elimina un drop si el usuario es propietario.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el resultado.
+     */
     public function destroy(Request $request, $id)
     {
         $me = $request->user();
@@ -142,6 +173,13 @@ class DropController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Activa o desactiva el like de un drop.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el estado del like.
+     */
     public function toggleLike(Request $request, $id)
     {
         $drop = Drop::find($id);
@@ -178,6 +216,13 @@ class DropController extends Controller
         return response()->json(['success' => true, 'reacted' => !$isActive]);
     }
 
+    /**
+     * Activa o desactiva el guardado de un drop.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el estado del guardado.
+     */
     public function toggleSave(Request $request, $id)
     {
         $drop = Drop::find($id);
@@ -198,6 +243,13 @@ class DropController extends Controller
         return response()->json(['success' => true, 'saved' => !$isActive]);
     }
 
+    /**
+     * Activa o desactiva el repost de un drop.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el estado del repost.
+     */
     public function toggleRepost(Request $request, $id)
     {
         $drop = Drop::find($id);
@@ -218,6 +270,13 @@ class DropController extends Controller
         return response()->json(['success' => true, 'reposted' => !$isActive]);
     }
 
+    /**
+     * Obtiene los comentarios asociados a un drop.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con los comentarios.
+     */
     public function getComments(Request $request, $id)
     {
         $me = $request->user();
@@ -240,6 +299,13 @@ class DropController extends Controller
 
         return response()->json(['success' => true, 'comments' => $comments]);
     }
+    /**
+     * Agrega un comentario a un drop y dispara notificaciones.
+     *
+     * @param Request $request Solicitud HTTP con el contenido.
+     * @param mixed $id Identificador del drop.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el comentario agregado.
+     */
     public function addComment(Request $request, $id)
     {
         $request->validate(['content' => 'required|string|max:500']);
@@ -293,6 +359,12 @@ class DropController extends Controller
         return response()->json(['success' => true, 'comment' => $comment->load('user')]);
     }
 
+    /**
+     * Retorna los drops guardados por el usuario autenticado.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con los drops guardados.
+     */
     public function getSavedDrops(Request $request)
     {
         $me = $request->user();
@@ -309,6 +381,13 @@ class DropController extends Controller
         ]);
     }
 
+    /**
+     * Retorna los drops repostados por un usuario específico.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param string $username Nombre de usuario objetivo.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con los drops repostados.
+     */
     public function getUserRepostedDrops(Request $request, $username)
     {
         $targetUser = User::where('username', $username)->first();
@@ -330,6 +409,13 @@ class DropController extends Controller
         ]);
     }
 
+    /**
+     * Elimina un comentario si el usuario tiene permisos.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del comentario.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el resultado.
+     */
     public function deleteComment(Request $request, $id)
     {
         $me = $request->user();
@@ -355,6 +441,13 @@ class DropController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Activa o desactiva el like de un comentario.
+     *
+     * @param Request $request Solicitud HTTP actual.
+     * @param mixed $id Identificador del comentario.
+     * @return \Illuminate\Http\JsonResponse Respuesta JSON con el estado del like.
+     */
     public function toggleCommentLike(Request $request, $id)
     {
         $comment = Comment::find($id);

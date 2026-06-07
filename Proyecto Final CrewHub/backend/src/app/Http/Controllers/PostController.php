@@ -15,8 +15,17 @@ use App\Models\Notification;
 use App\Events\NotificationSent;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Controlador para manejar publicaciones, interacciones y contenido relacionado.
+ */
 class PostController extends Controller
 {
+    /**
+     * Crea una nueva publicación.
+     *
+     * @param Request $request Solicitud HTTP con datos de la publicación.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -74,6 +83,12 @@ class PostController extends Controller
         ]);
     }
 
+    /**
+     * Obtiene el feed de publicaciones según filtros, comunidades y privacidad.
+     *
+     * @param Request $request Solicitud HTTP con parámetros de consulta.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(Request $request)
     {
         $me = $request->user();
@@ -209,6 +224,13 @@ class PostController extends Controller
         ]);
     }
 
+    /**
+     * Muestra los datos de una publicación específica.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param mixed $id Identificador de la publicación.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Request $request, $id)
     {
         $me = $request->user();
@@ -229,6 +251,13 @@ class PostController extends Controller
         return response()->json(['success' => true, 'post' => $post]);
     }
 
+    /**
+     * Actualiza la descripción de una publicación propia.
+     *
+     * @param Request $request Solicitud HTTP con la nueva descripción.
+     * @param mixed $id Identificador de la publicación.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request, $id)
     {
         $post = Post::find($id);
@@ -246,6 +275,13 @@ class PostController extends Controller
         return response()->json(['success' => true, 'post' => $post]);
     }
 
+    /**
+     * Elimina una publicación si el usuario tiene los permisos adecuados.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param mixed $id Identificador de la publicación.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Request $request, $id)
     {
         $post = Post::find($id);
@@ -296,6 +332,13 @@ class PostController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Obtiene publicaciones repostadas por un usuario.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param string $username Nombre de usuario.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function userReposts(Request $request, $username)
     {
         $user = User::where('username', $username)->first();
@@ -327,6 +370,13 @@ class PostController extends Controller
         return response()->json(['success' => true, 'posts' => $posts]);
     }
 
+    /**
+     * Activa o desactiva un repost de una publicación.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param mixed $id Identificador de la publicación.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleRepost(Request $request, $id)
     {
         $me = $request->user();
@@ -348,6 +398,13 @@ class PostController extends Controller
         }
     }
 
+    /**
+     * Elimina un comentario si el usuario tiene permiso.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param mixed $id Identificador del comentario.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function deleteComment(Request $request, $id)
     {
         $me = $request->user();
@@ -372,6 +429,13 @@ class PostController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Activa o desactiva un me gusta en un comentario y notifica al autor.
+     *
+     * @param Request $request Solicitud HTTP.
+     * @param mixed $id Identificador del comentario.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleCommentLike(Request $request, $id)
     {
         $comment = Comment::find($id);

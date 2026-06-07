@@ -5,6 +5,8 @@ import StoriesBar from '../StoriesBar.jsx';
 import StoryManager from '../StoryManager.jsx';
 import './LeftSidebar.css';
 
+// Componente: LeftSidebar
+// Barra lateral izquierda con avatar, subida de medios y navegación rápida.
 const LeftSidebar = () => {
     const { activeUser } = useContext(AuthContext);
     const fileInputRef = useRef(null);

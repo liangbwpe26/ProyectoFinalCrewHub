@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage.js';
 
+// Componente: ImageCropperModal
+// Modal para recortar imágenes y obtener el resultado en base al aspecto.
 const ImageCropperModal = ({ imageSrc, aspectRatio, onCropComplete, onCancel }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);

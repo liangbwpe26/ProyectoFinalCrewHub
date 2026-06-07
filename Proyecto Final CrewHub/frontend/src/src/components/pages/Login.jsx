@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useLoginLogic } from "../../hooks/useLoginLogic.js";
 import logoImg from "../../assets/logo.png";
 
+// Componente: Login
+// Pantalla de inicio de sesión y redirección tras autenticar.
 const Login = () => {
     const navigate = useNavigate();
     const { credentials, updateData, handleLogin, loading } = useLoginLogic();

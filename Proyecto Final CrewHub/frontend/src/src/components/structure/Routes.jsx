@@ -23,6 +23,8 @@ import Premium from "../pages/Premium.jsx";
 import Checkout from "../pages/Checkout.jsx";
 import Explore from "../pages/Explore.jsx";
 
+// Componente: RoutesApp
+// Define rutas públicas y protegidas de la aplicación.
 const RoutesApp = () => {
     const { activeUser } = useContext(AuthContext);
 

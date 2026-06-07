@@ -1,6 +1,8 @@
 import React from 'react';
 import { useOnboarding } from '../../hooks/useOnboarding.js';
 
+// Componente: Onboarding
+// Selección inicial de intereses y configuración básica del usuario.
 const Onboarding = () => {
     const { 
         availableInterests, 

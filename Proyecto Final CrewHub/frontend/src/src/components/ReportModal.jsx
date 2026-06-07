@@ -11,6 +11,8 @@ const REASONS = [
     "No me gusta"
 ];
 
+// Componente: ReportModal
+// Modal para enviar un reporte sobre publicación, comentario o usuario.
 const ReportModal = ({ targetType, targetId, reportedUserId, onClose }) => {
     const [selectedReason, setSelectedReason] = useState("");
     const [details, setDetails] = useState("");

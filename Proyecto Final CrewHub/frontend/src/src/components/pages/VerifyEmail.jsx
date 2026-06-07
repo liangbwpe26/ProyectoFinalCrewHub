@@ -2,6 +2,8 @@ import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useVerifyEmail } from '../../hooks/useVerifyEmail.js';
 
+// Componente: VerifyEmail
+// Formulario para verificar código enviado por email.
 const VerifyEmail = () => {
     const location = useLocation();
     const initialEmail = location.state?.email || '';

@@ -9,6 +9,8 @@ import SingleDropModal from "../SingleDropModal.jsx";
 import ReportModal from '../ReportModal.jsx';
 import VerifiedBadge from "../VerifiedBadge.jsx";
 
+// Componente: Profile
+// Vista de perfil público/privado del usuario y su contenido.
 const Profile = () => {
     const { username } = useParams();
     const { activeUser } = useContext(AuthContext);

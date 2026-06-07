@@ -6,6 +6,8 @@ import Navbar from '../structure/Navbar.jsx';
 import PrivacySettings from '../PrivacySettings.jsx';
 import { useSettings } from '../../hooks/useSettings.js';
 
+// Componente: Settings
+// Configuraciones de cuenta, notificaciones y tickets de soporte.
 const Settings = () => {
     const { tab } = useParams();
     const activeTab = tab || 'edit-profile'; 

@@ -1,6 +1,8 @@
 import React, { Fragment } from 'react';
 import { usePrivacySettings } from '../hooks/usePrivacySettings.js';
 
+// Componente: PrivacySettings
+// Formulario para ajustar privacidad de mensajes y comentarios.
 const PrivacySettings = () => {
     const { 
         privacyMessages, setPrivacyMessages, 

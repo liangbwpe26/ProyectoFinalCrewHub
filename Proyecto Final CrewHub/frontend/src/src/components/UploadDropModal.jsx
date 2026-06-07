@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { fetchAPI } from '../services/api.js';
 
+// Componente: UploadDropModal
+// Modal para subir un nuevo drop (video) y vista previa antes de enviar.
 const UploadDropModal = ({ onClose, onUploadSuccess }) => {
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);

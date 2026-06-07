@@ -9,8 +9,25 @@ use App\Models\User;
 use App\Models\Notification;
 use App\Events\NotificationSent;
 
+/**
+ * Controlador para gestionar reportes, tickets y sanciones de usuarios.
+ * 
+ * Maneja la creación de reportes, resolución de reportes y gestión de
+ * sanciones a usuarios.
+ */
 class ReportController extends Controller
 {
+    /**
+     * Crea un nuevo reporte sobre un usuario o contenido.
+     *
+     * @param Request $request Los datos del reporte con los campos:
+     *                          - reported_id: ID del usuario reportado
+     *                          - target_type: Tipo de contenido (user, post, drop, comment)
+     *                          - target_id: ID del contenido reportado (opcional)
+     *                          - reason: Razón del reporte
+     *                          - details: Detalles adicionales (opcional, máx. 500 caracteres)
+     * @return \Illuminate\Http\JsonResponse Respuesta con éxito o error
+     */
     public function store(Request $request)
     {
         try {
@@ -25,10 +42,12 @@ class ReportController extends Controller
             $me = $request->user();
             $myId = (string) ($me->_id ?? $me->id);
 
+            // Evita que un usuario se reporte a sí mismo
             if ($myId === $request->reported_id) {
                 return response()->json(['success' => false, 'message' => 'No puedes reportarte a ti mismo.']);
             }
 
+            // Verifica si ya existe un reporte similar
             $query = Report::where('reporter_id', $myId)
                 ->where('reported_id', $request->reported_id);
             if ($request->target_id) $query->where('target_id', $request->target_id);
@@ -37,6 +56,7 @@ class ReportController extends Controller
                 return response()->json(['success' => false, 'message' => 'Ya has reportado este contenido.']);
             }
 
+            // Crea el reporte
             Report::create([
                 'reporter_id' => $myId,
                 'reported_id' => $request->reported_id,
@@ -47,6 +67,7 @@ class ReportController extends Controller
                 'status' => 'pending'
             ]);
 
+            // Si hay 5 o más reportes, oculta automáticamente el contenido
             if ($request->target_id && in_array($request->target_type, ['post', 'drop'])) {
                 $reportCount = Report::where('target_id', $request->target_id)->count();
                 
@@ -66,6 +87,12 @@ class ReportController extends Controller
         }
     }
 
+    /**
+     * Obtiene todos los reportes pendientes.
+     *
+     * @param Request $request Requiere que el usuario sea administrador
+     * @return \Illuminate\Http\JsonResponse Lista de reportes pendientes
+     */
     public function index(Request $request)
     {
         if (!$request->user()->is_admin) {
@@ -80,10 +107,18 @@ class ReportController extends Controller
         return response()->json(['success' => true, 'reports' => $reports]);
     }
 
+    /**
+     * Resuelve un reporte y notifica al reportero.
+     *
+     * @param Request $request La solicitud HTTP
+     * @param string $id ID del reporte a resolver
+     * @return \Illuminate\Http\JsonResponse Respuesta de éxito
+     */
     public function resolve(Request $request, $id)
     {
         $me = $request->user();
 
+        // Verifica permisos de administrador
         if (!$me->is_admin && $me->username !== 'liangbw_') {
             return response()->json(['success' => false, 'message' => 'Acceso denegado'], 403);
         }
@@ -97,6 +132,7 @@ class ReportController extends Controller
 
         $reporter = User::find($report->reporter_id);
         
+        // Envía notificación al reportero si lo desea
         if ($reporter && $reporter->wantsNotification('report_resolved')) {
             $notif = Notification::create([
                 'recipient_id' => $report->reporter_id,
@@ -115,6 +151,12 @@ class ReportController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Obtiene todos los tickets pendientes.
+     *
+     * @param Request $request Requiere que el usuario sea administrador
+     * @return \Illuminate\Http\JsonResponse Lista de tickets pendientes
+     */
     public function getTickets(Request $request)
     {
         $me = $request->user();
@@ -131,6 +173,13 @@ class ReportController extends Controller
         return response()->json(['success' => true, 'tickets' => $tickets]);
     }
 
+    /**
+     * Resuelve un ticket.
+     *
+     * @param Request $request La solicitud HTTP
+     * @param string $id ID del ticket a resolver
+     * @return \Illuminate\Http\JsonResponse Respuesta de éxito
+     */
     public function resolveTicket(Request $request, $id)
     {
         $me = $request->user();
@@ -148,6 +197,12 @@ class ReportController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Obtiene usuarios sancionados (con sanciones o baneados).
+     *
+     * @param Request $request Requiere que el usuario sea administrador
+     * @return \Illuminate\Http\JsonResponse Lista de usuarios sancionados
+     */
     public function getSanctionedUsers(Request $request)
     {
         $me = $request->user();
@@ -161,6 +216,13 @@ class ReportController extends Controller
         return response()->json(['success' => true, 'users' => $users]);
     }
 
+    /**
+     * Alterna el estado de baneo de un usuario.
+     *
+     * @param Request $request La solicitud HTTP
+     * @param string $id ID del usuario
+     * @return \Illuminate\Http\JsonResponse Respuesta de éxito
+     */
     public function toggleBan(Request $request, $id)
     {
         $me = $request->user();
@@ -175,6 +237,13 @@ class ReportController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Reinicia las sanciones de un usuario.
+     *
+     * @param Request $request La solicitud HTTP
+     * @param string $id ID del usuario
+     * @return \Illuminate\Http\JsonResponse Respuesta de éxito
+     */
     public function resetStrikes(Request $request, $id)
     {
         $me = $request->user();
@@ -183,8 +252,7 @@ class ReportController extends Controller
         $user = User::find($id);
         if ($user) {
             $user->strikes = 0;
-
-            $user->is_banned = false; 
+            $user->is_banned = false;
             $user->save();
         }
 

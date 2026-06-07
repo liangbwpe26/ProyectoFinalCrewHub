@@ -11,8 +11,17 @@ use App\Models\Community;
 use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
+/**
+ * Controlador para manejar historias de usuarios y comunidades.
+ */
 class StoryController extends Controller
 {
+    /**
+     * Convierte un valor en un arreglo seguro.
+     *
+     * @param mixed $value Valor a normalizar.
+     * @return array Arreglo normalizado.
+     */
     private function safeArray($value) {
         if (is_array($value)) return $value;
         if (is_object($value)) return json_decode(json_encode($value), true);
@@ -33,6 +42,7 @@ class StoryController extends Controller
         $rawSlug = (string) $request->input('community_slug');
         $rawId = (string) $request->input('community_id');
         
+        // Normaliza parámetros de comunidad para evitar caracteres no válidos
         $communitySlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawSlug);
         $communityId = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawId);
 
@@ -58,6 +68,7 @@ class StoryController extends Controller
             
             $admins = $this->safeArray($community->admins);
             
+            // Verifica si el usuario actual está en la lista de administradores
             if (!in_array($myId, $admins)) {
                 return response()->json(['success' => false, 'message' => 'Solo los administradores pueden subir historias.'], 403);
             }
@@ -84,6 +95,15 @@ class StoryController extends Controller
         return response()->json(['success' => true, 'story' => $story]);
     }
 
+    /**
+     * Obtiene las historias activas para el feed del usuario.
+     *
+     * Incluye historias propias, de usuarios seguidos y de comunidades
+     * a las que pertenece o administra.
+     *
+     * @param Request $request Petición HTTP con el usuario autenticado.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getFeedStories(Request $request)
     {
         $me = $request->user();
@@ -95,6 +115,7 @@ class StoryController extends Controller
             $allowedUserIds[] = (string)$f->followed_id;
         }
 
+        // Construye lista de comunidades a las que el usuario pertenece o administra
         $allCommunities = Community::all();
         $allowedCommunityIds = [];
         foreach ($allCommunities as $c) {
@@ -191,6 +212,13 @@ class StoryController extends Controller
         ]);
     }
 
+    /**
+     * Marca una historia como vista por el usuario actual.
+     *
+     * @param Request $request Petición HTTP con el usuario autenticado.
+     * @param string $storyId Identificador de la historia.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function markAsViewed(Request $request, $storyId)
     {
         $me = $request->user();
@@ -210,6 +238,13 @@ class StoryController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Elimina una historia si el usuario actual es su propietario.
+     *
+     * @param Request $request Petición HTTP con el usuario autenticado.
+     * @param string $id Identificador de la historia.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Request $request, $id)
     {
         $me = $request->user();
@@ -228,6 +263,13 @@ class StoryController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Alterna el like de la historia para el usuario actual.
+     *
+     * @param Request $request Petición HTTP con el usuario autenticado.
+     * @param string $id Identificador de la historia.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleLike(Request $request, $id)
     {
         $me = $request->user();
@@ -264,6 +306,13 @@ class StoryController extends Controller
         return response()->json(['success' => true, 'reacted' => !$isLiked]);
     }
 
+    /**
+     * Obtiene estadísticas de la historia y lista de usuarios que la vieron.
+     *
+     * @param Request $request Petición HTTP con el usuario autenticado.
+     * @param string $id Identificador de la historia.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getStats(Request $request, $id)
     {
         $me = $request->user();

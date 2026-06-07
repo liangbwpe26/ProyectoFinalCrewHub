@@ -9,6 +9,8 @@ import CreatePost from "../CreatePost.jsx";
 import StoriesBar from "../StoriesBar.jsx";
 import PostSkeleton from '../ui/PostSkeleton.jsx';
 
+// Componente: LocationBadge
+// Badge que muestra país para items del feed.
 const LocationBadge = ({ country }) => (
     <div className="flex items-center gap-1 text-[9px] text-gray-400 bg-gradient-to-r from-[#1a1a1a] to-[#111] px-2 py-0.5 rounded-full border border-[#333] shadow-inner w-fit mt-1 group-hover:border-[#00ba7c] transition-colors">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#00ba7c]">

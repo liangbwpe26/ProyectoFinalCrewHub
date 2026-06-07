@@ -6,6 +6,8 @@ import PostCard from '../PostCard.jsx';
 import CreatePost from '../CreatePost.jsx';
 import StoryManager from '../StoryManager.jsx';
 
+// Componente: Community
+// Vista de una comunidad: feed, miembros y moderación.
 const Community = () => {
     const { slug } = useParams();
     const navigate = useNavigate();

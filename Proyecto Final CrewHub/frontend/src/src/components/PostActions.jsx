@@ -5,6 +5,8 @@ import { usePostInteractions } from '../hooks/usePostInteractions';
 import { fetchAPI } from '../services/api.js';
 import ConfirmModal from './ConfirmModal.jsx'; 
 
+// Componente: PostActions
+// Botones y lógica de interacción para una publicación (reactions, comentarios, guardado).
 const PostActions = ({ post, targetCommentId = null }) => {
     const { activeUser } = useContext(AuthContext);
     const inputRef = useRef(null);

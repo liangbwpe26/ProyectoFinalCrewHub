@@ -3,6 +3,8 @@ import { AuthContext } from '../contexts/AuthContext.jsx';
 import { useChatRoomLogic } from '../hooks/useChatRoomLogic.js';
 import MessageBubble from './MessageBubble.jsx';
 
+// Componente: ChatRoom
+// Sala de chat para conversar con otro usuario y enviar medios.
 const ChatRoom = ({ targetUsername }) => {
     const { activeUser } = useContext(AuthContext);
     

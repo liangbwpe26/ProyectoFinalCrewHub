@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 import Navbar from '../structure/Navbar.jsx';
 
+// Componente: Premium
+// Página de opciones premium y planes de suscripción.
 const Premium = () => {
     const { activeUser } = useContext(AuthContext);
     const navigate = useNavigate();
