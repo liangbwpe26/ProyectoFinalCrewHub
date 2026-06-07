@@ -62,7 +62,7 @@ const Home = () => {
 
     const toggleFollowSearch = async (targetUserId, currentStatus) => {
         try {
-            const data = await fetchAPI(`/users/${targetUserId}/follow`, { method: 'POST' });
+            const data = await fetchAPI(`/follow/${targetUserId}`, { method: 'POST' });
             if (data.success) {
                 setSearchResults(prevResults => prevResults.map(u => {
                     const uid = u.id || u._id;

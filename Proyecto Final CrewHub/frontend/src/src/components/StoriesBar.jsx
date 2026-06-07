@@ -4,7 +4,8 @@ import StoryViewer from './StoryViewer.jsx';
 
 // Componente: StoriesBar
 // Barra de historias (stories) con vista previa y apertura del viewer.
-const StoriesBar = ({ refreshKey = 0 }) => {
+// Añadimos isVertical = false a las propiedades recibidas
+const StoriesBar = ({ refreshKey = 0, isVertical = false }) => {
     const {
         storiesGroups, loading, viewingStoryOf, getAvatar, openStory, closeStory,
         onStoryViewed, onDeleteStory, onToggleLike, onGetStats, onReply
@@ -12,7 +13,8 @@ const StoriesBar = ({ refreshKey = 0 }) => {
 
     if (loading) {
         return (
-            <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-2">
+            // Cambiamos el contenedor de carga para que respete si es vertical u horizontal
+            <div className={`flex custom-scrollbar pb-2 ${isVertical ? 'flex-col items-center overflow-y-auto gap-4' : 'overflow-x-auto gap-4'}`}>
                 <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#333] shadow-inner animate-pulse shrink-0"></div>
                 <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] border border-[#333] shadow-inner animate-pulse shrink-0"></div>
             </div>
@@ -25,7 +27,12 @@ const StoriesBar = ({ refreshKey = 0 }) => {
 
     return (
         <Fragment>
-            <div className="flex gap-5 overflow-x-auto custom-scrollbar pb-3 pt-2 px-1">
+            {/* Contenedor principal dinámico: cambia flex-row/flex-col y el tipo de scroll */}
+            <div className={`flex custom-scrollbar pb-3 pt-2 px-1 ${
+                isVertical 
+                    ? 'flex-col items-center overflow-y-auto gap-4 w-full' 
+                    : 'flex-row overflow-x-auto gap-5 w-full'
+            }`}>
                 {storiesGroups.map((group, index) => {
                     const isCommunity = group.is_community;
                     const entity = group.user; 

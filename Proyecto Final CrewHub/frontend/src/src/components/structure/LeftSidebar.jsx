@@ -58,8 +58,10 @@ const LeftSidebar = () => {
                     <h2 className="text-center text-xs font-bold mb-4 border-b border-[#262626] pb-3 text-gray-400 uppercase tracking-widest">
                         Historias
                     </h2>
+                    
+                    {/* Contenedor de la barra de historias */}
                     <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                        <StoriesBar refreshKey={refreshKey} />
+                        <StoriesBar refreshKey={refreshKey} isVertical={true} />
                     </div>
                 </div>
 

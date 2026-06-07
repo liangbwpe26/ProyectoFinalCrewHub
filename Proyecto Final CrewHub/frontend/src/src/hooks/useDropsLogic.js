@@ -43,15 +43,19 @@ export const useDropsLogic = () => {
 
     // Función para alternar el estado de like o dislike de un drop, actualizando el estado local del drop correspondiente y enviando la solicitud a la API para registrar la acción del usuario
     const toggleAction = async (dropId, actionType) => { 
+        // Mapeamos el tipo de acción al nombre de la propiedad del estado (like -> liked, save -> saved, repost -> reposted)
+        const stateSuffix = actionType === 'like' ? 'liked' : actionType === 'save' ? 'saved' : 'reposted';
+        const countKey = `${actionType}s_count`; // likes_count, saves_count, reposts_count
+
         setDrops(prev => prev.map(drop => {
             if ((drop._id || drop.id) === dropId) {
-                const isActive = drop[`has_${actionType}`];
+                const isActive = drop[`has_${stateSuffix}`];
                 return {
                     ...drop,
-                    [`has_${actionType}`]: !isActive,
-                    [`${actionType}s_count`]: !isActive 
-                        ? (drop[`${actionType}s_count`] || 0) + 1 
-                        : Math.max(0, (drop[`${actionType}s_count`] || 1) - 1)
+                    [`has_${stateSuffix}`]: !isActive,
+                    [countKey]: !isActive 
+                        ? (drop[countKey] || 0) + 1 
+                        : Math.max(0, (drop[countKey] || 1) - 1)
                 };
             }
             return drop;
@@ -59,7 +63,9 @@ export const useDropsLogic = () => {
 
         try {
             await fetchAPI(`/drops/${dropId}/${actionType}`, { method: 'POST' });
-        } catch (error) {}
+        } catch (error) {
+            console.error(`Error al procesar la acción ${actionType}`, error);
+        }
     };
 
     // Función para eliminar un drop, enviando la solicitud a la API y actualizando el estado local para remover el drop eliminado de la lista
