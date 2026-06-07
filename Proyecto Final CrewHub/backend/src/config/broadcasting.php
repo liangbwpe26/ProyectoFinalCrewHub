@@ -32,16 +32,15 @@ return [
 
         'reverb' => [
             'driver' => 'reverb',
-            'key' => env('VITE_REVERB_APP_KEY'),
-            'secret' => env('REVERB_APP_SECRET'),
-            'app_id' => env('REVERB_APP_ID'),
+            'key' => env('VITE_REVERB_APP_KEY', '3nzzbbwlepkn13a1dt9k'),
+            'secret' => env('REVERB_APP_SECRET', 'phd0avajkp80nsxdwze3'),
+            'app_id' => env('REVERB_APP_ID', '761695'),
             'options' => [
                 'host' => env('REVERB_HOST', '127.0.0.1'),
                 'port' => env('REVERB_PORT', 8080),
                 'scheme' => env('REVERB_SCHEME', 'http'),
                 'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
             ],
-            // AGREGA ESTO:
             'attributes' => [
                 'auth' => [
                     'guard' => 'sanctum',
